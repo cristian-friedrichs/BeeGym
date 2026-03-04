@@ -13,8 +13,6 @@ export async function POST(request: NextRequest) {
         // A EFI envia um "notification" token — precisamos buscar os detalhes reais via GET
         if (payload.notification) {
             const notificationToken: string = payload.notification;
-            console.log(`[Webhook Card Rec.] Token recebido: ${notificationToken}`);
-
             // Buscar detalhes reais da notificação na API de Cobranças da EFI
             const baseUrl = efiConfig.baseUrlCobrancas;
             const response = await efiClient.get(`${baseUrl}/v1/notification/${notificationToken}`);
@@ -37,8 +35,6 @@ export async function POST(request: NextRequest) {
                     console.warn('[Webhook Card Rec.] Evento sem charge_id, ignorando.');
                     continue;
                 }
-
-                console.log(`[Webhook Card Rec.] Processando charge_id=${chargeId} status=${status}`);
 
                 await recurringPaymentUseCase.execute({
                     referenceId: chargeId,

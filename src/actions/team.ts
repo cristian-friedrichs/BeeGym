@@ -102,12 +102,6 @@ export async function createTeamMemberAction(formData: {
 
         // 3. Create instructor record if needed
         if (formData.isInstructor) {
-            console.log('🎓 Creating instructor record for:', {
-                profileId,
-                fullName: formData.fullName,
-                organizationId: formData.organizationId
-            });
-
             const { data: instructorData, error: instructorError } = await supabaseAdmin
                 .from('instructors')
                 .insert({
@@ -136,7 +130,6 @@ export async function createTeamMemberAction(formData: {
                 };
             }
 
-            console.log('✅ Instructor record created successfully:', instructorData);
         }
 
 

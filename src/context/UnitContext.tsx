@@ -19,17 +19,12 @@ export function UnitProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         async function initializeUnit() {
             try {
-                console.log('[UnitContext] Starting initialization...');
-
                 // Get authenticated user
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
-                    console.log('[UnitContext] No authenticated user found');
                     setIsLoading(false);
                     return;
                 }
-                console.log('[UnitContext] User authenticated:', user.id);
-
                 // Get user's organization and name
                 const { data: userData, error: userError } = await (supabase as any)
                     .from('profiles')
@@ -42,12 +37,9 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                 }
 
                 if (!userData?.organization_id) {
-                    console.log('[UnitContext] No organization_id found for user');
                     setIsLoading(false);
                     return;
                 }
-                console.log('[UnitContext] Organization ID:', userData.organization_id);
-
                 // Fetch units for this organization
                 let { data: units, error: unitsError } = await (supabase as any)
                     .from('units')
@@ -74,27 +66,19 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     };
 
                     units = [fallbackUnit];
-                    console.log('[UnitContext] 🛡️ Fallback unit created:', fallbackUnit);
                 }
                 // --------------------------------
 
-                console.log('[UnitContext] Units to process:', units);
-
                 // FORCE AUTO-SELECTION LOGIC
-                console.log('[UnitContext] 🎯 Found', units!.length, 'unit(s). Auto-selecting...');
-
                 let selectedUnitId: string | null = null;
 
                 // Check if there's already a stored unit ID
                 const storedUnitId = localStorage.getItem('currentUnitId');
-                console.log('[UnitContext] Stored unit ID from localStorage:', storedUnitId);
-
                 // Verify if stored ID is valid in the current units list
                 const storedUnitExists = storedUnitId ? units!.some((u: any) => u.id === storedUnitId) : false;
 
                 if (storedUnitId && storedUnitExists) {
                     // Use stored unit if it still exists
-                    console.log('[UnitContext] ✅ Using stored unit:', storedUnitId);
                     selectedUnitId = storedUnitId;
                 } else {
                     // Auto-select the first unit (prioritize active ones if available)
@@ -102,8 +86,6 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     const firstUnit = units![0];
 
                     selectedUnitId = activeUnit ? activeUnit.id : firstUnit.id;
-                    console.log('[UnitContext] ✅ Auto-selected unit:', selectedUnitId);
-
                     // FORCED PERSISTENCE
                     if (selectedUnitId) {
                         localStorage.setItem('currentUnitId', selectedUnitId);
@@ -112,14 +94,11 @@ export function UnitProvider({ children }: { children: ReactNode }) {
 
                 // SET THE STATE
                 if (selectedUnitId) {
-                    console.log('[UnitContext] 🚀 Setting currentUnitId state to:', selectedUnitId);
                     setCurrentUnitIdState(selectedUnitId);
                 }
 
                 // Store units data for Header display
                 localStorage.setItem('units_data', JSON.stringify(units));
-                console.log('[UnitContext] ✅ Initialization complete. Active unit:', selectedUnitId);
-
             } catch (err) {
                 console.error('[UnitContext] ❌ Fatal error during initialization:', err);
             } finally {
@@ -131,7 +110,6 @@ export function UnitProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setCurrentUnitId = (id: string | null) => {
-        console.log('[UnitContext] Manual unit change to:', id);
         setCurrentUnitIdState(id);
         if (id) {
             localStorage.setItem('currentUnitId', id);
@@ -141,8 +119,6 @@ export function UnitProvider({ children }: { children: ReactNode }) {
         // Dispatch custom event for components that aren't using context
         window.dispatchEvent(new Event('storage-update'));
     };
-
-    console.log('[UnitContext] Render - currentUnitId:', currentUnitId, 'isLoading:', isLoading);
 
     return (
         <UnitContext.Provider value={{ currentUnitId, setCurrentUnitId, isLoading }}>

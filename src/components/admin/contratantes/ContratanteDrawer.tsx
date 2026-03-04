@@ -84,7 +84,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                             <section>
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Assinatura Atual</h3>
-                                    <ContratanteBillingDialog contratanteId={id} assinatura={detail.assinatura} onUpdated={load} />
+                                    <ContratanteBillingDialog contratanteId={id as string} assinatura={detail.assinatura} onUpdated={load} />
                                 </div>
                                 <dl className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
                                     <div><dt className="text-slate-400 text-xs">Plano</dt><dd className="font-bold text-bee-orange">{detail.assinatura.plano}</dd></div>

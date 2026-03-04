@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+// @ts-ignore
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { UpgradeSubscriptionUseCase } from '@/application/use-cases/subscription/UpgradeSubscriptionUseCase';

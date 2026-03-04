@@ -34,7 +34,7 @@ export const SupabaseCouponRepository = {
             throw new Error('Falha ao criar cupom: ' + error.message);
         }
 
-        return coupon;
+        return coupon as unknown as Coupon;
     },
 
     async update(id: string, data: Partial<Coupon>): Promise<Coupon> {
@@ -54,7 +54,7 @@ export const SupabaseCouponRepository = {
             throw new Error('Falha ao atualizar cupom: ' + error.message);
         }
 
-        return coupon;
+        return coupon as unknown as Coupon;
     },
 
     async findById(id: string): Promise<Coupon | null> {
@@ -76,7 +76,7 @@ export const SupabaseCouponRepository = {
             .single();
 
         if (error || !data) return null;
-        return data;
+        return data as unknown as Coupon;
     },
 
     async listAll(): Promise<Coupon[]> {
@@ -90,6 +90,6 @@ export const SupabaseCouponRepository = {
             return [];
         }
 
-        return data || [];
+        return (data || []) as unknown as Coupon[];
     }
 };

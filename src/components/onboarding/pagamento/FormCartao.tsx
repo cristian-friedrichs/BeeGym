@@ -8,7 +8,7 @@ if (typeof window !== 'undefined') {
     // Fallback for missing env vars in some browser environments
     (window as any).process.env = {
         ...((window as any).process.env || {}),
-        NEXT_PUBLIC_EFI_PAYEE_CODE: (window as any).process.env?.NEXT_PUBLIC_EFI_PAYEE_CODE || 'c0796e898ed358d2a880a621789bcaae',
+        NEXT_PUBLIC_EFI_PAYEE_CODE: (window as any).process.env?.NEXT_PUBLIC_EFI_PAYEE_CODE || '',
         NEXT_PUBLIC_EFI_AMBIENTE: (window as any).process.env?.NEXT_PUBLIC_EFI_AMBIENTE || 'homologacao'
     };
 }
@@ -112,13 +112,12 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                 const EfiPayModule = await import('payment-token-efi');
                 const EfiPay = EfiPayModule.default || EfiPayModule;
 
-                const payeeCode = process.env.NEXT_PUBLIC_EFI_PAYEE_CODE || 'c0796e898ed358d2a880a621789bcaae';
+                const payeeCode = process.env.NEXT_PUBLIC_EFI_PAYEE_CODE || '';
                 const environment = process.env.NEXT_PUBLIC_EFI_AMBIENTE === 'producao'
                     ? 'production'
                     : 'sandbox';
 
                 console.warn('🚀 [FormCartao] INICIANDO TOKENIZAÇÃO COM SDK EFI');
-                console.log('📦 Config:', { environment, payeeCode: payeeCode?.slice(0, 10) + '...' });
 
                 if (!payeeCode) {
                     throw new Error('Configuração de pagamento incompleta. PAYEE_CODE não configurado.');
@@ -133,14 +132,10 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                 EfiPay.CreditCard.setAccount(payeeCode).setEnvironment(environment);
 
                 const numeroLimpo = card.number.replace(/\D/g, '');
-                console.log('💳 Número limpo (primeiros 6):', numeroLimpo.slice(0, 6));
-
                 // Verificar bandeira
                 const bandeira = await EfiPay.CreditCard
                     .setCardNumber(numeroLimpo)
                     .verifyCardBrand();
-
-                console.log('🏷️ Bandeira:', bandeira);
 
                 if (!bandeira || bandeira === 'undefined' || bandeira === 'unsupported') {
                     throw new Error(`Bandeira não reconhecida (${bandeira}). O número do cartão pode estar incorreto para o ambiente de ${environment}. Lembre-se de usar números de teste para sandbox.`);
@@ -150,8 +145,6 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
 
                 try {
                     const docLimpo = customer.cpf.replace(/\D/g, '');
-                    console.log('📄 Solicitando Payment Token para:', customer.name);
-
                     const resultado = await EfiPay.CreditCard
                         .setCreditCardData({
                             brand: bandeira,

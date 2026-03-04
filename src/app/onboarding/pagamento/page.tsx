@@ -146,7 +146,6 @@ export default function PagamentoPage() {
             let data;
             try {
                 data = JSON.parse(text);
-                console.log('[Onboarding Pagamento] Resultado API:', data);
             } catch {
                 console.error('[Onboarding Pagamento] Erro ao parsear JSON:', text);
                 throw new Error(`Erro de servidor (${res.status}). Ocorreu um problema ao processar a assinatura.`);
@@ -171,8 +170,6 @@ export default function PagamentoPage() {
             if (data.redirectUrl) params.append('urlConsentimento', data.redirectUrl); // Fallback para nomes de campos diferentes
             if (data.acessoLiberado) params.append('acessoLiberado', '1');
             if (data.statusEfi) params.append('statusEfi', data.statusEfi);
-
-            console.log('[Onboarding Pagamento] Redirecionando com params:', params.toString());
 
             // SUCESSO: Redirecionar para confirmação sem resetar ainda para evitar redirecionamentos em cadeia
             router.push(`/onboarding/pagamento/confirmacao?${params.toString()}`);

@@ -64,7 +64,6 @@ class EfiClientFactory {
 
                 // [DEBUG] Auditoria de headers
                 const authHeader = String(config.headers['Authorization'] || '');
-                console.log(`[Axios Debug] [${type}] URL: ${config.url} | Auth: ${authHeader.length} chars`);
                 if (authHeader.length > 2000) {
                     console.error('[CRÍTICO] O cabeçalho Authorization está anormalmente grande.');
                 }

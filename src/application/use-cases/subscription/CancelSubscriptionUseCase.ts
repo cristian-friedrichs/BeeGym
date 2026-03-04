@@ -15,8 +15,6 @@ export class CancelSubscriptionUseCase {
             throw new Error('Nenhuma assinatura ativa encontrada para esta organização.');
         }
 
-        console.log(`[CancelSubscriptionUseCase] Cancelando assinatura ${assinatura.id} (${assinatura.metodo})`);
-
         // 2. Cancelar na EFI
         if (assinatura.metodo === 'CARTAO_RECORRENTE') {
             if (assinatura.subscriptionEfiId) {
@@ -29,7 +27,7 @@ export class CancelSubscriptionUseCase {
         }
 
         // 3. Atualizar no banco de dados local
-        await SupabaseAssinaturaRepository.updateStatus(assinatura.id, 'CANCELADA');
+        await SupabaseAssinaturaRepository.updateStatus(assinatura.id, 'INATIVO');
 
         return { success: true };
     }

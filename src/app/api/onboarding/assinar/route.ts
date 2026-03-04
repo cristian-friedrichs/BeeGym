@@ -77,8 +77,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Plano inválido ou inativo' }, { status: 400 });
         }
 
-        console.log(`[Assinar] Org=${org.id}, Plano=${plano.name}(${plano.id}), Método=${metodo}`);
-
         const useCase = new CreateSubscriptionUseCase();
         const resultado = await useCase.execute({
             contratanteId: org.id,

@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (error) {
                 // PGRST116 means no rows found - common for new users in onboarding
                 if (error.code === 'PGRST116') {
-                    console.info('ℹ️ Perfil não encontrado para o usuário:', userId)
                     return null
                 }
                 throw error

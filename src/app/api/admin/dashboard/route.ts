@@ -47,8 +47,6 @@ export async function GET() {
         const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
-        console.log('[Admin Dashboard] Orgs:', orgs?.length, 'Subs:', subs?.length);
-
         // == KPIs ==
         let currentMRR = 0;
         let prevMRR = 0;

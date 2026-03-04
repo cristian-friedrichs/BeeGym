@@ -25,11 +25,9 @@ export class EfiPlansService {
         }
 
         try {
-            console.log(`[EFI Plans] Criando plano ${dados.name} em ${baseUrl}...`, payload);
             const response = await efiClient.post(`${baseUrl}/v1/plan`, payload);
 
             if (response.data && response.data.data && response.data.data.plan_id) {
-                console.log(`[EFI Plans] Plano criado com sucesso: plan_id=${response.data.data.plan_id}`);
                 return response.data.data.plan_id;
             }
 

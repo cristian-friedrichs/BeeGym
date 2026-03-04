@@ -19,15 +19,12 @@ export class HandlePixAutomaticoConsentUseCase {
         }
 
         if (status === 'ATIVO') {
-            console.log(`[Pix-Auto-Consent] Consentimento ATIVO para acordo ${acordoId}. Liberando acesso.`);
-
             // 1. Mudar para TRIAL (primeiros 7 dias ou acesso inicial)
             await assinaturaRepository.updateStatus(assinatura.id, 'TRIAL');
 
             // 2. Liberar acesso real no Supabase
             await contratanteRepository.liberarAcesso(assinatura.contratanteId);
 
-            console.info(`[Pix-Auto-Consent] Assinatura ${assinatura.id} ativada com sucesso.`);
             return;
         }
 

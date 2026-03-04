@@ -161,8 +161,6 @@ export function Header({ className }: { className?: string }) {
     // Fetch User Profile from public.users table
     async function loadUser() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      console.log('HEADER: Auth User:', user, 'Error:', authError);
-
       if (user) {
         // Fetch from public.profiles table for real data
         const { data: userData, error: dbError } = await (supabase as any)
@@ -170,8 +168,6 @@ export function Header({ className }: { className?: string }) {
           .select('full_name, avatar_url, email, organization_id')
           .eq('id', user.id)
           .single();
-
-        console.log('HEADER: Profile Data:', userData, 'DB Error:', dbError);
 
         // Priority fallback for avatar: db → auth metadata → null
         const dbAvatar = userData?.avatar_url;
@@ -213,7 +209,6 @@ export function Header({ className }: { className?: string }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         // Debounce or just call loadUser? calling is fine.
-        console.log('HEADER: Auth State Changed:', event, session.user.id);
         loadUser();
       }
     });

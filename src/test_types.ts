@@ -8,4 +8,3 @@ const p: Profiles = {
     // and so on
 } as any;
 
-console.log(p.organization_id);

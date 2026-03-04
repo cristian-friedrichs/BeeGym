@@ -27,8 +27,6 @@ export class HandleRecurringPaymentUseCase {
         const statusNormalizado = this.normalizarStatus(input.status, input.metodo);
 
         if (statusNormalizado === 'PAGO') {
-            console.log(`[Recurring-Payment] Confirmando pagamento para assinatura ${assinatura.id}`);
-
             // 1. Atualizar status e renovar data de cobrança
             const novaData = new Date();
             novaData.setMonth(novaData.getMonth() + 1);
@@ -39,7 +37,6 @@ export class HandleRecurringPaymentUseCase {
             // 2. Incrementar contador de cobranças (para controle de promoção)
             const { promoExpired } = await assinaturaRepository.incrementarCobranca(assinatura.id);
             if (promoExpired) {
-                console.info(`[Recurring-Payment] Promoção encerrada para assinatura ${assinatura.id}. Próxima cobrança será pelo valor cheio.`);
             }
 
             // Registrar cobrança no histórico PAGO
@@ -48,7 +45,6 @@ export class HandleRecurringPaymentUseCase {
             // 3. Garantir acesso desbloqueado
             await contratanteRepository.liberarAcesso(assinatura.contratanteId);
 
-            console.info(`[Recurring-Payment] Sucesso! Assinatura [${assinatura.id}] renovada.`);
             return;
         }
 

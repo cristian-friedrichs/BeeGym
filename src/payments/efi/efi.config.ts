@@ -47,7 +47,6 @@ export function getEfiConfig(): EfiConfig {
     }
 
     if (certBase64) {
-        console.log(`[EFI Config] Comprimento da chave EFI_CERT_BASE64: ${certBase64.length} caracteres`);
     }
 
     if (!baseUrlPix || !baseUrlOauth) {

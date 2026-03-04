@@ -9,8 +9,6 @@ export async function GET(request: Request) {
     }
 
     try {
-        console.log('[CRON: Subscriptions] Iniciando verificação diária de assinaturas.');
-
         // 1. Processar contas em TRIAL (Azul) para ATIVO (Verde) após 7 dias
         // Nota: Precisaremos adicionar um método findInTrial ao repository real depois
         // Simulando fluxo: se existe data de início, contamos os dias.
@@ -39,7 +37,6 @@ export async function GET(request: Request) {
                 await suspenderAcesso(assinatura.contratanteId);
                 await notificacaoService.enviarAcessoSuspenso(assinatura.contratanteId);
 
-                console.info(`[CRON: Subscriptions] Assinatura ${assinatura.id} INATIVA (Tempo inadimplência expirado: ${passedDays} dias). Contratante ${assinatura.contratanteId} revogado.`);
                 inativas++;
             } else {
                 // Continua no prazo: Envia Lembrete de pagamento p/ o admin do contrato
@@ -50,7 +47,6 @@ export async function GET(request: Request) {
             }
         }
 
-        console.log(`[CRON: Subscriptions] Finalizado com sucesso. Inativadas Hoje: ${inativas}`);
         return NextResponse.json({ success: true, processed: assinaturasInadimplentes.length, suspended: inativas });
     } catch (error) {
         console.error('[CRON: Subscriptions] Erro Crítico:', error);

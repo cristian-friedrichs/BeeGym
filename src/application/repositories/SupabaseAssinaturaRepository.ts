@@ -45,7 +45,7 @@ export const SupabaseAssinaturaRepository = {
                 manual_price_override: data.manualPriceOverride || null,
                 manual_discount_amount: data.manualDiscountAmount || null,
                 manual_discount_percentage: data.manualDiscountPercentage || null
-            })
+            } as any)
             .select()
             .single();
 

@@ -57,8 +57,6 @@ export const SupabaseContratanteRepository = {
      * Libera o acesso total ao sistema e marca onboarding como concluído.
      */
     async liberarAcesso(organizationId: string): Promise<void> {
-        console.log(`[SupabaseContratanteRepository] Liberando acesso para ${organizationId}`);
-
         // 1. Atualizar organização
         const { error: orgError } = await supabaseAdmin
             .from('organizations')

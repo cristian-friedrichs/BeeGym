@@ -15,7 +15,6 @@ export async function POST(request: NextRequest) {
             const acordos: any[] = payload.pixAutomatico.acordos;
             for (const evento of acordos) {
                 const { idAcordo, situacao } = evento;
-                console.log(`[Webhook Pix Auto] Consentimento: acordo=${idAcordo}, status=${situacao}`);
                 await consentUseCase.execute(idAcordo, situacao).catch(err => {
                     console.error(`[Webhook Pix Auto] Erro consentimento ${idAcordo}:`, err.message);
                 });
@@ -30,8 +29,6 @@ export async function POST(request: NextRequest) {
                 if (!cob.idAcordo) continue;
 
                 const status = cob.status || 'CONCLUIDA';
-                console.log(`[Webhook Pix Auto] Pagamento: txid=${cob.txid}, acordo=${cob.idAcordo}, status=${status}`);
-
                 await paymentUseCase.execute({
                     referenceId: cob.idAcordo, // Busca por acordo_efi_id no banco
                     status,

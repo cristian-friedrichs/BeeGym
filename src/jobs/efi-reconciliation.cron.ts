@@ -15,8 +15,6 @@ export class EfiReconciliationJob {
      * ou via biblioteca `node-cron` se estivéssemos em servidor longo.
      */
     public async execute(): Promise<void> {
-        console.log('[EfiReconciliationJob] Iniciando conciliação de Webhooks perdidos...');
-
         try {
             // 1. Busca no Banco de Dados faturas PENDENTES que expiraram há poucos minutos
             // Exemplo:
@@ -28,19 +26,15 @@ export class EfiReconciliationJob {
             for (const fatura of mockPendentes) {
                 if (!fatura.txid) continue;
 
-                console.log(`[EfiReconciliationJob] Consultando status real do TXID: ${fatura.txid}`);
-
                 try {
                     // 2. Consulta a fonte da verdade na API EFI
                     const cobranca = await efiPix.consultarCobranca(fatura.txid);
 
                     if (cobranca.status === 'CONCLUIDA') {
-                        console.log(`[EfiReconciliationJob] TXID ${fatura.txid} foi pago! Disparando confirmação salvadora.`);
                         // Dispara o caso de uso normalmente (idempotente)
                         await this.confirmInvoiceUseCase.execute(fatura.txid, cobranca.status, 'PIX');
                     }
                     else if (cobranca.status === 'REMOVIDA_PELO_USUARIO_RECEBEDOR' || cobranca.status === 'REMOVIDA_PELO_PSP') {
-                        console.log(`[EfiReconciliationJob] TXID ${fatura.txid} foi removido/expirado. Invalidar fatura (Mock).`);
                         // await InvoiceRepository.markAsExpired(fatura.txid);
                     }
                     // Se ainda for ATIVA, apenas ignoramos e esperamos
@@ -48,8 +42,6 @@ export class EfiReconciliationJob {
                     console.error(`[EfiReconciliationJob] Falha ao consultar TXID ${fatura.txid} na EFI:`, apiError.message);
                 }
             }
-
-            console.log('[EfiReconciliationJob] Conciliação finalizada.');
 
         } catch (err: any) {
             console.error('[EfiReconciliationJob] Erro fatal durante a rotina:', err.message);

@@ -26,14 +26,10 @@ export class EfiCardRecorrenteService {
             }
         };
 
-        console.log(`[EFI Card Recorrente] Criando assinatura no plano ${planId} em ${baseUrl}...`);
-
         const response = await efiCobrancasClient.post(
             `${baseUrl}/v1/plan/${planId}/subscription/one-step`,
             payload
         );
-
-        console.log('[EFI Card Recorrente] Resposta:', JSON.stringify(response.data).substring(0, 300));
 
         return {
             subscription_id: response.data.data.subscription_id,
@@ -74,7 +70,14 @@ export class EfiCardRecorrenteService {
         await efiCobrancasClient.put(`${baseUrl}/v1/subscription/${subscriptionId}`, {
             plan_id: newPlanId
         });
-        console.log(`[EFI Card Recorrente] Assinatura ${subscriptionId} alterada para o plano ${newPlanId}.`);
+    }
+
+    /**
+     * Cancela uma assinatura ativa
+     */
+    public async cancelarAssinatura(subscriptionId: number): Promise<void> {
+        const baseUrl = efiConfig.baseUrlCobrancas;
+        await efiCobrancasClient.put(`${baseUrl}/v1/subscription/${subscriptionId}/cancel`);
     }
 
     /**
@@ -84,7 +87,6 @@ export class EfiCardRecorrenteService {
         const baseUrl = efiConfig.baseUrlCobrancas;
 
         // 1. Criar novo plano customizado
-        console.log(`[EFI Card Recorrente] Criando plano customizado para override: ${customName} - R$ ${novoValorFixo}`);
         const novoPlanoResponse = await efiCobrancasClient.post(`${baseUrl}/v1/plan`, {
             name: customName.substring(0, 255),
             repeats: null, // infinito

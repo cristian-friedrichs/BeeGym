@@ -29,12 +29,9 @@ export class EfiPixAutomaticoService {
         const valorCobranca = dados.valorPromo || dados.valor.fixo;
 
         // --- PASSO 1: Criar Location para a Recorrência ---
-        console.log('[EFI Pix Auto] Passo 1: Criando location em /v2/locrec...');
         const locResponse = await efiClient.post(`${baseUrl}/v2/locrec`, {});
         const locId = locResponse.data.id;
         const locationUrl = locResponse.data.location;
-        console.log(`[EFI Pix Auto] Location criado: id=${locId} -> ${locationUrl}`);
-
         // --- PASSO 2: Criar a Recorrência vinculada ao Location ---
         const diaVenc = dados.recorrencia?.diaVencimento || 10;
         const dataInicial = (() => {
@@ -70,15 +67,12 @@ export class EfiPixAutomaticoService {
             politicaRetentativa: 'NAO_PERMITE'
         };
 
-        console.log('[EFI Pix Auto] Passo 2: Criando recorrência em /v2/rec...');
         const recResponse = await efiClient.post(`${baseUrl}/v2/rec`, recPayload);
 
         const logSuccess = `\n--- [${new Date().toISOString()}] EFI V2 REC SUCCESS ---\nStatus: ${recResponse.status}\nBody: ${JSON.stringify(recResponse.data, null, 2)}\n`;
         try { fs.appendFileSync('debug_onboarding.log', logSuccess); } catch (e) { }
 
         const idRec = recResponse.data.idRec || recResponse.data.loc?.idRec;
-        console.log(`[EFI Pix Auto] Recorrência criada: idRec=${idRec}`);
-
         // --- PASSO 3: Criar Cobrança com Vencimento (cobr) vinculada ao loc ---
         const txid = `BGYM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`.substring(0, 35);
 
@@ -102,10 +96,7 @@ export class EfiPixAutomaticoService {
         let brCode: string | null = null;
 
         try {
-            console.log(`[EFI Pix Auto] Passo 3: Criando cobrança em /v2/cobr/${txid}...`);
             const cobrResponse = await efiClient.put(`${baseUrl}/v2/cobr/${txid}`, cobrPayload);
-            console.log(`[EFI Pix Auto] Cobrança criada: txid=${cobrResponse.data.txid}, status=${cobrResponse.data.status}`);
-
             brCode = cobrResponse.data.pixCopiaECola || cobrResponse.data.brcode || null;
 
             const logCobr = `[EFI Pix Auto] Cobrança OK: txid=${cobrResponse.data.txid}, brCode=${brCode ? 'OK' : 'NULL'}\n`;
@@ -120,10 +111,8 @@ export class EfiPixAutomaticoService {
         if (!brCode && locId) {
             // Tentar via /v2/locrec/:id/qrcode (endpoint correto para Jornada 2)
             try {
-                console.log(`[EFI Pix Auto] Passo 4: Buscando QR via /v2/locrec/${locId}/qrcode...`);
                 const qrResponse = await efiClient.get(`${baseUrl}/v2/locrec/${locId}/qrcode`);
                 brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
-                console.log(`[EFI Pix Auto] QR via locrec: ${brCode ? 'OK' : 'Vazio'}`);
             } catch (err: any) {
                 console.error('[EFI Pix Auto] Erro locrec/qrcode:', err.response?.data || err.message);
             }
@@ -134,7 +123,6 @@ export class EfiPixAutomaticoService {
             try {
                 const qrResponse = await efiClient.get(`${baseUrl}/v2/loc/${locId}/qrcode`);
                 brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
-                console.log(`[EFI Pix Auto] Fallback /v2/loc: ${brCode ? 'OK' : 'Vazio'}`);
             } catch (err: any) {
                 console.error('[EFI Pix Auto] Fallback loc falhou:', err.response?.data || err.message);
             }
@@ -182,7 +170,6 @@ export class EfiPixAutomaticoService {
         await efiClient.patch(`${baseUrl}/v2/rec/${acordoId}`, {
             status: 'CANCELADA'
         });
-        console.log(`[EFI Pix Auto] Acordo ${acordoId} cancelado com sucesso.`);
     }
 
     /**
@@ -195,7 +182,6 @@ export class EfiPixAutomaticoService {
                 valorRec: Number(novoValorFixo).toFixed(2)
             }
         });
-        console.log(`[EFI Pix Auto] Acordo ${acordoId} teve seu valor alterado para R$ ${novoValorFixo}.`);
     }
 
     /**
