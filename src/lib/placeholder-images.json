@@ -1,0 +1,34 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-couple",
+      "description": "A fit couple smiling and looking strong",
+      "imageUrl": "https://images.unsplash.com/photo-1603792582751-c73976204e1e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmaXRuZXNzJTIwY291cGxlfGVufDB8fHx8MTc2ODYyMTc5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fitness couple"
+    },
+    {
+      "id": "experience-man",
+      "description": "Man lifting weights at the gym",
+      "imageUrl": "https://images.unsplash.com/photo-1605296867724-fa87a8ef53fd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtYW4lMjBneW18ZW58MHx8fHwxNzY4NjIxNzk3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man gym"
+    },
+    {
+      "id": "hero-dashboard",
+      "description": "Personal trainers with a tablet showing BeeGym Pro dashboard",
+      "imageUrl": "https://storage.googleapis.com/gemini-generations/uploads/6e08283a-8742-4974-9844-3c874254b1f4/hero-dashboard.png",
+      "imageHint": "personal trainers gym dashboard"
+    },
+    {
+      "id": "testimonial-1",
+      "description": "Portrait of a smiling woman",
+      "imageUrl": "https://images.unsplash.com/photo-1614283233556-f35b0c801ef1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3b21hbiUyMHBvcnRyYWl0fGVufDB8fHx8MTc2ODU1NDczMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "testimonial-2",
+      "description": "Portrait of a smiling man",
+      "imageUrl": "https://images.unsplash.com/photo-1583195763986-0231686dcd43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3Njg1NzI1MTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man portrait"
+    }
+  ]
+}

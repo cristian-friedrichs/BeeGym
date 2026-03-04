@@ -1,0 +1,524 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// -----------------------------------------------------------------------------
+// 1. ORGANIZATION AND MULTI-UNIT
+// -----------------------------------------------------------------------------
+
+model Organization {
+  id                   String       @id @default(uuid()) @db.Uuid
+  name                 String
+  businessType         BusinessType @map("business_type")
+  contactEmail         String?      @map("contact_email")
+  document             String?
+  logoUrl              String?      @map("logo_url")
+  hasPhysicalLocation  Boolean      @default(true) @map("has_physical_location")
+  addressZip           String?      @map("address_zip")
+  addressLine1         String?      @map("address_line1")
+  addressNumber        String?      @map("address_number")
+  addressNeighborhood  String?      @map("address_neighborhood")
+  addressCity          String?      @map("address_city")
+  addressState         String?      @map("address_state")
+  openingHours         Json?        @map("opening_hours")
+  allowConcurrentBookings Boolean   @default(false) @map("allow_concurrent_bookings")
+  maxCapacityPerSlot   Int          @default(1) @map("max_capacity_per_slot")
+  defaultSessionDuration Int        @default(60) @map("default_session_duration")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  units                Unit[]
+  users                User[]
+  // students              Student[]
+  classTemplates       ClassTemplate[]
+  cancellationPolicies CancellationPolicy[]
+  workouts             Workout[]
+  conversations        Conversation[]
+  reports              Report[]
+  systemLogs           SystemLog[]
+  instructors          Instructor[]
+  plans                Plan[]
+  // calendarEvents        CalendarEvent[]
+
+  @@map("organizations")
+}
+
+enum BusinessType {
+  STARTER
+  PLUS
+  STUDIO
+  PRO
+  ENTERPRISE
+}
+
+model Unit {
+  id                  String   @id @default(uuid()) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  name                String
+  managerName         String?  @map("manager_name")
+  email               String?
+  phone               String?
+  addressZip          String?  @map("address_zip")
+  addressStreet       String?  @map("address_street")
+  addressNumber       String?  @map("address_number")
+  addressNeighborhood String?  @map("address_neighborhood")
+  addressCity         String?  @map("address_city")
+  addressState        String?  @map("address_state")
+  isMain              Boolean  @default(false) @map("is_main")
+  addressJson         Json?    @map("address_json")
+  services            String[] // Array of services: Pilates, Yoga, CrossFit, etc.
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rooms          Room[]
+  students       Student[]
+  calendarEvents CalendarEvent[]
+
+  @@map("units")
+}
+
+model Room {
+  id                   String   @id @default(uuid()) @db.Uuid
+  unitId               String   @map("unit_id") @db.Uuid
+  name                 String
+  capacity             Int      @default(10)
+  description          String?
+  allowParallelBooking Boolean  @default(false) @map("allow_parallel_booking")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  unit           Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  calendarEvents CalendarEvent[]
+
+  @@map("rooms")
+}
+
+// -----------------------------------------------------------------------------
+// 2. USERS AND PROFILES
+// -----------------------------------------------------------------------------
+
+model User {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  name               String
+  email              String   @unique
+  avatarUrl          String?  @map("avatar_url")
+  bio                String?
+  jobTitle           String?  @map("job_title")
+  showPublicProfile  Boolean  @default(true) @map("show_public_profile")
+  role               UserRole
+  allowedUnitIds     String[] @map("allowed_unit_ids") @db.Uuid // Array of Unit IDs
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  // Relations as Instructor (if user is also an instructor)
+  instructorProfile Instructor?
+
+  // Relations for created content
+  createdWorkouts  Workout[]
+  generatedReports Report[]
+  logsAsActor      SystemLog[] @relation("ActorUser")
+
+  @@map("users")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  INSTRUCTOR
+  STAFF
+}
+
+model Instructor {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  userId         String?  @unique @map("user_id") @db.Uuid
+  name           String
+  bio            String?
+  allowedUnitIds String[] @map("allowed_unit_ids") @db.Uuid
+  active         Boolean  @default(true)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  calendarEvents CalendarEvent[]
+
+  @@map("instructors")
+}
+
+// -----------------------------------------------------------------------------
+// 3. STUDENTS
+// -----------------------------------------------------------------------------
+
+model Student {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  unitId         String        @map("unit_id") @db.Uuid
+  fullName       String        @map("full_name")
+  email          String?
+  phone          String?
+  avatarUrl      String?       @map("avatar_url")
+  status         StudentStatus @default(ACTIVE)
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  // organization   Organization @relation(fields: [organizationId], references: [id], onDelete: NoAction)
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: NoAction)
+
+  planAssignments   StudentPlanAssignment[]
+  eventParticipants EventParticipant[]
+  workouts          Workout[]
+  attendanceLogs    AttendanceLog[]
+  bodyMeasurements  BodyMeasurement[]
+
+  @@map("students")
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  CANCELED
+}
+
+model StudentPlanAssignment {
+  id                String           @id @default(uuid()) @db.Uuid
+  studentId         String           @map("student_id") @db.Uuid
+  planName          String           @map("plan_name")
+  scheduleType      PlanScheduleType @map("schedule_type")
+  weeklyLimit       Int?             @map("weekly_limit")
+  fixedScheduleJson Json?            @map("fixed_schedule_json")
+  color             String?
+  startDate         DateTime         @map("start_date")
+  status            PlanStatus       @default(ACTIVE)
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("student_plan_assignments")
+}
+
+enum PlanScheduleType {
+  FIXED
+  FLEXIBLE
+  OPEN
+}
+
+enum PlanStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+// -----------------------------------------------------------------------------
+// 4. CLASSES (CATALOG)
+// -----------------------------------------------------------------------------
+
+model ClassTemplate {
+  id                     String   @id @default(uuid()) @db.Uuid
+  organizationId         String   @map("organization_id") @db.Uuid
+  title                  String
+  icon                   String?
+  color                  String?
+  defaultDurationMinutes Int      @map("default_duration_minutes")
+  minStudents            Int?     @map("min_students")
+  maxStudents            Int?     @map("max_students")
+  allowReservations      Boolean  @default(true) @map("allow_reservations")
+  cancellationPolicyId   String?  @map("cancellation_policy_id") @db.Uuid
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cancellationPolicy CancellationPolicy? @relation(fields: [cancellationPolicyId], references: [id])
+
+  calendarEvents CalendarEvent[]
+
+  @@map("class_templates")
+}
+
+model CancellationPolicy {
+  id                 String      @id @default(uuid()) @db.Uuid
+  organizationId     String      @map("organization_id") @db.Uuid
+  name               String
+  cancelLimitMinutes Int         @map("cancel_limit_minutes")
+  penaltyType        PenaltyType @map("penalty_type")
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classTemplates ClassTemplate[]
+
+  @@map("cancellation_policies")
+}
+
+enum PenaltyType {
+  NONE
+  LOSE_CREDIT
+  FEE
+}
+
+// -----------------------------------------------------------------------------
+// 5. AGENDA AND EVENTS
+// -----------------------------------------------------------------------------
+
+model CalendarEvent {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  unitId         String    @map("unit_id") @db.Uuid
+  type           EventType
+  templateId     String?   @map("template_id") @db.Uuid
+  instructorId   String?   @map("instructor_id") @db.Uuid
+  roomId         String?   @map("room_id") @db.Uuid
+
+  startDateTime DateTime @map("start_datetime")
+  endDateTime   DateTime @map("end_datetime")
+
+  status        EventStatus @default(PENDENTE)
+  capacityLimit Int?        @map("capacity")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  // organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: NoAction)
+  unit       Unit           @relation(fields: [unitId], references: [id], onDelete: NoAction)
+  template   ClassTemplate? @relation(fields: [templateId], references: [id])
+  instructor Instructor?    @relation(fields: [instructorId], references: [id])
+  room       Room?          @relation(fields: [roomId], references: [id])
+
+  participants   EventParticipant[]
+  attendanceLogs AttendanceLog[]
+
+  @@map("calendar_events")
+}
+
+enum EventType {
+  CLASS
+  TRAINING
+}
+
+enum EventStatus {
+  PREVISTA
+  EM_EXECUCAO
+  PENDENTE
+  REALIZADA
+  FALTA
+}
+
+model EventParticipant {
+  id        String            @id @default(uuid()) @db.Uuid
+  eventId   String            @map("event_id") @db.Uuid
+  studentId String            @map("student_id") @db.Uuid
+  status    ParticipantStatus @default(CONFIRMED)
+
+  event   CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("event_participants")
+}
+
+enum ParticipantStatus {
+  CONFIRMED
+  CANCELED
+  ATTENDED
+  MISSED
+}
+
+// -----------------------------------------------------------------------------
+// 6. WORKOUTS AND PRESCRIPTION
+// -----------------------------------------------------------------------------
+
+model Workout {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  studentId       String   @map("student_id") @db.Uuid
+  title           String
+  goal            String?
+  createdByUserId String?  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdByUserId], references: [id])
+
+  exercises WorkoutExercise[]
+
+  @@map("workouts")
+}
+
+model WorkoutExercise {
+  id              String  @id @default(uuid()) @db.Uuid
+  workoutId       String  @map("workout_id") @db.Uuid
+  exerciseId      String  @map("exercise_id") @db.Uuid
+  sets            Int?
+  reps            String? // String to allow ranges like "10-12"
+  weight          Float?
+  durationSeconds Int?    @map("duration_seconds")
+  intensity       String?
+  notes           String?
+
+  workout  Workout         @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise ExerciseLibrary @relation(fields: [exerciseId], references: [id])
+
+  @@map("workout_exercises")
+}
+
+model ExerciseLibrary {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String
+  muscleGroup String? @map("muscle_group")
+  equipment   String?
+  difficulty  String?
+  mediaUrl    String? @map("media_url")
+
+  workoutExercises WorkoutExercise[]
+
+  @@map("exercises_library")
+}
+
+// -----------------------------------------------------------------------------
+// 7. ATTENDANCE AND HISTORY
+// -----------------------------------------------------------------------------
+
+model AttendanceLog {
+  id              String   @id @default(uuid()) @db.Uuid
+  studentId       String   @map("student_id") @db.Uuid
+  eventId         String   @map("event_id") @db.Uuid
+  status          String // REALIZADA, FALTA (can be enum but schema says status)
+  confirmedByUser String?  @map("confirmed_by_user")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  student Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  event   CalendarEvent @relation(fields: [eventId], references: [id])
+
+  @@map("attendance_logs")
+}
+
+// -----------------------------------------------------------------------------
+// 8. MEASUREMENTS AND EVALUATIONS
+// -----------------------------------------------------------------------------
+
+model BodyMeasurement {
+  id        String   @id @default(uuid()) @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  date      DateTime
+  weight    Float?
+  bodyFat   Float?   @map("body_fat")
+  chest     Float?
+  waist     Float?
+  hips      Float?
+  arms      Float?
+  legs      Float?
+  notes     String?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("body_measurements")
+}
+
+// -----------------------------------------------------------------------------
+// 9. CHAT AND CONVERSATIONS
+// -----------------------------------------------------------------------------
+
+model Conversation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  organizationId     String   @map("organization_id") @db.Uuid
+  participantIds     String[] @map("participant_ids") @db.Uuid // Array of Student or User IDs
+  archivedBy         String[] @map("archived_by") @db.Uuid
+  lastMessagePreview String?  @map("last_message_preview")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(uuid()) @db.Uuid
+  conversationId String      @map("conversation_id") @db.Uuid
+  senderId       String      @map("sender_id") @db.Uuid
+  type           MessageType
+  content        String?
+  fileUrl        String?     @map("file_url")
+  reactionsJson  Json?       @map("reactions_json")
+  deletedAt      DateTime?   @map("deleted_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  FILE
+}
+
+// -----------------------------------------------------------------------------
+// 10. REPORTS
+// -----------------------------------------------------------------------------
+
+model Report {
+  id              String   @id @default(uuid()) @db.Uuid
+  organizationId  String   @map("organization_id") @db.Uuid
+  name            String
+  filtersJson     Json?    @map("filters_json")
+  resultJson      Json?    @map("result_json")
+  generatedByUser String?  @map("generated_by_user") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  generatedBy  User?        @relation(fields: [generatedByUser], references: [id])
+
+  @@map("reports")
+}
+
+// -----------------------------------------------------------------------------
+// 11. LOGS AND AUDIT
+// -----------------------------------------------------------------------------
+
+model SystemLog {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  actionType     String   @map("action_type")
+  entityType     String   @map("entity_type")
+  entityId       String?  @map("entity_id")
+  oldDataJson    Json?    @map("old_data_json")
+  newDataJson    Json?    @map("new_data_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User?        @relation("ActorUser", fields: [actorUserId], references: [id])
+
+  @@map("system_logs")
+}
+
+// -----------------------------------------------------------------------------
+// 12. PLANS
+// -----------------------------------------------------------------------------
+
+model Plan {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  name           String
+  description    String?
+  price          Decimal  @default(0.00) @db.Decimal(10, 2)
+  durationDays   Int      @default(30) @map("duration_days")
+  type           String   @default("unlimited") // 'unlimited', 'pack', 'recurring'
+  checkinLimit   Int?     @map("checkin_limit")
+  checkinCycle   String?  @map("checkin_cycle") // 'total', 'weekly', 'monthly'
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("plans")
+}

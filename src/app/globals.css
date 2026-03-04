@@ -1,0 +1,174 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 17px;
+  }
+
+  :root {
+    /* BeeGym Brand Colors - Official Hex Codes */
+    --bee-orange: 33 100% 50%;
+    /* #FF8C00 */
+    --deep-midnight: 216 100% 12%;
+    /* #00173F */
+    --pure-white: 255 255 255;
+    /* #FFFFFF */
+
+    --background: 210 20% 97%;
+    /* #F4F6F8 (Cinza Background) */
+    --foreground: 216 100% 12%;
+    /* #00173F (Deep Midnight) */
+
+    --card: 0 0% 100%;
+    /* #FFFFFF */
+    --card-foreground: 216 100% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 100% 12%;
+
+    --primary: 33 100% 50%;
+    /* #FF8C00 (Bee Orange) */
+    --primary-foreground: 0 0% 100%;
+    /* #FFFFFF */
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 216 100% 12%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 33 100% 50%;
+    /* #FF8C00 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 354 70% 54%;
+    /* #DC3545 (Vermelho Alert) */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 33 100% 50%;
+
+    --radius: 8px;
+    /* Standard 8px corner radius for buttons and CTAs */
+  }
+
+  .dark {
+    --background: 0 0% 4%;
+    /* #0B0B0B */
+    --foreground: 0 0% 95%;
+    /* #F2F2F2 */
+
+    --card: 0 0% 9%;
+    /* #161616 */
+    --card-foreground: 0 0% 95%;
+    /* #F2F2F2 */
+
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 33 100% 50%;
+    /* #FF8C00 - Orange */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 12%;
+    /* #1F1F1F */
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 70%;
+    /* #B3B3B3 */
+
+    --accent: 33 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 354 70% 54%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 12%;
+    /* #1F1F1F */
+    --input: 0 0% 12%;
+    --ring: 33 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+}
+
+@layer utilities {
+  .timer-dot {
+    position: relative;
+    display: flex;
+    height: 0.75rem;
+    width: 0.75rem;
+  }
+
+  .timer-dot::after {
+    content: '';
+    position: absolute;
+    display: inline-flex;
+    height: 100%;
+    width: 100%;
+    border-radius: 9999px;
+    background-color: #ef4444;
+    opacity: 0.75;
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .timer-dot::before {
+    content: '';
+    position: relative;
+    display: inline-flex;
+    border-radius: 9999px;
+    height: 0.75rem;
+    width: 0.75rem;
+    background-color: #ef4444;
+  }
+
+  @keyframes ping {
+
+    75%,
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+}
