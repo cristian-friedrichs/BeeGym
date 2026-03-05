@@ -139,7 +139,7 @@ export function StudentProfileView({
                     </Avatar>
                     <button
                         onClick={onEditProfile}
-                        className="absolute bottom-1 right-1 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-500 hover:text-bee-orange transition-colors"
+                        className="absolute bottom-1 right-1 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-500 hover:text-bee-amber transition-colors"
                     >
                         <Edit className="h-4 w-4" />
                     </button>
@@ -150,7 +150,7 @@ export function StudentProfileView({
                         {student.full_name}
                     </h1>
                     <div className="flex flex-col items-center gap-1.5">
-                        <Badge variant="secondary" className="bg-[#FFF4E5] text-bee-orange border-orange-100 px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-full font-sans">
+                        <Badge variant="secondary" className="bg-[#FFF4E5] text-bee-amber border-orange-100 px-3 py-1 text-[11px] font-bold uppercase tracking-widest rounded-full font-sans">
                             {displayPlan}
                         </Badge>
                         <div className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.1em] font-sans">
@@ -165,8 +165,8 @@ export function StudentProfileView({
 
                 <div className="w-full pt-4 border-t border-slate-50 flex flex-col items-center gap-2 py-2">
                     {/* E-MAIL: Primary Metadata */}
-                    <div className="flex items-center gap-2 text-slate-500 hover:text-bee-orange transition-colors group">
-                        <Mail className="h-3.5 w-3.5 text-slate-300 group-hover:text-bee-orange" />
+                    <div className="flex items-center gap-2 text-slate-500 hover:text-bee-amber transition-colors group">
+                        <Mail className="h-3.5 w-3.5 text-slate-300 group-hover:text-bee-amber" />
                         <span className="text-sm font-medium font-sans">{student.email || '-'}</span>
                     </div>
 
@@ -197,7 +197,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => onChangeView('dashboard')}
-                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'dashboard' ? 'bg-bee-orange text-white border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-orange hover:bg-orange-50'}`}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'dashboard' ? 'bg-bee-amber text-bee-midnight border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-amber hover:bg-amber-50'}`}
                                 >
                                     <Home className="h-5 w-5" />
                                 </button>
@@ -209,7 +209,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => setMessageModalOpen(true)}
-                                    className="p-2.5 bg-slate-50 text-slate-400 rounded-[8px] border border-slate-100 hover:text-bee-orange hover:bg-orange-50 transition-all flex items-center justify-center"
+                                    className="p-2.5 bg-slate-50 text-slate-400 rounded-[8px] border border-slate-100 hover:text-bee-amber hover:bg-amber-50 transition-all flex items-center justify-center"
                                 >
                                     <MessageSquare className="h-5 w-5" />
                                 </button>
@@ -221,7 +221,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => onChangeView('workouts')}
-                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'workouts' ? 'bg-bee-orange text-white border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-orange hover:bg-orange-50'}`}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'workouts' ? 'bg-bee-amber text-bee-midnight border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-amber hover:bg-amber-50'}`}
                                 >
                                     <Dumbbell className="h-5 w-5" />
                                 </button>
@@ -233,7 +233,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => onChangeView('measurements')}
-                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'measurements' ? 'bg-bee-orange text-white border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-orange hover:bg-orange-50'}`}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'measurements' ? 'bg-bee-amber text-bee-midnight border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-amber hover:bg-amber-50'}`}
                                 >
                                     <Ruler className="h-5 w-5" />
                                 </button>
@@ -245,7 +245,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => onChangeView('plans')}
-                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'plans' ? 'bg-bee-orange text-white border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-orange hover:bg-orange-50'}`}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'plans' ? 'bg-bee-amber text-bee-midnight border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-amber hover:bg-amber-50'}`}
                                 >
                                     <CreditCard className="h-5 w-5" />
                                 </button>
@@ -257,7 +257,7 @@ export function StudentProfileView({
                             <TooltipTrigger asChild>
                                 <button
                                     onClick={() => onChangeView('invoices')}
-                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'invoices' ? 'bg-bee-orange text-white border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-orange hover:bg-orange-50'}`}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${currentView === 'invoices' ? 'bg-bee-amber text-bee-midnight border-orange-600 shadow-sm' : 'bg-slate-50 text-slate-400 border-slate-100 hover:text-bee-amber hover:bg-amber-50'}`}
                                 >
                                     <ReceiptText className="h-5 w-5" />
                                 </button>

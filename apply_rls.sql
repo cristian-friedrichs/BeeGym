@@ -68,7 +68,7 @@ COMMENT ON INDEX idx_chat_participants_participant_id IS 'Performance: Buscar ch
 DO $$
 DECLARE
     t_name text;
-    tables_list text[] := ARRAY['organizations', 'profiles', 'users', 'units', 'students', 'student_medical_records', 'student_measurements', 'student_plan_history', 'student_credits_log', 'instructors', 'membership_plans', 'plans', 'rooms', 'exercises', 'workouts', 'workout_exercises', 'workout_execution', 'workout_executions', 'workout_logs', 'physical_assessments', 'classes', 'class_templates', 'class_attendees', 'class_attendance', 'calendar_events', 'event_enrollments', 'chats', 'chat_participants', 'chat_messages', 'conversations', 'messages', 'invoices', 'financial_summary', 'notifications', 'app_roles', 'system_logs'];
+    tables_list text[] := ARRAY['organizations', 'profiles', 'users', 'units', 'students', 'student_medical_records', 'student_measurements', 'student_plan_history', 'student_credits_log', 'instructors', 'membership_plans', 'plans', 'rooms', 'exercises', 'workouts', 'workout_exercises', 'workout_executions', 'workout_logs', 'classes', 'class_templates', 'class_attendees', 'calendar_events', 'event_enrollments', 'chats', 'chat_participants', 'chat_messages', 'invoices', 'financial_summary', 'notifications', 'app_roles', 'system_logs'];
 BEGIN
     FOREACH t_name IN ARRAY tables_list
     LOOP
@@ -170,18 +170,6 @@ BEGIN
   END IF;
 END $$;
 
--- PHYSICAL_ASSESSMENTS
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'physical_assessments') THEN
-    PERFORM drop_policy_if_exists('org_staff_view_assessments', 'physical_assessments');
-    EXECUTE 'CREATE POLICY "org_staff_view_assessments" ON physical_assessments FOR SELECT TO authenticated USING (organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role IN (''ADMIN'', ''INSTRUCTOR'')));';
-
-    PERFORM drop_policy_if_exists('org_staff_manage_assessments', 'physical_assessments');
-    EXECUTE 'CREATE POLICY "org_staff_manage_assessments" ON physical_assessments FOR ALL TO authenticated USING (organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role IN (''ADMIN'', ''INSTRUCTOR'')));';
-  END IF;
-END $$;
-
 -- STUDENT_PLAN_HISTORY
 DO $$
 BEGIN
@@ -249,33 +237,6 @@ BEGIN
 
     PERFORM drop_policy_if_exists('sender_deletes_own_messages', 'chat_messages');
     EXECUTE 'CREATE POLICY "sender_deletes_own_messages" ON chat_messages FOR DELETE TO authenticated USING (sender_id = auth.uid());';
-  END IF;
-END $$;
-
--- CONVERSATIONS
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'conversations') THEN
-    PERFORM drop_policy_if_exists('org_members_view_conversations', 'conversations');
-    EXECUTE 'CREATE POLICY "org_members_view_conversations" ON conversations FOR SELECT TO authenticated USING (organization_id IN auth_user_org_id());';
-
-    PERFORM drop_policy_if_exists('org_members_manage_conversations', 'conversations');
-    EXECUTE 'CREATE POLICY "org_members_manage_conversations" ON conversations FOR ALL TO authenticated USING (organization_id IN auth_user_org_id());';
-  END IF;
-END $$;
-
--- MESSAGES
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'messages') THEN
-    PERFORM drop_policy_if_exists('users_view_own_messages', 'messages');
-    EXECUTE 'CREATE POLICY "users_view_own_messages" ON messages FOR SELECT TO authenticated USING (sender_id = auth.uid() OR receiver_id = auth.uid() OR conversation_id IN (SELECT id FROM conversations WHERE organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role = ''ADMIN'')));';
-
-    PERFORM drop_policy_if_exists('users_send_messages', 'messages');
-    EXECUTE 'CREATE POLICY "users_send_messages" ON messages FOR INSERT TO authenticated WITH CHECK (sender_id = auth.uid());';
-
-    PERFORM drop_policy_if_exists('users_update_own_messages', 'messages');
-    EXECUTE 'CREATE POLICY "users_update_own_messages" ON messages FOR UPDATE TO authenticated USING (sender_id = auth.uid() OR receiver_id = auth.uid());';
   END IF;
 END $$;
 
@@ -371,18 +332,6 @@ BEGIN
   END IF;
 END $$;
 
--- WORKOUT_EXECUTION
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'workout_execution') THEN
-    PERFORM drop_policy_if_exists('org_members_view_workout_execution', 'workout_execution');
-    EXECUTE 'CREATE POLICY "org_members_view_workout_execution" ON workout_execution FOR SELECT TO authenticated USING (organization_id IN auth_user_org_id());';
-
-    PERFORM drop_policy_if_exists('staff_manage_workout_execution', 'workout_execution');
-    EXECUTE 'CREATE POLICY "staff_manage_workout_execution" ON workout_execution FOR ALL TO authenticated USING (organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role IN (''ADMIN'', ''INSTRUCTOR'')));';
-  END IF;
-END $$;
-
 -- WORKOUT_EXECUTIONS
 DO $$
 BEGIN
@@ -444,18 +393,6 @@ BEGIN
 
     PERFORM drop_policy_if_exists('staff_manage_class_attendees', 'class_attendees');
     EXECUTE 'CREATE POLICY "staff_manage_class_attendees" ON class_attendees FOR ALL TO authenticated USING (organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role IN (''ADMIN'', ''INSTRUCTOR'')));';
-  END IF;
-END $$;
-
--- CLASS_ATTENDANCE
-DO $$
-BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'class_attendance') THEN
-    PERFORM drop_policy_if_exists('org_members_view_class_attendance', 'class_attendance');
-    EXECUTE 'CREATE POLICY "org_members_view_class_attendance" ON class_attendance FOR SELECT TO authenticated USING (class_id IN (SELECT id FROM classes WHERE organization_id IN auth_user_org_id()));';
-
-    PERFORM drop_policy_if_exists('staff_manage_class_attendance', 'class_attendance');
-    EXECUTE 'CREATE POLICY "staff_manage_class_attendance" ON class_attendance FOR ALL TO authenticated USING (class_id IN (SELECT id FROM classes WHERE organization_id IN (SELECT organization_id FROM profiles WHERE id = auth.uid() AND role IN (''ADMIN'', ''INSTRUCTOR''))));';
   END IF;
 END $$;
 

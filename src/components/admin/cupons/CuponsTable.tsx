@@ -9,27 +9,42 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-export function CuponsTable() {
+export function CuponsTable({ externalOpenNew, onExternalOpenHandled }: { externalOpenNew?: boolean; onExternalOpenHandled?: () => void } = {}) {
     const [cupons, setCupons] = useState<any[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [editando, setEditando] = useState<any>(null);
     const { toast } = useToast();
 
     const load = useCallback(() => {
-        fetch('/api/admin/coupons').then(r => r.json()).then(data => {
-            if (data.coupons) setCupons(data.coupons);
-        });
+        let active = true;
+        fetch('/api/admin/coupons')
+            .then(r => r.json())
+            .then(data => {
+                if (active && data.coupons) setCupons(data.coupons);
+            })
+            .catch(err => {
+                if (active) {
+                    console.error('Erro ao carregar cupons:', err);
+                }
+            });
+        return () => { active = false; };
     }, []);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        const cleanup = load();
+        return cleanup;
+    }, [load]);
+
+    useEffect(() => {
+        if (externalOpenNew) {
+            setEditando(null);
+            setModalOpen(true);
+            onExternalOpenHandled?.();
+        }
+    }, [externalOpenNew, onExternalOpenHandled]);
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <Button className="bg-bee-orange hover:bg-orange-600 gap-2" onClick={() => { setEditando(null); setModalOpen(true); }}>
-                    <Plus className="w-4 h-4" /> Novo Cupom
-                </Button>
-            </div>
 
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                 <Table>
@@ -50,13 +65,13 @@ export function CuponsTable() {
                         ) : cupons.map((c) => (
                             <TableRow key={c.id} className="hover:bg-slate-50/60 transition-colors">
                                 <TableCell>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-bee-orange"
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-bee-amber"
                                         onClick={() => { setEditando(c); setModalOpen(true); }}>
                                         <Pencil className="w-3.5 h-3.5" />
                                     </Button>
                                 </TableCell>
                                 <TableCell>
-                                    <p className="font-bold font-mono text-sm text-[#00173F]">{c.code}</p>
+                                    <p className="font-bold font-mono text-sm text-[#0B0F1A]">{c.code}</p>
                                     {c.description && <p className="text-xs text-slate-400">{c.description}</p>}
                                 </TableCell>
                                 <TableCell className="font-bold text-sm">

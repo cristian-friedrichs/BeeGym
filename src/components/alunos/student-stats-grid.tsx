@@ -103,15 +103,15 @@ export function StudentStatsGrid({
             case 'Concluido': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
             case 'Faltou': return <XCircle className="h-4 w-4 text-red-500" />;
             case 'Cancelado': return <AlertCircle className="h-4 w-4 text-slate-400" />;
-            case 'Em Execução': return <Clock className="h-4 w-4 text-bee-orange animate-pulse" />;
-            default: return <Calendar className="h-4 w-4 text-bee-orange" />;
+            case 'Em Execução': return <Clock className="h-4 w-4 text-bee-amber animate-pulse" />;
+            default: return <Calendar className="h-4 w-4 text-bee-amber" />;
         }
     };
 
     const KPIBox = ({ title, value, icon: Icon, colorClass, trendLabel, trendDir }: any) => (
-        <div className="bg-white rounded-[8px] p-6 shadow-sm border border-slate-100 flex items-center gap-5 hover:border-bee-orange transition-all group overflow-hidden relative">
+        <div className="bg-white rounded-[8px] p-6 shadow-sm border border-slate-100 flex items-center gap-5 hover:border-bee-amber transition-all group overflow-hidden relative">
             <div className={`h-16 w-16 rounded-[8px] ${colorClass} bg-opacity-10 text-slate-900 flex items-center justify-center shrink-0 shadow-sm border border-slate-50`}>
-                <Icon className={`h-7 w-7 ${colorClass === 'bg-bee-orange' ? 'text-bee-orange' : colorClass.replace('bg-', 'text-')}`} />
+                <Icon className={`h-7 w-7 ${colorClass === 'bg-bee-amber' ? 'text-bee-amber' : colorClass.replace('bg-', 'text-')}`} />
             </div>
             <div className="flex flex-col">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-none font-sans mb-1.5">{title}</span>
@@ -131,14 +131,14 @@ export function StudentStatsGrid({
         /* ... existing ... */
         <div
             onClick={() => onShowWorkoutDetails(workout.id)}
-            className="flex items-center justify-between p-4 bg-white rounded-[8px] border shadow-sm hover:border-bee-orange transition-all cursor-pointer group"
+            className="flex items-center justify-between p-4 bg-white rounded-[8px] border shadow-sm hover:border-bee-amber transition-all cursor-pointer group"
         >
             <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-slate-50 rounded-[8px] flex items-center justify-center border group-hover:bg-orange-50 group-hover:border-orange-100 transition-colors">
+                <div className="h-12 w-12 bg-slate-50 rounded-[8px] flex items-center justify-center border group-hover:bg-amber-50 group-hover:border-orange-100 transition-colors">
                     {getStatusIcon(workout.status)}
                 </div>
                 <div>
-                    <h4 className="font-bold text-base text-deep-midnight group-hover:text-bee-orange transition-colors tracking-tight font-sans">{workout.title}</h4>
+                    <h4 className="font-bold text-base text-deep-midnight group-hover:text-bee-amber transition-colors tracking-tight font-sans">{workout.title}</h4>
                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground uppercase tracking-wider font-bold mt-0.5 font-sans">
                         <span className="text-blue-600">{workout.type || 'Geral'}</span>
                         <span className="text-slate-300">•</span>
@@ -152,7 +152,7 @@ export function StudentStatsGrid({
                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter font-sans ${workout.status === 'Concluido' ? 'bg-emerald-50 text-emerald-600' : workout.status === 'Faltou' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
                     {workout.status}
                 </span>
-                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-bee-orange transition-colors" />
+                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-bee-amber transition-colors" />
             </div>
         </div>
     );
@@ -164,18 +164,18 @@ export function StudentStatsGrid({
         return (
             <div
                 onClick={() => onChangeView('invoices')}
-                className="flex items-center justify-between p-4 bg-white rounded-[8px] border shadow-sm hover:border-bee-orange transition-all cursor-pointer group"
+                className="flex items-center justify-between p-4 bg-white rounded-[8px] border shadow-sm hover:border-bee-amber transition-all cursor-pointer group"
             >
                 <div className="flex items-center gap-4">
-                    <div className={`h-12 w-12 rounded-[8px] flex items-center justify-center border group-hover:border-orange-100 transition-colors shadow-sm ${isPaid ? 'bg-emerald-50 text-emerald-600' : isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-orange'}`}>
+                    <div className={`h-12 w-12 rounded-[8px] flex items-center justify-center border group-hover:border-orange-100 transition-colors shadow-sm ${isPaid ? 'bg-emerald-50 text-emerald-600' : isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-amber'}`}>
                         <CreditCard className="h-5 w-5" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-base text-deep-midnight group-hover:text-bee-orange transition-colors tracking-tight font-sans">
+                        <h4 className="font-bold text-base text-deep-midnight group-hover:text-bee-amber transition-colors tracking-tight font-sans">
                             {(invoice.amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </h4>
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground uppercase tracking-wider font-bold mt-0.5 font-sans">
-                            <span className={isPaid ? 'text-emerald-600' : isOverdue ? 'text-red-500' : 'text-bee-orange'}>{invoice.status}</span>
+                            <span className={isPaid ? 'text-emerald-600' : isOverdue ? 'text-red-500' : 'text-bee-amber'}>{invoice.status}</span>
                             <span className="text-slate-300">•</span>
                             <span className="flex items-center gap-1">
                                 Vencimento: {invoice.due_date ? format(new Date(invoice.due_date), "dd/MM/yyyy") : '-'}
@@ -183,7 +183,7 @@ export function StudentStatsGrid({
                         </div>
                     </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-bee-orange transition-colors" />
+                <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-bee-amber transition-colors" />
             </div>
         );
     };
@@ -196,7 +196,7 @@ export function StudentStatsGrid({
                     title="Total de Treinos"
                     value={completedCount}
                     icon={Dumbbell}
-                    colorClass="bg-bee-orange"
+                    colorClass="bg-bee-amber"
                     trendLabel={`${completedCount > 10 ? 'Elite' : 'Ativo'}`}
                     trendDir="up"
                 />
@@ -213,7 +213,7 @@ export function StudentStatsGrid({
                         title="Créditos"
                         value={creditsBalance ?? 0}
                         icon={Package}
-                        colorClass="bg-bee-orange"
+                        colorClass="bg-bee-amber"
                         trendLabel={creditsBalance === 0 ? 'RECUPERAR' : 'OK'}
                         trendDir={(creditsBalance ?? 0) > 3 ? 'up' : 'down'}
                     />
@@ -222,7 +222,7 @@ export function StudentStatsGrid({
                         title="Peso Atual"
                         value={currentWeight ? `${currentWeight.toString().replace('.', ',')} kg` : '--'}
                         icon={RefreshCw}
-                        colorClass="bg-bee-orange"
+                        colorClass="bg-bee-amber"
                         trendLabel={trend === 'down' ? 'Redução' : trend === 'up' ? 'Aumento' : ''}
                         trendDir={trend === 'down' ? 'up' : 'down'}
                     />
@@ -260,8 +260,8 @@ export function StudentStatsGrid({
                                     >
                                         <defs>
                                             <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#FF8C00" stopOpacity={0.15} />
-                                                <stop offset="95%" stopColor="#FF8C00" stopOpacity={0} />
+                                                <stop offset="5%" stopColor="#FFBF00" stopOpacity={0.15} />
+                                                <stop offset="95%" stopColor="#FFBF00" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f8fafc" />
@@ -284,11 +284,11 @@ export function StudentStatsGrid({
                                         <Area
                                             type="monotone"
                                             dataKey="weight"
-                                            stroke="#FF8C00"
+                                            stroke="#FFBF00"
                                             strokeWidth={4}
                                             fillOpacity={1}
                                             fill="url(#colorValue)"
-                                            dot={{ r: 6, fill: '#FF8C00', strokeWidth: 3, stroke: '#fff' }}
+                                            dot={{ r: 6, fill: '#FFBF00', strokeWidth: 3, stroke: '#fff' }}
                                             activeDot={{ r: 8, strokeWidth: 0 }}
                                         />
                                     </AreaChart>

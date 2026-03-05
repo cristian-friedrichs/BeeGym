@@ -56,10 +56,10 @@ export function InstrucoesPix({ initialName = '', initialDoc = '', onChange }: P
     return (
         <div className="space-y-4">
             {/* Dados do Pagador (Editáveis) */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-sm">
                 <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dados do Pagador (Billing)</h4>
-                    <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold">PIX</span>
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 font-display">Dados do Pagador (Billing)</h4>
+                    <span className="text-[10px] bg-bee-amber/10 text-amber-700 px-2.5 py-1 rounded-lg font-black font-display tracking-wider">PIX</span>
                 </div>
 
                 <div className="space-y-3">
@@ -71,7 +71,7 @@ export function InstrucoesPix({ initialName = '', initialDoc = '', onChange }: P
                             placeholder="Nome do titular da conta"
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="h-10 text-sm"
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                     <div>
@@ -83,7 +83,7 @@ export function InstrucoesPix({ initialName = '', initialDoc = '', onChange }: P
                             value={doc}
                             onChange={e => setDoc(formatDoc(e.target.value))}
                             maxLength={18}
-                            className="h-10 text-sm"
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                 </div>
@@ -94,20 +94,20 @@ export function InstrucoesPix({ initialName = '', initialDoc = '', onChange }: P
             </div>
 
             {/* Como funciona */}
-            <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-5 space-y-4">
-                <h4 className="font-bold text-sm text-[#00173F]">Como funciona o Pix Automático</h4>
-                <ol className="space-y-2.5">
+            <div className="bg-amber-50/30 border border-amber-100/50 rounded-3xl p-6 space-y-5">
+                <h4 className="font-black text-sm text-bee-midnight font-display tracking-tightSmall">Como funciona o Pix Automático</h4>
+                <ol className="space-y-3">
                     {etapas.map((e, i) => (
-                        <li key={i} className="flex items-start gap-3 text-sm text-slate-600">
-                            <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <li key={i} className="flex items-start gap-3.5 text-sm text-slate-500 font-medium leading-snug">
+                            <span className="w-5 h-5 rounded-full bg-bee-amber text-bee-midnight text-[11px] font-black flex items-center justify-center flex-shrink-0 mt-0.5 font-display">
                                 {i + 1}
                             </span>
                             {e}
                         </li>
                     ))}
                 </ol>
-                <div className="flex items-start gap-2 pt-1 border-t border-blue-100 text-xs text-blue-600">
-                    <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <div className="flex items-start gap-3 pt-4 border-t border-amber-100/50 text-[11px] text-amber-700 font-medium">
+                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-bee-amber" />
                     <p>
                         O débito ocorre todo dia <strong>{diaVencimento}</strong> do mês. Cancele quando quiser, sem multa.
                     </p>

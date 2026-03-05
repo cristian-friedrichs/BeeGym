@@ -3,10 +3,17 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { BeeGymPlan, getPlanById } from '@/config/plans'
 
+const ACTIVE_STATUSES = [
+    'active', 'trialing', 'trial', 'teste', 'ativo',
+    'ATIVO', 'TRIAL', 'TESTE',
+]
+
 export function useSubscription() {
     const { organizationId } = useAuth()
     const [planId, setPlanId] = useState<string | null>(null)
     const [status, setStatus] = useState<string | null>(null)
+    const [metodo, setMetodo] = useState<string | null>(null)
+    const [proximoVencimento, setProximoVencimento] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -15,22 +22,44 @@ export function useSubscription() {
             return
         }
 
+        let isMounted = true
+
         const fetchOrgSub = async () => {
             setLoading(true)
             try {
-                const { data, error } = await supabase
+                // 1. Buscar status da organização
+                const { data: orgData } = await supabase
                     .from('organizations')
-                    .select('plan_id, subscription_status, saas_plans(tier)')
+                    .select('subscription_status')
                     .eq('id', organizationId)
                     .single()
 
-                if (!error && data) {
-                    const orgData = data as any
-                    const tier = orgData.saas_plans?.tier?.toLowerCase() || 'starter'
-                    setPlanId(`plan_${tier}`)
-                    setStatus(orgData.subscription_status)
+                if (!isMounted) return
+                if (orgData) {
+                    setStatus((orgData as any).subscription_status)
                 }
-            } catch (error) {
+
+                // 2. Buscar plano via saas_subscriptions (independe do pagamento)
+                const { data: subData } = await supabase
+                    .from('saas_subscriptions')
+                    .select('status, plan_tier, saas_plans!saas_plan_id ( tier ), metodo, proximo_vencimento')
+                    .eq('organization_id', organizationId)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle()
+
+                if (!isMounted) return
+                if (subData) {
+                    const sub = subData as any
+                    const tier = sub.saas_plans?.tier?.toLowerCase()
+                        || sub.plan_tier?.toLowerCase()
+                        || 'starter'
+                    setPlanId(`plan_${tier}`)
+                    setMetodo(sub.metodo)
+                    setProximoVencimento(sub.proximo_vencimento)
+                }
+            } catch (error: any) {
+                if (!isMounted || error.name === 'AbortError') return
                 console.error('Failed to fetch subscription:', error)
             } finally {
                 setLoading(false)
@@ -38,17 +67,17 @@ export function useSubscription() {
         }
 
         fetchOrgSub()
+        return () => { isMounted = false }
     }, [organizationId])
 
     const plan: BeeGymPlan = getPlanById(planId)
 
-    // Sub is active if status is ACITVE or TRIALING, or if no status is set (assuming grandfathered/legacy free access until billing is locked)
-    const isActive = status === 'active' || status === 'trialing' || !status
+    const isActive = ACTIVE_STATUSES.includes(status || '')
+        || !status // fallback for orgs without status
 
-    // Helper for feature checks
     const hasFeature = (feature: import('@/config/plans').PlanFeature) => {
         return plan.allowedFeatures.includes(feature)
     }
 
-    return { plan, status, isActive, loading, hasFeature }
+    return { plan, status, isActive, loading, hasFeature, metodo, proximoVencimento }
 }

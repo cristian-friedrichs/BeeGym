@@ -56,22 +56,22 @@ export function ActiveListSection({
             case 'Concluido': return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
             case 'Faltou': return <XCircle className="h-4 w-4 text-red-500" />;
             case 'Cancelado': return <AlertCircle className="h-4 w-4 text-slate-400" />;
-            case 'Em Execução': return <Clock className="h-4 w-4 text-bee-orange animate-pulse" />;
-            default: return <Calendar className="h-4 w-4 text-bee-orange" />;
+            case 'Em Execução': return <Clock className="h-4 w-4 text-bee-amber animate-pulse" />;
+            default: return <Calendar className="h-4 w-4 text-bee-amber" />;
         }
     };
 
     const WorkoutItem = ({ workout }: { workout: Workout }) => (
         <div
             onClick={() => onWorkoutClick(workout.id)}
-            className="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-[12px] border border-slate-100 hover:border-bee-orange hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
+            className="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-[12px] border border-slate-100 hover:border-bee-amber hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
         >
             <div className="flex items-center gap-4">
-                <div className="h-10 w-10 bg-white rounded-[10px] flex items-center justify-center border group-hover:bg-orange-50 group-hover:border-orange-100 transition-colors">
+                <div className="h-10 w-10 bg-white rounded-[10px] flex items-center justify-center border group-hover:bg-amber-50 group-hover:border-orange-100 transition-colors">
                     {getStatusIcon(workout.status)}
                 </div>
                 <div>
-                    <h4 className="font-bold text-sm text-deep-midnight group-hover:text-bee-orange transition-colors">{workout.title}</h4>
+                    <h4 className="font-bold text-sm text-deep-midnight group-hover:text-bee-amber transition-colors">{workout.title}</h4>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">
                         {workout.type || 'Geral'} • {format(new Date(workout.scheduled_at || workout.created_at), "dd/MM/yyyy 'às' HH:mm")}
                     </span>
@@ -83,7 +83,7 @@ export function ActiveListSection({
                     }`}>
                     {workout.status}
                 </span>
-                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-orange transition-colors" />
+                <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-amber transition-colors" />
             </div>
         </div>
     );
@@ -95,16 +95,16 @@ export function ActiveListSection({
         return (
             <div
                 onClick={onInvoiceClick}
-                className="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-[12px] border border-slate-100 hover:border-bee-orange hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
+                className="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-[12px] border border-slate-100 hover:border-bee-amber hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
             >
                 <div className="flex items-center gap-4">
                     <div className={`h-10 w-10 rounded-[10px] flex items-center justify-center border group-hover:border-orange-100 transition-colors ${isPaid ? 'bg-emerald-50 text-emerald-600' :
-                        isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-orange'
+                        isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-amber'
                         }`}>
                         <CreditCard className="h-5 w-5" />
                     </div>
                     <div>
-                        <h4 className="font-bold text-sm text-deep-midnight group-hover:text-bee-orange transition-colors">
+                        <h4 className="font-bold text-sm text-deep-midnight group-hover:text-bee-amber transition-colors">
                             {invoice.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mt-0.5">
@@ -114,11 +114,11 @@ export function ActiveListSection({
                 </div>
                 <div className="flex items-center gap-3">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${isPaid ? 'bg-emerald-50 text-emerald-600' :
-                        isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-orange'
+                        isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-amber'
                         }`}>
                         {invoice.status}
                     </span>
-                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-orange transition-colors" />
+                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-amber transition-colors" />
                 </div>
             </div>
         );
@@ -129,9 +129,9 @@ export function ActiveListSection({
             <CardHeader className="flex flex-row items-center justify-between py-4 px-6 border-b border-slate-50 shrink-0 bg-slate-50/50">
                 <CardTitle className="text-lg font-bold flex items-center gap-2 text-deep-midnight tracking-tight font-display">
                     {view === 'workouts' ? (
-                        <><RefreshCw className="h-5 w-5 text-bee-orange" /> Últimas Atividades</>
+                        <><RefreshCw className="h-5 w-5 text-bee-amber" /> Últimas Atividades</>
                     ) : (
-                        <><ReceiptText className="h-5 w-5 text-bee-orange" /> Últimas Faturas</>
+                        <><ReceiptText className="h-5 w-5 text-bee-amber" /> Últimas Faturas</>
                     )}
                 </CardTitle>
 
@@ -145,14 +145,14 @@ export function ActiveListSection({
                     <DropdownMenuContent align="end" className="rounded-xl border-slate-100 shadow-xl p-1 bg-white z-[100] min-w-[140px]">
                         <DropdownMenuItem
                             onClick={() => setView('workouts')}
-                            className="text-[11px] font-medium rounded-lg p-2.5 flex items-center gap-2 text-slate-600 focus:bg-bee-orange focus:text-white cursor-pointer transition-colors"
+                            className="text-[11px] font-medium rounded-lg p-2.5 flex items-center gap-2 text-slate-600 focus:bg-bee-amber focus:text-white cursor-pointer transition-colors"
                         >
                             <Dumbbell className="h-4 w-4" />
                             Treinos/Aulas
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => setView('invoices')}
-                            className="text-[11px] font-medium rounded-lg p-2.5 flex items-center gap-2 text-slate-600 focus:bg-bee-orange focus:text-white cursor-pointer transition-colors"
+                            className="text-[11px] font-medium rounded-lg p-2.5 flex items-center gap-2 text-slate-600 focus:bg-bee-amber focus:text-white cursor-pointer transition-colors"
                         >
                             <CreditCard className="h-4 w-4" />
                             Faturas

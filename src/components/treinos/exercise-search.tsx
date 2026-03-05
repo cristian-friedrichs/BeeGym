@@ -99,7 +99,7 @@ export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
                     {results.map((ex) => (
                         <div
                             key={ex.id}
-                            className="px-4 py-2 hover:bg-orange-50 cursor-pointer flex flex-col border-b border-slate-50 last:border-0"
+                            className="px-4 py-2 hover:bg-amber-50 cursor-pointer flex flex-col border-b border-slate-50 last:border-0"
                             onClick={() => {
                                 onChange(ex.id, ex.name);
                                 setSearchTerm(ex.name);

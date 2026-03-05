@@ -145,7 +145,7 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-sm text-[#00173F]">{member.name}</span>
+                                                    <span className="font-medium text-sm text-[#0B0F1A]">{member.name}</span>
                                                     <span className="text-xs text-muted-foreground">{member.email}</span>
                                                 </div>
                                             </div>

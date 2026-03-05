@@ -60,8 +60,8 @@ export async function GET() {
             const dateObj = new Date(s.created_at);
             const mKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
 
-            // MRR e Ativos consideram ATIVO, TRIAL e PENDENTE
-            if (['ATIVO', 'TRIAL', 'PENDENTE'].includes(s.status)) {
+            // MRR e Ativos consideram ATIVO, TRIAL, PENDENTE e TESTE
+            if (['ATIVO', 'TRIAL', 'PENDENTE', 'TESTE'].includes(s.status)) {
                 currentMRR += Number(s.valor_mensal);
                 ativos++;
                 if (mKey <= prevMonthKey) {
@@ -102,7 +102,7 @@ export async function GET() {
                 const mKeyMatch = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
                 // Incluímos PENDENTE nas novas assinaturas para o gráfico bater com o KPI de "Novas do Dia/Mes"
-                const isValidStatus = ['ATIVO', 'TRIAL', 'PENDENTE'].includes(s.status);
+                const isValidStatus = ['ATIVO', 'TRIAL', 'PENDENTE', 'TESTE'].includes(s.status);
                 return isValidStatus && mKeyMatch === m.monthKey;
             }).length;
 
@@ -139,7 +139,7 @@ export async function GET() {
 
         // == Rateio por Planos ==
         const planMap: Record<string, { name: string; receita: number; clientes: number }> = {};
-        (subs || []).filter(s => ['ATIVO', 'TRIAL'].includes(s.status)).forEach(s => {
+        (subs || []).filter(s => ['ATIVO', 'TRIAL', 'TESTE'].includes(s.status)).forEach(s => {
             const t = s.saas_plans?.tier || 'N/A';
             if (!planMap[t]) planMap[t] = { name: t, receita: 0, clientes: 0 };
             planMap[t].receita += Number(s.valor_mensal);
@@ -155,7 +155,7 @@ export async function GET() {
             typeMap[t].value++;
 
             // Tenta achar a receita dessa org nas assinaturas
-            const orgSub = (subs || []).find(s => s.organization_id === o.id && ['ATIVO', 'TRIAL'].includes(s.status));
+            const orgSub = (subs || []).find(s => s.organization_id === o.id && ['ATIVO', 'TRIAL', 'TESTE'].includes(s.status));
             if (orgSub) {
                 typeMap[t].receita += Number(orgSub.valor_mensal);
             }
@@ -169,7 +169,7 @@ export async function GET() {
             if (!rangeMap[r]) rangeMap[r] = { faixa: r, clientes: 0, receita: 0 };
             rangeMap[r].clientes++;
 
-            const orgSub = (subs || []).find(s => s.organization_id === o.id && ['ATIVO', 'TRIAL'].includes(s.status));
+            const orgSub = (subs || []).find(s => s.organization_id === o.id && ['ATIVO', 'TRIAL', 'TESTE'].includes(s.status));
             if (orgSub) {
                 rangeMap[r].receita += Number(orgSub.valor_mensal);
             }

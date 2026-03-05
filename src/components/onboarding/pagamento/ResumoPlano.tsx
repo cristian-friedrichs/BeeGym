@@ -32,18 +32,20 @@ export function ResumoPlano({ plano, hidePrice, isPromo }: Props) {
     }).format(plano.price);
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/30 p-6 space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${tierBadgeClass[plano.tier] ?? 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-[0.15em] ${tierBadgeClass[plano.tier] ?? 'bg-slate-100 text-slate-600'} font-display`}>
                         {plano.tier}
                     </span>
-                    <h3 className="text-xl font-black font-display text-[#00173F] mt-1.5">{plano.name}</h3>
+                    <h3 className="text-2xl font-black font-display text-bee-midnight mt-2 tracking-tight">{plano.name}</h3>
                 </div>
                 {!hidePrice && (
                     <div className="text-right flex flex-col items-end">
-                        <p className="text-2xl font-black text-bee-orange">{preco}</p>
-                        <p className="text-xs text-slate-400 font-medium pb-1 border-b border-transparent">por mês</p>
+                        <p className="text-3xl font-black text-bee-midnight font-display tracking-tighter">
+                            {preco}
+                            <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter ml-1">/mês</span>
+                        </p>
                         {isPromo && (
                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md mt-1 border border-emerald-200 shadow-sm leading-tight text-center max-w-[120px]">
                                 Promocional por 3 meses
@@ -57,12 +59,12 @@ export function ResumoPlano({ plano, hidePrice, isPromo }: Props) {
                 <p className="text-sm text-slate-500">{plano.description}</p>
             )}
 
-            <ul className="space-y-2">
+            <ul className="space-y-3 pt-2 border-t border-slate-50">
                 {plano.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
-                        <span className="w-4 h-4 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-2.5 h-2.5 text-green-500" />
-                        </span>
+                    <li key={i} className="flex items-center gap-3 text-sm text-slate-500 font-medium">
+                        <div className="w-5 h-5 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-3 h-3 text-bee-amber stroke-[3px]" />
+                        </div>
                         {f}
                     </li>
                 ))}

@@ -12,18 +12,18 @@ import { PlanoSyncButton } from './PlanoSyncButton';
 import { cn } from '@/lib/utils';
 
 const tierBadge: Record<string, string> = {
-    STARTER: 'bg-amber-50 text-amber-600 border border-amber-200',
-    PLUS: 'bg-blue-50 text-blue-600 border border-blue-200',
-    STUDIO: 'bg-teal-50 text-teal-600 border border-teal-200',
-    PRO: 'bg-slate-100 text-slate-600 border border-slate-200',
-    ENTERPRISE: 'bg-orange-50 text-bee-orange border border-orange-200',
-    CUSTOM: 'bg-purple-50 text-purple-700 border border-purple-200',
+    STARTER: 'bg-amber-50 text-amber-600 border border-amber-200/50 shadow-sm',
+    PLUS: 'bg-blue-50 text-blue-600 border border-blue-200/50 shadow-sm',
+    STUDIO: 'bg-emerald-50 text-emerald-600 border border-emerald-200/50 shadow-sm',
+    PRO: 'bg-indigo-50 text-indigo-600 border border-indigo-200/50 shadow-sm',
+    ENTERPRISE: 'bg-bee-amber/10 text-bee-amber border border-bee-amber/20 shadow-sm',
+    CUSTOM: 'bg-purple-50 text-purple-700 border border-purple-200/50 shadow-sm',
 };
 
 const formatCurrency = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-export function PlanosTable() {
+export function PlanosTable({ externalOpenNew, onExternalOpenHandled }: { externalOpenNew?: boolean; onExternalOpenHandled?: () => void } = {}) {
     const [planos, setPlanos] = useState<any[]>([]);
     const [modalOpen, setModalOpen] = useState(false);
     const [editando, setEditando] = useState<any>(null);
@@ -32,34 +32,41 @@ export function PlanosTable() {
     const { toast } = useToast();
 
     const load = useCallback(() => {
-        const controller = new AbortController();
-        const signal = controller.signal;
+        let active = true;
 
-        fetch('/api/admin/planos', { signal })
+        fetch('/api/admin/planos')
             .then(r => {
                 if (!r.ok) throw new Error('Falha ao carregar planos');
                 return r.json();
             })
             .then(data => {
-                if (Array.isArray(data)) {
+                if (active && Array.isArray(data)) {
                     setPlanos(data);
                 }
             })
             .catch(err => {
-                if (err.name === 'AbortError') return;
-                console.error('Erro ao carregar planos:', err);
-                toast({ title: 'Erro ao carregar planos', variant: 'destructive' });
+                if (active) {
+                    console.error('Erro ao carregar planos:', err);
+                    toast({ title: 'Erro ao carregar planos', variant: 'destructive' });
+                }
             });
 
-        return () => controller.abort();
+        return () => { active = false; };
     }, [toast]);
 
     useEffect(() => {
         const cleanup = load();
-        return () => {
-            if (typeof cleanup === 'function') cleanup();
-        };
+        return cleanup;
     }, [load]);
+
+    // Respond to external trigger from page header
+    useEffect(() => {
+        if (externalOpenNew) {
+            setEditando(null);
+            setModalOpen(true);
+            onExternalOpenHandled?.();
+        }
+    }, [externalOpenNew, onExternalOpenHandled]);
 
     const handleDelete = async (id: string) => {
         const res = await fetch(`/api/admin/planos/${id}`, { method: 'DELETE' });
@@ -76,60 +83,79 @@ export function PlanosTable() {
 
     return (
         <div className="space-y-4">
-            {/* Barra de ações */}
-            <div className="flex items-center justify-between flex-wrap gap-3">
-                <div className="flex items-center gap-3">
-                    <Button className="bg-bee-orange hover:bg-orange-600 gap-2" onClick={() => { setEditando(null); setModalOpen(true); }}>
-                        <Plus className="w-4 h-4" /> Novo Plano
-                    </Button>
-                    <PlanoSyncButton />
-                </div>
-            </div>
 
             {/* Tabela */}
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden relative group">
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-50/30 to-transparent pointer-events-none" />
                 <Table>
                     <TableHeader>
-                        <TableRow className="bg-slate-50/60">
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Nome</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Tier</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Valor</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Intervalo</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Assinantes</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">EFI HML</TableHead>
-                            <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">EFI PRD</TableHead>
-                            <TableHead />
+                        <TableRow className="bg-slate-50/50 hover:bg-slate-50/50 border-b-slate-100">
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14 px-6">Nome / Descrição</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">Tier</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">Valor</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">Intervalo</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14 text-center">Assinantes</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">EFI HML</TableHead>
+                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">EFI PRD</TableHead>
+                            <TableHead className="h-14 w-20 px-6 text-right" />
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {planos.map((p) => (
-                            <TableRow key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                                <TableCell>
-                                    <p className="font-bold text-sm text-[#00173F]">{p.nome}</p>
-                                    <p className="text-xs text-slate-400">{p.descricao}</p>
+                            <TableRow key={p.id} className="hover:bg-amber-50/30 transition-all duration-300 border-b-slate-50 cursor-default group/row">
+                                <TableCell className="px-6 py-4">
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-black text-bee-midnight group-hover/row:text-bee-amber transition-colors">{p.nome}</p>
+                                        <p className="text-[11px] font-bold text-slate-400 truncate max-w-[200px]">{p.descricao}</p>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
-                                    <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-md', tierBadge[p.tier] ?? '')}>
+                                    <span className={cn(
+                                        'text-[9px] font-black tracking-widest px-3 py-1.5 rounded-lg uppercase',
+                                        tierBadge[p.tier] ?? 'bg-slate-100 text-slate-500'
+                                    )}>
                                         {p.tier}
                                     </span>
                                 </TableCell>
-                                <TableCell className="font-bold text-sm">{formatCurrency(p.valor_mensal)}</TableCell>
-                                <TableCell className="text-sm text-slate-600">{p.intervalo}</TableCell>
+                                <TableCell className="text-sm font-black text-bee-midnight">{formatCurrency(p.valor_mensal)}</TableCell>
                                 <TableCell>
-                                    <span className="font-bold text-sm text-[#00173F]">{p.assinantes_ativos}</span>
-                                    <span className="text-xs text-slate-400 ml-1">ativos</span>
+                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-2 py-1 rounded-md border border-slate-100/50">
+                                        {p.intervalo}
+                                    </span>
                                 </TableCell>
-                                <TableCell className="font-mono text-xs text-slate-500">{p.efi_plan_id_hml ?? '—'}</TableCell>
-                                <TableCell className="font-mono text-xs text-slate-500">{p.efi_plan_id_prd ?? '—'}</TableCell>
+                                <TableCell className="text-center">
+                                    <div className="inline-flex flex-col items-center bg-slate-50 px-3 py-1 rounded-xl border border-slate-100/50">
+                                        <span className="font-black text-sm text-bee-midnight leading-none">{p.assinantes_ativos}</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ativos</span>
+                                    </div>
+                                </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-1">
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-bee-orange"
-                                            onClick={() => { setEditando(p); setModalOpen(true); }}>
-                                            <Pencil className="w-3.5 h-3.5" />
+                                    <code className="bg-slate-50 text-[10px] text-slate-400 px-2 py-1 rounded-lg border border-slate-100/50 font-mono">
+                                        {p.efi_plan_id_hml ?? '—'}
+                                    </code>
+                                </TableCell>
+                                <TableCell>
+                                    <code className="bg-slate-50 text-[10px] text-slate-400 px-2 py-1 rounded-lg border border-slate-100/50 font-mono">
+                                        {p.efi_plan_id_prd ?? '—'}
+                                    </code>
+                                </TableCell>
+                                <TableCell className="px-6 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-xl text-slate-300 hover:text-bee-amber hover:bg-amber-50 transition-all"
+                                            onClick={() => { setEditando(p); setModalOpen(true); }}
+                                        >
+                                            <Pencil className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-400 hover:text-red-500"
-                                            onClick={() => setDeleteConfirm({ id: p.id, nome: p.nome, assinantes: p.assinantes_ativos })}>
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                            onClick={() => setDeleteConfirm({ id: p.id, nome: p.nome, assinantes: p.assinantes_ativos })}
+                                        >
+                                            <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </div>
                                 </TableCell>
@@ -149,35 +175,55 @@ export function PlanosTable() {
 
             {/* Dialog de Deletar */}
             <AlertDialog open={!!deleteConfirm} onOpenChange={open => { if (!open) { setDeleteConfirm(null); setDeleteInput(''); } }}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Remover plano "{deleteConfirm?.nome}"?</AlertDialogTitle>
+                <AlertDialogContent className="border-none rounded-[2rem] shadow-2xl p-0 overflow-hidden">
+                    <AlertDialogHeader className="px-8 pt-8 pb-4 relative">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+                        <div className="flex items-center gap-3 mb-2 relative">
+                            <div className="w-1.5 h-6 bg-red-500 rounded-full" />
+                            <AlertDialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight">
+                                Remover Plano
+                            </AlertDialogTitle>
+                        </div>
                         <AlertDialogDescription asChild>
-                            <div>
+                            <div className="relative">
                                 {(deleteConfirm?.assinantes ?? 0) > 0 ? (
-                                    <p className="text-red-600 font-bold">
-                                        Não é possível remover. {deleteConfirm?.assinantes} assinante(s) ativo(s) neste plano.
-                                    </p>
+                                    <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-start gap-3">
+                                        <div className="w-8 h-8 rounded-xl bg-white border border-red-100 flex items-center justify-center shrink-0">
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-red-600">Não é possível remover.</p>
+                                            <p className="text-[11px] font-medium text-red-500 leading-tight mt-1">
+                                                Este plano possui {deleteConfirm?.assinantes} assinante(s) ativo(s). Remova ou migre os assinantes antes de excluir o plano.
+                                            </p>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <div className="space-y-3">
-                                        <p>Esta ação é irreversível. Digite o nome do plano para confirmar:</p>
-                                        <Input
-                                            placeholder={deleteConfirm?.nome}
-                                            value={deleteInput}
-                                            onChange={e => setDeleteInput(e.target.value)}
-                                        />
+                                    <div className="space-y-4">
+                                        <p className="text-sm text-slate-500 font-medium">
+                                            Esta ação é irreversível. O plano <span className="text-bee-midnight font-black uppercase text-[11px] tracking-widest">{deleteConfirm?.nome}</span> será removido permanentemente.
+                                        </p>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Para confirmar, digite o nome do plano:</label>
+                                            <Input
+                                                placeholder={deleteConfirm?.nome}
+                                                value={deleteInput}
+                                                onChange={e => setDeleteInput(e.target.value)}
+                                                className="h-12 rounded-2xl border-slate-200 focus-visible:ring-red-500/10 focus-visible:border-red-500 shadow-sm"
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogFooter className="px-8 py-6 border-t bg-slate-50/50 gap-3 mt-4">
+                        <AlertDialogCancel className="text-slate-400 font-bold hover:bg-slate-100 rounded-xl border-none h-11">Cancelar</AlertDialogCancel>
                         {(deleteConfirm?.assinantes ?? 0) === 0 && (
                             <AlertDialogAction
                                 onClick={() => deleteConfirm && handleDelete(deleteConfirm.id)}
                                 disabled={deleteInput !== deleteConfirm?.nome}
-                                className="bg-red-600 hover:bg-red-700 disabled:opacity-40"
+                                className="h-11 px-8 bg-red-600 text-white hover:bg-red-700 font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-lg shadow-red-500/20 transition-all border-none disabled:opacity-40"
                             >
                                 Remover Permanentemente
                             </AlertDialogAction>

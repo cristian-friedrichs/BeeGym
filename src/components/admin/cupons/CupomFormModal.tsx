@@ -91,7 +91,7 @@ export function CupomFormModal({ open, onOpenChange, cupom, onSaved }: CupomForm
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-lg">
                 <DialogHeader>
-                    <DialogTitle className="font-display text-[#00173F]">
+                    <DialogTitle className="font-display text-[#0B0F1A]">
                         {isEditing ? 'Editar Cupom' : 'Novo Cupom'}
                     </DialogTitle>
                     <DialogDescription>
@@ -146,7 +146,7 @@ export function CupomFormModal({ open, onOpenChange, cupom, onSaved }: CupomForm
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="bg-bee-orange hover:bg-orange-600 border-none text-white">
+                    <Button onClick={handleSubmit} disabled={loading} className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold border-none">
                         {loading ? 'Salvando...' : 'Salvar Alterações'}
                     </Button>
                 </DialogFooter>

@@ -46,6 +46,19 @@ export async function GET(request: NextRequest) {
 
         if (error) throw error;
 
+        // Count active students per organization
+        const { data: activeStudents, error: studentsErr } = await supabase
+            .from('students')
+            .select('organization_id')
+            .in('status', ['ACTIVE', 'TRIALING']);
+
+        const studentCountMap = (activeStudents || []).reduce((acc: any, s: any) => {
+            if (s.organization_id) {
+                acc[s.organization_id] = (acc[s.organization_id] || 0) + 1;
+            }
+            return acc;
+        }, {});
+
         let formatedData = (data as any[]).map(org => {
             // Se houver uma saas_subscription real (V2), nós pegamos. Se não, pegamos o base da org.
             // Para garantir fallback:
@@ -66,6 +79,7 @@ export async function GET(request: NextRequest) {
                 valor_mensal: sub?.valor_mensal || 0,
                 desde: org.created_at,
                 cpf_cnpj: org.cpf_cnpj || '***.***.***-**',
+                alunos_ativos: studentCountMap[org.id] || 0,
             };
         });
 

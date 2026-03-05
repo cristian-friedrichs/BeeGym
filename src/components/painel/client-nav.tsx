@@ -46,7 +46,7 @@ interface ClientNavProps {
 
 export function ClientNav({ studentId }: ClientNavProps) {
     const pathname = usePathname();
-    const baseUrl = `/painel/alunos/${studentId}`;
+    const baseUrl = `/app/painel/alunos/${studentId}`;
 
     return (
         <nav className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto pb-2 border-b">

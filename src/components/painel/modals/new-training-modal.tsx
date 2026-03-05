@@ -571,7 +571,7 @@ export function NewTrainingModal({
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setExercises([...exercises, { name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                            className="h-8 text-xs border-orange-200 text-orange-600 hover:bg-orange-50"
+                                            className="h-8 text-xs border-orange-200 text-orange-600 hover:bg-amber-50"
                                         >
                                             <Plus className="h-3 w-3 mr-1" /> Adicionar
                                         </Button>

@@ -43,7 +43,7 @@ export function BeeGymLogo({
             {!imgError ? (
                 <div className={cn('relative flex items-center', size === 'sm' ? 'h-6' : size === 'md' ? 'h-10' : 'h-16')}>
                     <Image
-                        src={variant === 'dark' ? '/logo-white.png' : '/Logo Vertical.png'}
+                        src={variant === 'dark' ? '/logo-white.webp' : '/Logo Vertical.webp'}
                         alt="BeeGym"
                         width={dimensions[size].width}
                         height={dimensions[size].height}
@@ -57,7 +57,7 @@ export function BeeGymLogo({
                     "flex items-center justify-center bg-red-100 text-red-600 border border-red-500 font-bold rounded px-2 text-center",
                     size === 'sm' ? 'h-6 text-[10px]' : size === 'md' ? 'h-10 text-xs' : 'h-16 text-sm'
                 )}>
-                    Salve a imagem na pasta <br /> public/{variant === 'dark' ? 'logo-white.png' : 'Logo Vertical.png'}
+                    Salve a imagem na pasta <br /> public/{variant === 'dark' ? 'logo-white.webp' : 'Logo Vertical.webp'}
                 </div>
             )}
         </div>

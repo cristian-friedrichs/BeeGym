@@ -29,17 +29,19 @@ const formatK = (value: number) => {
 
 export function RevenueChart({ data }: RevenueChartProps) {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="mb-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Evolução do MRR (R$)</p>
-                <p className="text-xs text-slate-400 mt-0.5">Últimos 12 meses</p>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200">
+            <div className="mb-5 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-bold text-[#0B0F1A]">Evolução do MRR</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Últimos 12 meses</p>
+                </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={data} margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
                     <defs>
                         <linearGradient id="mrrGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#FF8C00" stopOpacity={0.18} />
-                            <stop offset="95%" stopColor="#FF8C00" stopOpacity={0} />
+                            <stop offset="5%" stopColor="#FFBF00" stopOpacity={0.18} />
+                            <stop offset="95%" stopColor="#FFBF00" stopOpacity={0} />
                         </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -52,11 +54,11 @@ export function RevenueChart({ data }: RevenueChartProps) {
                     <Area
                         type="monotone"
                         dataKey="valor"
-                        stroke="#FF8C00"
+                        stroke="#FFBF00"
                         strokeWidth={2.5}
                         fill="url(#mrrGradient)"
                         dot={false}
-                        activeDot={{ r: 4, fill: '#FF8C00' }}
+                        activeDot={{ r: 4, fill: '#FFBF00' }}
                     />
                 </AreaChart>
             </ResponsiveContainer>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Users, DollarSign, AlertCircle, CalendarCheck, Loader2 } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
+import { KpiCard } from '@/components/ui/kpi-card';
 
 export function KpiCards() {
     const supabase = createClient();
@@ -127,49 +128,33 @@ export function KpiCards() {
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Alunos Ativos */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5">
-                <div className="h-16 w-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <Users className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                    <h3 className="text-xs font-semibold text-slate-500 mb-0.5 tracking-tight whitespace-nowrap">Alunos Ativos</h3>
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{formatK(metrics.activeStudents)}</h2>
-                </div>
-            </div>
+            <KpiCard
+                title="Alunos Ativos"
+                value={formatK(metrics.activeStudents)}
+                icon={<Users className="h-6 w-6" />}
+                color="yellow"
+            />
 
-            {/* Receita Mensal */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5">
-                <div className="h-16 w-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <DollarSign className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                    <h3 className="text-xs font-semibold text-slate-500 mb-0.5 tracking-tight whitespace-nowrap">Receita Mensal (R$)</h3>
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{formatK(metrics.monthlyRevenue)}</h2>
-                </div>
-            </div>
+            <KpiCard
+                title="Receita Mensal (R$)"
+                value={formatK(metrics.monthlyRevenue)}
+                icon={<DollarSign className="h-6 w-6" />}
+                color="yellow"
+            />
 
-            {/* Inadimplência */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5">
-                <div className="h-16 w-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <AlertCircle className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                    <h3 className="text-xs font-semibold text-slate-500 mb-0.5 tracking-tight whitespace-nowrap">Pendentes (R$)</h3>
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{formatK(metrics.pendingPayments)}</h2>
-                </div>
-            </div>
+            <KpiCard
+                title="Pendentes (R$)"
+                value={formatK(metrics.pendingPayments)}
+                icon={<AlertCircle className="h-6 w-6" />}
+                color="yellow"
+            />
 
-            {/* Atividades Hoje */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5">
-                <div className="h-16 w-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <CalendarCheck className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                    <h3 className="text-xs font-semibold text-slate-500 mb-0.5 tracking-tight whitespace-nowrap">Atividades Hoje</h3>
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{formatK(metrics.todayActivities)}</h2>
-                </div>
-            </div>
+            <KpiCard
+                title="Atividades Hoje"
+                value={formatK(metrics.todayActivities)}
+                icon={<CalendarCheck className="h-6 w-6" />}
+                color="yellow"
+            />
         </div>
     );
 }

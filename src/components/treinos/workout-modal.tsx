@@ -563,7 +563,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     variant="outline"
                                     size="sm"
                                     onClick={() => setExercises([...exercises, { name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                    className="text-xs h-8 border-orange-200 text-orange-600 hover:bg-orange-50"
+                                    className="text-xs h-8 border-orange-200 text-orange-600 hover:bg-amber-50"
                                 >
                                     <Plus className="h-3 w-3 mr-1" /> Adicionar
                                 </Button>
@@ -651,7 +651,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => setExercises([{ name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                            className="mt-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 font-bold"
+                                            className="mt-2 text-orange-600 hover:text-orange-700 hover:bg-amber-50 font-bold"
                                         >
                                             + Montar Ficha agora
                                         </Button>

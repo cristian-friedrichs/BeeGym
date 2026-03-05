@@ -67,27 +67,33 @@ export function ContratanteBillingDialog({ contratanteId, assinatura, onUpdated 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-bee-orange">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-bee-amber">
                     <Edit2 className="w-3.5 h-3.5" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Alterar Mensalidade / Aplicar Desconto</DialogTitle>
-                    <DialogDescription>
-                        Ajuste o valor que este cliente pagará. Válido primariamente para assinaturas Pix Automático.
+            <DialogContent className="sm:max-w-md border-none rounded-[2rem] shadow-2xl overflow-hidden p-0">
+                <DialogHeader className="px-8 pt-8 pb-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                    <div className="flex items-center gap-3 mb-2 relative">
+                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
+                        <DialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight">
+                            Ajuste de Faturamento
+                        </DialogTitle>
+                    </div>
+                    <DialogDescription className="text-sm font-medium text-slate-400 relative">
+                        Ajuste o valor que este cliente pagará. Válido para assinaturas Pix.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-4">
-                        <Label>Tipo de Ajuste</Label>
+                <div className="px-8 py-4 space-y-5">
+                    <div className="space-y-2">
+                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Ajuste</Label>
                         <select
-                            className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            className="flex h-12 w-full items-center justify-between rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 py-2 text-sm font-bold text-bee-midnight focus:outline-none focus:border-bee-amber focus:bg-white transition-all appearance-none cursor-pointer"
                             value={overrideType}
                             onChange={(e) => setOverrideType(e.target.value as any)}
                             disabled={loading}
                         >
-                            <option value="none">Nenhum (usar preço do plano)</option>
+                            <option value="none">Nenhum (Preço do plano)</option>
                             <option value="price">Forçar preço fixo (R$)</option>
                             <option value="discount_amount">Desconto fixo (R$)</option>
                             <option value="discount_percentage">Desconto percentual (%)</option>
@@ -95,8 +101,8 @@ export function ContratanteBillingDialog({ contratanteId, assinatura, onUpdated 
                     </div>
 
                     {overrideType !== 'none' && (
-                        <div className="space-y-2">
-                            <Label>Valor / Porcentagem</Label>
+                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor / Porcentagem</Label>
                             <Input
                                 type="number"
                                 step="0.01"
@@ -104,13 +110,18 @@ export function ContratanteBillingDialog({ contratanteId, assinatura, onUpdated 
                                 value={overrideValue}
                                 onChange={(e) => setOverrideValue(e.target.value)}
                                 disabled={loading}
+                                className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm"
                             />
                         </div>
                     )}
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>Cancelar</Button>
-                    <Button className="bg-[#00173F] hover:bg-[#00173f]/90" onClick={handleSave} disabled={loading}>
+                <DialogFooter className="px-8 py-6 border-t bg-slate-50/50 gap-3">
+                    <Button variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="text-slate-400 font-bold hover:bg-slate-100 rounded-xl">Cancelar</Button>
+                    <Button
+                        disabled={loading}
+                        onClick={handleSave}
+                        className="h-12 px-8 bg-bee-amber text-bee-midnight hover:bg-bee-amber/90 font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-lg shadow-bee-amber/20 transition-all border-none"
+                    >
                         {loading ? 'Salvando...' : 'Aplicar Alteração'}
                     </Button>
                 </DialogFooter>

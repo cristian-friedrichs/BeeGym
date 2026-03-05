@@ -65,73 +65,105 @@ export function PlanoFormModal({ open, onOpenChange, plano, onSaved }: PlanoForm
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle className="font-display text-[#00173F]">
-                        {isEditing ? 'Editar Plano' : 'Novo Plano'}
-                    </DialogTitle>
-                    <DialogDescription>
+            <DialogContent className="max-w-lg border-none rounded-[2rem] shadow-2xl p-0 overflow-hidden bg-white">
+                <DialogHeader className="px-8 pt-8 pb-4 relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+                    <div className="flex items-center gap-3 mb-2 relative">
+                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
+                        <DialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight">
+                            {isEditing ? 'Editar Plano' : 'Novo Plano'}
+                        </DialogTitle>
+                    </div>
+                    <DialogDescription className="text-slate-500 font-medium relative">
                         {isEditing ? 'Alterações afetarão a próxima cobrança dos assinantes ativos.' : 'Configure o novo plano de assinatura.'}
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Aviso de impacto ao editar */}
-                {isEditing && plano?.assinantes_ativos > 0 && (
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800">
-                        <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-500" />
-                        <span>
-                            Alterar o valor deste plano afetará a próxima cobrança de todos os{' '}
-                            <strong>{plano.assinantes_ativos} assinantes ativos</strong>. Esta ação não pode ser desfeita.
-                        </span>
-                    </div>
-                )}
+                <div className="px-8 py-2 relative">
+                    {/* Aviso de impacto ao editar */}
+                    {isEditing && plano?.assinantes_ativos > 0 && (
+                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-100 mb-6 group transition-all hover:bg-amber-100/50">
+                            <div className="w-8 h-8 rounded-xl bg-white border border-amber-200 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                <AlertTriangle className="w-4 h-4 text-bee-amber" />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-sm font-bold text-amber-700">Atenção ao alterar valores</p>
+                                <p className="text-[11px] font-medium text-amber-600 leading-tight">
+                                    Alterar o valor deste plano afetará a próxima cobrança de todos os{' '}
+                                    <span className="font-black text-amber-700">{plano.assinantes_ativos} assinantes ativos</span>. Esta ação não pode ser desfeita.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
-                <div className="grid gap-4">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5 col-span-2">
-                            <Label>Nome do Plano <span className="text-red-500">*</span></Label>
-                            <Input value={form.nome} onChange={e => set('nome', e.target.value)} placeholder="ex: Pro Mensal" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Tier</Label>
-                            <Select value={form.tier} onValueChange={v => set('tier', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="STARTER">Starter</SelectItem>
-                                    <SelectItem value="PLUS">Plus</SelectItem>
-                                    <SelectItem value="STUDIO">Studio</SelectItem>
-                                    <SelectItem value="PRO">Pro</SelectItem>
-                                    <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
-                                    <SelectItem value="CUSTOM">Custom</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Valor Mensal (R$) <span className="text-red-500">*</span></Label>
-                            <Input type="number" value={form.valor_mensal} onChange={e => set('valor_mensal', Number(e.target.value))} placeholder="249" />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Intervalo</Label>
-                            <Select value={form.intervalo} onValueChange={v => set('intervalo', v)}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Mensal">Mensal</SelectItem>
-                                    <SelectItem value="Trimestral">Trimestral</SelectItem>
-                                    <SelectItem value="Semestral">Semestral</SelectItem>
-                                    <SelectItem value="Anual">Anual</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label>Repetições (0 = indefinido)</Label>
-                            <Input type="number" value={form.repeticoes} onChange={e => set('repeticoes', Number(e.target.value))} min={0} />
+                    <div className="grid gap-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Nome do Plano <span className="text-bee-amber">*</span></Label>
+                                <Input
+                                    value={form.nome}
+                                    onChange={e => set('nome', e.target.value)}
+                                    placeholder="ex: Pro Mensal"
+                                    className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm"
+                                />
+                            </div>
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Tier</Label>
+                                <Select value={form.tier} onValueChange={v => set('tier', v)}>
+                                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 focus:ring-bee-amber/10 focus:border-bee-amber shadow-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2">
+                                        <SelectItem value="STARTER" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Starter</SelectItem>
+                                        <SelectItem value="PLUS" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Plus</SelectItem>
+                                        <SelectItem value="STUDIO" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Studio</SelectItem>
+                                        <SelectItem value="PRO" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Pro</SelectItem>
+                                        <SelectItem value="ENTERPRISE" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Enterprise</SelectItem>
+                                        <SelectItem value="CUSTOM" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Custom</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Valor Mensal (R$) <span className="text-bee-amber">*</span></Label>
+                                <Input
+                                    type="number"
+                                    value={form.valor_mensal}
+                                    onChange={e => set('valor_mensal', Number(e.target.value))}
+                                    placeholder="249"
+                                    className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm"
+                                />
+                            </div>
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Intervalo</Label>
+                                <Select value={form.intervalo} onValueChange={v => set('intervalo', v)}>
+                                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 focus:ring-bee-amber/10 focus:border-bee-amber shadow-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2">
+                                        <SelectItem value="Mensal" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Mensal</SelectItem>
+                                        <SelectItem value="Trimestral" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Trimestral</SelectItem>
+                                        <SelectItem value="Semestral" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Semestral</SelectItem>
+                                        <SelectItem value="Anual" className="rounded-xl focus:bg-amber-50 focus:text-bee-amber font-bold py-3 px-4">Anual</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2 group">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Repetições (0 = indefinido)</Label>
+                                <Input
+                                    type="number"
+                                    value={form.repeticoes}
+                                    onChange={e => set('repeticoes', Number(e.target.value))}
+                                    min={0}
+                                    className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="bg-bee-orange hover:bg-orange-600">
+                <DialogFooter className="px-8 py-6 border-t bg-slate-50/50 gap-3 mt-6">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="text-slate-400 font-bold hover:bg-slate-100 rounded-xl border-none h-11">Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={loading} className="h-11 px-8 bg-bee-amber text-bee-midnight hover:bg-amber-500 font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-lg shadow-amber-500/20 transition-all border-none disabled:opacity-40">
                         {loading ? 'Salvando...' : isEditing ? 'Salvar Alterações' : 'Criar Plano'}
                     </Button>
                 </DialogFooter>

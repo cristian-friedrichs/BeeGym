@@ -17,10 +17,12 @@ interface SubscriptionsChartProps {
 
 export function SubscriptionsChart({ data }: SubscriptionsChartProps) {
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div className="mb-4">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Novas vs Cancelamentos</p>
-                <p className="text-xs text-slate-400 mt-0.5">Últimos 6 meses</p>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200">
+            <div className="mb-5 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-bold text-[#0B0F1A]">Novas vs Cancelamentos</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Últimos 6 meses</p>
+                </div>
             </div>
             <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={data} margin={{ top: 0, right: 8, left: 8, bottom: 0 }} barGap={4}>

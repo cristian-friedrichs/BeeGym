@@ -97,8 +97,17 @@ export function RelatoriosPanel() {
     const [dateTo, setDateTo] = useState('');
     const [planoFilter, setPlanoFilter] = useState('TODOS');
 
+    const [controller, setController] = useState<AbortController | null>(null);
+
     const handleGenerate = async () => {
         if (!selected) return;
+
+        // Abort previous request if exists
+        if (controller) controller.abort();
+
+        const newController = new AbortController();
+        setController(newController);
+
         setLoading(true);
         setReportData(null);
 
@@ -108,11 +117,14 @@ export function RelatoriosPanel() {
             if (dateTo) params.set('ate', dateTo);
             if (planoFilter !== 'TODOS') params.set('plano', planoFilter);
 
-            const res = await fetch(`/api/admin/relatorios?${params.toString()}`);
+            const res = await fetch(`/api/admin/relatorios?${params.toString()}`, {
+                signal: newController.signal
+            });
             if (!res.ok) throw new Error('Erro ao gerar relatório');
             const data = await res.json();
             setReportData(data);
-        } catch (err) {
+        } catch (err: any) {
+            if (err.name === 'AbortError') return;
             console.error(err);
         } finally {
             setLoading(false);
@@ -172,7 +184,7 @@ export function RelatoriosPanel() {
                             className={`
                                 relative overflow-hidden text-left p-4 rounded-xl border-2 transition-all duration-200
                                 ${isSelected
-                                    ? 'border-bee-orange bg-bee-orange/5 shadow-lg shadow-orange-500/10 ring-2 ring-bee-orange/30'
+                                    ? 'border-bee-amber bg-bee-amber/5 shadow-lg shadow-amber-500/10 ring-2 ring-bee-amber/30'
                                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
                                 }
                             `}
@@ -186,7 +198,7 @@ export function RelatoriosPanel() {
                             <h3 className="text-sm font-bold text-slate-800">{report.label}</h3>
                             <p className="text-xs text-slate-500 mt-1 leading-relaxed">{report.desc}</p>
                             {isSelected && (
-                                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-bee-orange animate-pulse" />
+                                <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-bee-amber animate-pulse" />
                             )}
                         </button>
                     );
@@ -210,7 +222,7 @@ export function RelatoriosPanel() {
                                         type="date"
                                         value={dateFrom}
                                         onChange={e => setDateFrom(e.target.value)}
-                                        className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-orange/30 focus:border-bee-orange outline-none"
+                                        className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-amber/30 focus:border-bee-amber outline-none"
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -219,7 +231,7 @@ export function RelatoriosPanel() {
                                         type="date"
                                         value={dateTo}
                                         onChange={e => setDateTo(e.target.value)}
-                                        className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-orange/30 focus:border-bee-orange outline-none"
+                                        className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-amber/30 focus:border-bee-amber outline-none"
                                     />
                                 </div>
                             </>
@@ -231,7 +243,7 @@ export function RelatoriosPanel() {
                                 <select
                                     value={planoFilter}
                                     onChange={e => setPlanoFilter(e.target.value)}
-                                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-orange/30 focus:border-bee-orange outline-none"
+                                    className="block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-slate-50 focus:ring-2 focus:ring-bee-amber/30 focus:border-bee-amber outline-none"
                                 >
                                     <option value="TODOS">Todos</option>
                                     <option value="STARTER">Starter</option>
@@ -252,7 +264,7 @@ export function RelatoriosPanel() {
                         <button
                             onClick={handleGenerate}
                             disabled={loading}
-                            className="ml-auto inline-flex items-center gap-2 bg-[#00173F] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg hover:bg-[#001a4d] disabled:opacity-50 transition-all shadow-md"
+                            className="ml-auto inline-flex items-center gap-2 bg-[#0B0F1A] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-lg hover:bg-[#001a4d] disabled:opacity-50 transition-all shadow-md"
                         >
                             {loading ? (
                                 <Loader2 className="w-4 h-4 animate-spin" />

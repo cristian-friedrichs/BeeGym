@@ -119,15 +119,13 @@ export function ImportantAlerts() {
     }
 
     return (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full mt-[-60px]">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full">
             <div className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 text-orange-500">
-                        <Bell className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-lg font-bold text-deep-midnight tracking-tight font-display">Alertas Importantes</h3>
+                <div className="flex items-center gap-3">
+                    <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
+                    <h3 className="text-base font-bold text-[#0B0F1A] font-display">Alertas Importantes</h3>
                 </div>
-                <button className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-orange-50 transition-all rounded-[10px]">
+                <button className="h-9 w-9 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-amber-50 transition-all rounded-[10px]">
                     <MoreVertical className="h-5 w-5" />
                 </button>
             </div>
@@ -137,8 +135,8 @@ export function ImportantAlerts() {
                     const isChurn = alert.type === 'CHURN_RISK';
                     const isPending = alert.type === 'WORKOUT_PENDING';
 
-                    let borderColor = 'border-l-[#ff8c00]';
-                    let iconColor = 'text-[#ff8c00]';
+                    let borderColor = 'border-l-[#FFBF00]';
+                    let iconColor = 'text-[#FFBF00]';
                     let bgColor = 'bg-orange-50/50';
                     let Icon = CalendarCheck;
 
@@ -153,8 +151,8 @@ export function ImportantAlerts() {
                         bgColor = 'bg-rose-50/50';
                         Icon = UserX;
                     } else if (isPending) {
-                        borderColor = 'border-l-[#ff8c00]';
-                        iconColor = 'text-[#ff8c00]';
+                        borderColor = 'border-l-[#FFBF00]';
+                        iconColor = 'text-[#FFBF00]';
                         bgColor = 'bg-orange-50/50';
                         Icon = CalendarCheck;
                     }

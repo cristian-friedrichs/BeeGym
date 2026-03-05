@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { BEEGYM_PLANS } from '@/config/plans';
 
 export async function GET() {
     try {
         const supabase = supabaseAdmin;
+
+        // Fetch plans
         const { data: planos, error } = await supabase
             .from('saas_plans')
             .select('*')
@@ -11,19 +14,38 @@ export async function GET() {
 
         if (error) throw error;
 
+        // Fetch active subscriptions count per plan
+        const { data: subs, error: subsError } = await supabase
+            .from('saas_subscriptions')
+            .select('saas_plan_id, status')
+            .in('status', ['active', 'trialing']);
+
+        if (subsError) throw subsError;
+
+        // Calculate count
+        const activeCountByPlan = subs.reduce((acc: any, sub: any) => {
+            if (!sub.saas_plan_id) return acc;
+            acc[sub.saas_plan_id] = (acc[sub.saas_plan_id] || 0) + 1;
+            return acc;
+        }, {});
+
         // Formata os dados no padrao esperado pela tabela do admin
-        const payload = planos.map((p: any) => ({
-            id: p.id,
-            nome: p.name,
-            descricao: p.description,
-            tier: p.tier,
-            valor_mensal: Number(p.price),
-            intervalo: p.interval || 'Mensal',
-            assinantes_ativos: 0, // Mock visual por enquanto, será preenchido via count na tabela de saas_subscriptions futuramente
-            efi_plan_id_hml: p.efi_plan_id_hml,
-            efi_plan_id_prd: p.efi_plan_id_prd,
-            ativo: p.active,
-        }));
+        const payload = planos.map((p: any) => {
+            const configPlan = BEEGYM_PLANS[`plan_${p.tier?.toLowerCase()}`];
+            return {
+                id: p.id,
+                nome: p.name,
+                descricao: p.description,
+                tier: p.tier,
+                valor_mensal: Number(p.price),
+                intervalo: p.interval || 'Mensal',
+                assinantes_ativos: activeCountByPlan[p.id] || 0,
+                max_alunos: configPlan?.max_students || null,
+                efi_plan_id_hml: p.efi_plan_id_hml,
+                efi_plan_id_prd: p.efi_plan_id_prd,
+                ativo: p.active,
+            };
+        });
 
         return NextResponse.json(payload);
     } catch (err: any) {

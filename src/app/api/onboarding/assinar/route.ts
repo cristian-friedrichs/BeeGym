@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         if (assinaturaExistente) {
             return NextResponse.json({
                 error: 'Já existe uma assinatura ativa para esta conta.',
-                redirect: '/painel',
+                redirect: '/app/painel',
             }, { status: 409 });
         }
 
@@ -77,10 +77,19 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Plano inválido ou inativo' }, { status: 400 });
         }
 
+        // Verificar se existe assinatura com AGUARDANDO_PAGAMENTO para atualizar
+        const { data: pendingSub } = await supabaseAdmin
+            .from('saas_subscriptions')
+            .select('id')
+            .eq('organization_id', org.id)
+            .eq('status', 'AGUARDANDO_PAGAMENTO')
+            .limit(1)
+            .maybeSingle();
+
         const useCase = new CreateSubscriptionUseCase();
         const resultado = await useCase.execute({
             contratanteId: org.id,
-            planoId: plano.id,            // ← UUID correto (não tier)
+            planoId: plano.id,
             metodo,
             paymentToken,
             billingAddress,
@@ -88,6 +97,31 @@ export async function POST(req: NextRequest) {
             devedorCpf: (devedorCpf || org.cpf_cnpj)?.replace(/\D/g, ''),
             devedorNome: devedorNome || org.name,
         });
+
+        // Se existia assinatura pendente, atualizar ao invés de duplicar
+        if (pendingSub) {
+            await supabaseAdmin
+                .from('saas_subscriptions')
+                .update({
+                    status: 'TRIAL',
+                    metodo,
+                    saas_plan_id: plano.id,
+                    valor_mensal: plano.price,
+                    dia_vencimento: new Date().getDate(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', pendingSub.id);
+        }
+
+        // ✅ Após pagamento confirmado: atualizar status da organização
+        await supabaseAdmin
+            .from('organizations')
+            .update({
+                subscription_status: 'trial',
+                onboarding_completed: true,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', org.id);
 
         return NextResponse.json(resultado, { status: 200 });
 

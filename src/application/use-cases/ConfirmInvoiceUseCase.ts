@@ -18,9 +18,7 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
         // Fluxo a ser implementado:
         // 1. SELECT * FROM invoices WHERE txid = txidOrChargeId
         // 2. Se a fatura não existir, ignorar ou logar erro
-        // 3. Se a fatura já estiver com status PAGO (Idempotência):
-        //    console.info(`Fatura ${txidOrChargeId} já está paga. Webhook descartado silenciosamente.`);
-        //    return;
+        // 3. Se a fatura já estiver com status PAGO (Idempotência):        //    return;
         // 4. Update status para PAGO no BD, usando uma query atômica
         // 5. Opcional: emitir evento para NotificationService enviar recibo
         // 6. Opcional: OrderService.activateSubscription()

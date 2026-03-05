@@ -176,7 +176,7 @@ export function UpcomingActivities() {
                 return <Badge className="bg-slate-50 text-slate-400 hover:bg-slate-50 border-none px-2.5 py-1 rounded-lg font-bold text-[11px] uppercase tracking-wider text-center">Realizado</Badge>;
             case 'PENDENTE':
             case 'PENDENTE DE AÇÃO':
-                return <Badge className="bg-orange-50 text-orange-600 hover:bg-orange-50 border-none px-2.5 py-1 rounded-lg font-bold text-[11px] uppercase tracking-wider text-center">Pendente</Badge>;
+                return <Badge className="bg-orange-50 text-orange-600 hover:bg-amber-50 border-none px-2.5 py-1 rounded-lg font-bold text-[11px] uppercase tracking-wider text-center">Pendente</Badge>;
             case 'CANCELADO':
             case 'CANCELADA':
             case 'CANCELLED':

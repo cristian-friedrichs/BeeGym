@@ -201,11 +201,9 @@ export function ActivitiesChart() {
     return (
         <div className="w-full h-full flex flex-col">
             <div className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 text-orange-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" /></svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-deep-midnight tracking-tight font-display">Atividades Diárias</h3>
+                <div className="flex items-center gap-3">
+                    <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
+                    <h3 className="text-base font-bold text-[#0B0F1A] font-display">Atividades Diárias</h3>
                 </div>
                 <div className="relative">
                     <select
@@ -240,7 +238,7 @@ export function ActivitiesChart() {
                                     <text
                                         x={x}
                                         y={y + 20}
-                                        fill={isToday ? '#ff8c00' : '#94a3b8'}
+                                        fill={isToday ? '#FFBF00' : '#94a3b8'}
                                         textAnchor="middle"
                                         className={`text-[11px] font-bold ${isToday ? '' : 'capitalize'}`}
                                     >
@@ -272,7 +270,7 @@ export function ActivitiesChart() {
                                 return (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={isToday ? '#ff8c00' : '#e2e8f0'}
+                                        fill={isToday ? '#FFBF00' : '#e2e8f0'}
                                         width={period === 'week' ? 44 : 20}
                                     />
                                 );

@@ -357,7 +357,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                     {fullName ? fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <User className="h-10 w-10 text-orange-300" />}
                                 </AvatarFallback>
                             </Avatar>
-                            <label className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-orange transition-all cursor-pointer hover:scale-110">
+                            <label className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-all cursor-pointer hover:scale-110">
                                 <Camera className="h-4 w-4" />
                                 <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
                             </label>

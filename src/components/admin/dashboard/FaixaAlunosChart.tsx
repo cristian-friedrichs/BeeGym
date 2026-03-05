@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface FaixaData {
@@ -47,46 +46,47 @@ export function FaixaAlunosChart({ data }: FaixaAlunosChartProps) {
     };
 
     return (
-        <Card className="rounded-2xl border-slate-100 shadow-sm p-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-bold text-slate-800 tracking-tight">Distribuição por Tamanho</CardTitle>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200">
+            <div className="mb-5 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-bold text-[#0B0F1A]">Porte de Academia</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Distribuição por número de alunos</p>
+                </div>
                 <Select value={viewMode} onValueChange={(val: 'clientes' | 'receita') => setViewMode(val)}>
-                    <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-slate-200">
+                    <SelectTrigger className="w-[130px] h-7 text-xs font-medium border-slate-200">
                         <SelectValue placeholder="Visualizar por" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="receita" className="text-xs">Por Receita (R$)</SelectItem>
-                        <SelectItem value="clientes" className="text-xs">Por Clientes (Qtd)</SelectItem>
+                        <SelectItem value="receita" className="text-xs">Por Receita</SelectItem>
+                        <SelectItem value="clientes" className="text-xs">Por Clientes</SelectItem>
                     </SelectContent>
                 </Select>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[280px] w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis
-                                dataKey="faixa"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 'bold' }}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                                tickFormatter={(val) => viewMode === 'receita' ? formatK(val) : val}
-                            />
-                            <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                            <Bar dataKey={viewMode} radius={[4, 4, 0, 0]} barSize={40}>
-                                {data.map((_, index) => (
-                                    <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+            <div className="h-[240px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                            dataKey="faixa"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 'bold' }}
+                        />
+                        <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 11, fill: '#94a3b8' }}
+                            tickFormatter={(val) => viewMode === 'receita' ? formatK(val) : val}
+                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                        <Bar dataKey={viewMode} radius={[4, 4, 0, 0]} barSize={40}>
+                            {data.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
+                            ))}
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
     );
 }

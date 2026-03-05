@@ -90,17 +90,17 @@ export function TopbarActions() {
                     {/* 1. CHAT POPOVER */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <button className="relative p-2 rounded-full text-slate-400 hover:text-bee-orange hover:bg-orange-50 transition-colors">
+                            <button className="relative p-2 rounded-full text-slate-400 hover:text-bee-amber hover:bg-amber-50 transition-colors">
                                 <MessageSquare className="h-5 w-5" />
                                 {unreadChatCount > 0 && (
-                                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-bee-orange border-2 border-white"></span>
+                                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-bee-amber border-2 border-white"></span>
                                 )}
                             </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-80 p-0 mr-4 mt-2 shadow-xl rounded-[8px] border-slate-100 bg-white" align="end">
                             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-deep-midnight font-display tracking-tight">Mensagens</h4>
-                                <button onClick={() => router.push('/painel/conversas')} className="text-xs text-bee-orange hover:underline font-bold font-sans">Ver Chat</button>
+                                <button onClick={() => router.push('/painel/conversas')} className="text-xs text-bee-amber hover:underline font-bold font-sans">Ver Chat</button>
                             </div>
                             <div className="max-h-[300px] overflow-y-auto">
                                 {unreadChats.length === 0 ? (
@@ -126,7 +126,7 @@ export function TopbarActions() {
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-center">
-                                                    <h5 className="text-sm font-bold text-deep-midnight truncate group-hover:text-bee-orange transition-colors font-sans lowercase first-letter:uppercase">
+                                                    <h5 className="text-sm font-bold text-deep-midnight truncate group-hover:text-bee-amber transition-colors font-sans lowercase first-letter:uppercase">
                                                         {chat.contact_name || chat.other_name}
                                                     </h5>
                                                     <span className="text-[11px] text-slate-400 font-sans">
@@ -136,7 +136,7 @@ export function TopbarActions() {
                                                 <p className="text-xs text-slate-500 mt-0.5 truncate font-sans">{chat.last_message_content || 'Nova conversa'}</p>
                                             </div>
                                             {chat.unread_count > 0 && (
-                                                <span className="bg-bee-orange text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full font-sans">
+                                                <span className="bg-bee-amber text-bee-midnight text-[11px] font-bold px-1.5 py-0.5 rounded-full font-sans">
                                                     {chat.unread_count}
                                                 </span>
                                             )}
@@ -161,7 +161,7 @@ export function TopbarActions() {
                             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-deep-midnight font-display tracking-tight">Notificações</h4>
                                 {notifications.length > 0 && (
-                                    <span className="text-[11px] font-bold bg-orange-100 text-bee-orange px-2 py-0.5 rounded-full font-sans">{notifications.length} novas</span>
+                                    <span className="text-[11px] font-bold bg-orange-100 text-bee-amber px-2 py-0.5 rounded-full font-sans">{notifications.length} novas</span>
                                 )}
                             </div>
                             <div className="max-h-[300px] overflow-y-auto">
@@ -177,7 +177,7 @@ export function TopbarActions() {
                                             onClick={() => handleReadNotification(notif.id, notif.link)}
                                             className="p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors group"
                                         >
-                                            <h5 className="text-sm font-bold text-deep-midnight group-hover:text-bee-orange transition-colors font-sans">{notif.title}</h5>
+                                            <h5 className="text-sm font-bold text-deep-midnight group-hover:text-bee-amber transition-colors font-sans">{notif.title}</h5>
                                             <p className="text-xs text-slate-500 mt-1 line-clamp-2 font-sans">{notif.message}</p>
                                             <span className="text-[11px] text-slate-400 mt-2 block font-bold uppercase tracking-wider font-sans">
                                                 {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true, locale: ptBR })}

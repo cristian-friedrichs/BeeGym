@@ -70,9 +70,8 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             address_state: data.addressState || null,
             address_zip: data.hasPhysicalLocation ? data.addressZip : null,
             has_physical_location: data.hasPhysicalLocation,
-            // plan_id: data.planId, // Removido pois aponta para planos de alunos via FK, causando erro no Onboarding SaaS
-            subscription_status: data.subscriptionStatus || 'PENDENTE',
-            onboarding_completed: true,
+            subscription_status: 'aguardando_pagamento',
+            onboarding_completed: false,
             updated_at: new Date().toISOString(),
         })
         .select()
@@ -92,8 +91,8 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
             avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             organization_id: orgData.id,
-            status: 'ACTIVE', // Mark user as ACTIVE
-            role: 'OWNER', // First user is owner
+            status: 'ACTIVE',
+            role: 'OWNER',
         })
 
     if (userError) {
@@ -102,7 +101,6 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
     }
 
     // 3. Update Auth Metadata (Critical for Middleware)
-
     const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(
         user.id,
         {
@@ -115,10 +113,29 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
 
     if (metadataError) {
         console.error('Error updating user metadata:', metadataError)
-        // We don't block success here, but log it. Middleware might need a refresh.
     }
 
-    // 4. Revalidate and Return
+    // 4. Create saas_subscriptions with AGUARDANDO_PAGAMENTO
+    // Plano é salvo AGORA, independente do pagamento
+    if (data.planId) {
+        const { error: subError } = await supabaseAdmin
+            .from('saas_subscriptions')
+            .insert({
+                organization_id: orgData.id,
+                saas_plan_id: data.planId,
+                status: 'AGUARDANDO_PAGAMENTO',
+                metodo: 'PENDENTE',
+                valor_mensal: 0,
+                dia_vencimento: new Date().getDate(),
+            })
+
+        if (subError) {
+            console.error('Error creating subscription record:', subError)
+            // Non-blocking: org and profile already created
+        }
+    }
+
+    // 5. Revalidate and Return
     revalidatePath('/')
     return { success: true }
 }

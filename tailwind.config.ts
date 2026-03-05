@@ -17,16 +17,21 @@ export default {
     },
     extend: {
       fontFamily: {
-        display: ['var(--font-display)', 'sans-serif'], // Poppins (Titles & Logo)
-        sans: ['var(--font-body)', 'sans-serif'],    // Roboto (Body & UI)
+        display: ['Satoshi', 'var(--font-display)', 'sans-serif'],  // Brand Display
+        sans: ['Inter', 'var(--font-body)', 'sans-serif'],          // Brand UI
       },
       colors: {
-        // BeeGym Brand Colors
-        'bee-orange': '#FF8C00',
-        'deep-midnight': '#00173F',
-        'pure-white': '#FFFFFF',
+        // === BeeGym Brand Palette (Official) ===
+        'bee-amber': '#FFBF00',  // Pure Amber    — CTA, Brand Primary
+        'bee-orange': '#E67E22',  // Burnt Orange  — Hover / Active States
+        'bee-midnight': '#0B0F1A',  // Midnight Ink  — Dark Background
+        'slate-100': '#F5F7FA',  // Slate Gray 100 — Light BG / Dashboard
+        'slate-400': '#AAB2BD',  // Slate Gray 400 — Borders, Placeholders
+        'slate-700': '#4E5F70',  // Slate Gray 700 — Body Text / Descriptions
+        'emerald-brand': '#2ECC71',  // Emerald Green — Success / Confirmed
+        'coral-red': '#E74C3C',  // Coral Red     — Error / Destructive
 
-        // Theme Colors (using CSS variables)
+        // === Semantic Theme Colors (CSS variables) ===
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -62,30 +67,22 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        xl: "calc(var(--radius) + 4px)",
-        '2xl': "calc(var(--radius) + 8px)",
-        '3xl': "calc(var(--radius) + 16px)",
+        lg: 'var(--radius)',
+        xl: 'calc(var(--radius) + 4px)',
+        '2xl': 'calc(var(--radius) + 8px)',
+        '3xl': 'calc(var(--radius) + 16px)',
       },
       boxShadow: {
         soft: '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
       },
       keyframes: {
         'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
         },
         'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
         },
       },
       animation: {

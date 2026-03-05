@@ -107,7 +107,7 @@ export function StudentWorkoutsView({ workouts, studentId, studentName, onRefres
                         <div className="h-64 flex flex-col items-center justify-center text-muted-foreground border-2 border-dashed rounded-[8px] bg-slate-50/50 font-sans">
                             <Dumbbell className="h-10 w-10 mb-2 opacity-20" />
                             <p>Nenhum treino encontrado para este aluno.</p>
-                            <Button variant="link" onClick={onNewWorkout} className="text-bee-orange font-bold mt-2">
+                            <Button variant="link" onClick={onNewWorkout} className="text-bee-amber font-bold mt-2">
                                 Criar o primeiro treino
                             </Button>
                         </div>
@@ -128,10 +128,10 @@ export function StudentWorkoutsView({ workouts, studentId, studentName, onRefres
                                     >
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-bold text-lg text-slate-800 group-hover:text-bee-orange transition-colors font-sans">{w.title}</span>
+                                                <span className="font-bold text-lg text-slate-800 group-hover:text-bee-amber transition-colors font-sans">{w.title}</span>
                                                 <Badge variant="outline" className="text-xs font-normal bg-slate-50">{w.type || 'Geral'}</Badge>
                                                 {w.recurrence_id && (
-                                                    <span className="text-[11px] text-bee-orange bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 font-bold font-sans">Recorrente</span>
+                                                    <span className="text-[11px] text-bee-amber bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100 font-bold font-sans">Recorrente</span>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -160,7 +160,7 @@ export function StudentWorkoutsView({ workouts, studentId, studentName, onRefres
                                             {/* MENU DE AÇÕES */}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-bee-orange">
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-bee-amber">
                                                         <MoreHorizontal className="h-5 w-5" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
@@ -337,7 +337,7 @@ function PlanHistoryRow({ entry, isActive }: { entry: PlanHistoryEntry; isActive
                         {entry.plan_name ?? '—'}
                     </span>
                     {isActive && (
-                        <p className="text-[11px] font-bold text-bee-orange uppercase tracking-wider mt-0.5 font-sans">Plano Vigente</p>
+                        <p className="text-[11px] font-bold text-bee-amber uppercase tracking-wider mt-0.5 font-sans">Plano Vigente</p>
                     )}
                 </div>
                 <Badge className={isActive

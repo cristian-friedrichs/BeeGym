@@ -23,7 +23,7 @@ export function UpgradePromptModal({ open, onOpenChange, featureName }: UpgradeP
             <DialogContent className="sm:max-w-md pt-8 pb-6 px-6 sm:px-8 border-slate-100 rounded-2xl shadow-xl">
                 <div className="flex flex-col items-center text-center space-y-4">
                     <div className="h-16 w-16 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 mb-2">
-                        <Lock className="h-8 w-8 text-bee-orange" />
+                        <Lock className="h-8 w-8 text-bee-amber" />
                     </div>
 
                     <DialogHeader className="space-y-2 w-full text-center sm:text-center">
@@ -44,9 +44,9 @@ export function UpgradePromptModal({ open, onOpenChange, featureName }: UpgradeP
                         <Button
                             onClick={() => {
                                 onOpenChange(false)
-                                router.push('/configuracoes/subscription')
+                                router.push('/app/configuracoes/subscription')
                             }}
-                            className="w-full bg-bee-orange hover:bg-orange-600 text-white font-bold h-12 rounded-xl flex items-center justify-center gap-2"
+                            className="w-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold h-12 rounded-xl flex items-center justify-center gap-2"
                         >
                             <Crown className="w-5 h-5" />
                             Ver Planos e Fazer Upgrade

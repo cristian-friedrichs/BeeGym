@@ -1,12 +1,17 @@
 import { cn } from '@/lib/utils';
 import { Clock, AlertTriangle, XCircle, CheckCircle, Ban } from 'lucide-react';
 
-type Status = 'PENDENTE' | 'TRIAL' | 'ATIVO' | 'INADIMPLENTE' | 'INATIVO';
+type Status = 'PENDENTE' | 'AGUARDANDO_PAGAMENTO' | 'TRIAL' | 'ATIVO' | 'INADIMPLENTE' | 'INATIVO' | 'TESTE' | 'DEMO';
 
 const statusConfig: Record<Status, { label: string; className: string; Icon: any }> = {
     PENDENTE: {
         label: 'Pendente',
         className: 'bg-orange-50 text-orange-600 border-orange-200',
+        Icon: Clock,
+    },
+    AGUARDANDO_PAGAMENTO: {
+        label: 'Aguardando Pgto',
+        className: 'bg-amber-50 text-amber-700 border-amber-200',
         Icon: Clock,
     },
     TRIAL: {
@@ -17,6 +22,16 @@ const statusConfig: Record<Status, { label: string; className: string; Icon: any
     ATIVO: {
         label: 'Ativo',
         className: 'bg-green-50 text-green-700 border-green-200',
+        Icon: CheckCircle,
+    },
+    TESTE: {
+        label: 'Teste',
+        className: 'bg-purple-50 text-purple-600 border-purple-200',
+        Icon: CheckCircle,
+    },
+    DEMO: {
+        label: 'Demo',
+        className: 'bg-cyan-50 text-cyan-600 border-cyan-200',
         Icon: CheckCircle,
     },
     INADIMPLENTE: {

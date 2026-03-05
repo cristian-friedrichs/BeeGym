@@ -11,6 +11,8 @@ import { CreditCard, QrCode, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ContratanteEditDialog } from './ContratanteEditDialog';
 import { ContratanteBillingDialog } from './ContratanteBillingDialog';
+import { ChangePlanDialog } from './ChangePlanDialog';
+import { ArrowRightLeft } from 'lucide-react';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('pt-BR');
 const formatCurrency = (v: number) =>
@@ -24,6 +26,7 @@ interface ContratanteDrawerProps {
 export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
     const [detail, setDetail] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [changePlanOpen, setChangePlanOpen] = useState(false);
     const { toast } = useToast();
 
     const load = useCallback(() => {
@@ -50,59 +53,110 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
 
     return (
         <Sheet open={!!id} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent className="w-full sm:max-w-xl flex flex-col h-full p-0">
-                <SheetHeader className="p-6 border-b">
-                    <SheetTitle className="font-display text-[#00173F]">
-                        {loading ? 'Carregando...' : detail?.contratante?.nome}
-                    </SheetTitle>
-                    <SheetDescription>
-                        {detail && <ContratanteStatusBadge status={detail.assinatura?.status} />}
-                    </SheetDescription>
+            <SheetContent className="w-full sm:max-w-xl flex flex-col h-full p-0 border-none rounded-l-[2rem] shadow-2xl">
+                <SheetHeader className="px-8 pt-8 pb-6 border-b border-slate-50 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+                    <div className="flex items-center gap-3 mb-2 relative">
+                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
+                        <SheetTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight">
+                            {loading ? 'Carregando...' : detail?.contratante?.nome}
+                        </SheetTitle>
+                    </div>
+                    <div className="relative">
+                        {loading ? (
+                            <div className="h-6 w-24 bg-slate-100 animate-pulse rounded-full" />
+                        ) : (
+                            detail && <ContratanteStatusBadge status={detail.assinatura?.status} />
+                        )}
+                    </div>
                 </SheetHeader>
 
                 {detail && (
                     <ScrollArea className="flex-1">
                         <div className="p-6 space-y-6">
                             {/* Seção 1 — Dados */}
-                            <section>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dados do Cliente</h3>
+                            <section className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 rounded-xl bg-slate-50 text-slate-400">
+                                            <CheckCircle className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Dados do Cliente</h3>
+                                    </div>
                                     <ContratanteEditDialog contratante={detail.contratante} onUpdated={load} />
                                 </div>
-                                <dl className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-                                    <div><dt className="text-slate-400 text-xs">E-mail</dt><dd className="font-medium text-[#00173F]">{detail.contratante.email}</dd></div>
-                                    <div><dt className="text-slate-400 text-xs">Telefone</dt><dd className="font-medium">{detail.contratante.telefone}</dd></div>
-                                    <div><dt className="text-slate-400 text-xs">CPF/CNPJ</dt><dd className="font-medium font-mono">{detail.contratante.cpf_cnpj}</dd></div>
-                                    <div><dt className="text-slate-400 text-xs">Cliente desde</dt><dd className="font-medium">{formatDate(detail.contratante.desde)}</dd></div>
-                                    <div className="col-span-2"><dt className="text-slate-400 text-xs">Endereço</dt><dd className="font-medium">{detail.contratante.endereco}</dd></div>
+                                <dl className="grid grid-cols-2 gap-y-5 gap-x-6 text-sm">
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">E-mail</dt>
+                                        <dd className="font-bold text-bee-midnight truncate">{detail.contratante.email}</dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Telefone</dt>
+                                        <dd className="font-bold text-bee-midnight">{detail.contratante.telefone}</dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">CPF/CNPJ</dt>
+                                        <dd className="font-bold text-bee-midnight font-mono">{detail.contratante.cpf_cnpj}</dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Cliente desde</dt>
+                                        <dd className="font-bold text-bee-midnight">{formatDate(detail.contratante.desde)}</dd>
+                                    </div>
+                                    <div className="col-span-2 space-y-1 pt-2">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Endereço</dt>
+                                        <dd className="font-medium text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100/50">{detail.contratante.endereco}</dd>
+                                    </div>
                                 </dl>
                             </section>
 
                             <Separator />
 
                             {/* Seção 2 — Assinatura */}
-                            <section>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Assinatura Atual</h3>
-                                    <ContratanteBillingDialog contratanteId={id as string} assinatura={detail.assinatura} onUpdated={load} />
+                            <section className="bg-white rounded-[1.5rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-bee-amber/5 rounded-full -mr-12 -mt-12 blur-2xl" />
+                                <div className="flex items-center justify-between mb-6 relative">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-2 rounded-xl bg-amber-50 text-bee-amber">
+                                            <CreditCard className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Assinatura Atual</h3>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="ghost" size="sm" className="text-xs h-9 gap-2 font-bold text-bee-midnight hover:bg-slate-100 rounded-xl px-4" onClick={() => setChangePlanOpen(true)}>
+                                            <ArrowRightLeft className="w-3.5 h-3.5" />Alterar Plano
+                                        </Button>
+                                        <ContratanteBillingDialog contratanteId={id as string} assinatura={detail.assinatura} onUpdated={load} />
+                                    </div>
                                 </div>
-                                <dl className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
-                                    <div><dt className="text-slate-400 text-xs">Plano</dt><dd className="font-bold text-bee-orange">{detail.assinatura.plano}</dd></div>
-                                    <div>
-                                        <dt className="text-slate-400 text-xs">Método</dt>
-                                        <dd className="font-medium flex items-center gap-1.5">
-                                            {detail.assinatura.metodo === 'PIX_AUTOMATICO'
-                                                ? <><QrCode className="w-3.5 h-3.5 text-green-500" /> Pix Automático</>
-                                                : <><CreditCard className="w-3.5 h-3.5 text-blue-500" /> Cartão Recorrente</>}
+                                <dl className="grid grid-cols-2 gap-y-5 gap-x-6 text-sm relative">
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Plano</dt>
+                                        <dd className="font-black text-lg text-bee-midnight flex items-center gap-2">
+                                            <span className="w-1 h-3 bg-bee-amber rounded-full" />
+                                            {detail.assinatura.plano}
                                         </dd>
                                     </div>
-                                    <div><dt className="text-slate-400 text-xs">Valor Mensal</dt><dd className="font-bold">{formatCurrency(detail.assinatura.valor_mensal)}</dd></div>
-                                    <div><dt className="text-slate-400 text-xs">Próx. Vencimento</dt><dd className="font-medium">{detail.assinatura.proximo_vencimento ? formatDate(detail.assinatura.proximo_vencimento) : '-'}</dd></div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Método de Pagamento</dt>
+                                        <dd className="font-bold text-bee-midnight flex items-center gap-1.5 pt-1">
+                                            {detail.assinatura.metodo === 'PIX_AUTOMATICO'
+                                                ? <><div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center"><QrCode className="w-3.5 h-3.5 text-emerald-600" /></div> Pix Automático</>
+                                                : <><div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center"><CreditCard className="w-3.5 h-3.5 text-blue-600" /></div> Cartão Recorrente</>}
+                                        </dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Valor Mensal</dt>
+                                        <dd className="font-bold text-bee-midnight text-base tracking-tight">{formatCurrency(detail.assinatura.valor_mensal)}</dd>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Próx. Vencimento</dt>
+                                        <dd className="font-bold text-bee-midnight">{detail.assinatura.proximo_vencimento ? formatDate(detail.assinatura.proximo_vencimento) : '-'}</dd>
+                                    </div>
                                     {detail.assinatura.acordo_efi_id && (
-                                        <div className="col-span-2"><dt className="text-slate-400 text-xs">ID Acordo EFI</dt><dd className="font-mono text-xs break-all">{detail.assinatura.acordo_efi_id}</dd></div>
-                                    )}
-                                    {detail.assinatura.subscription_efi_id && (
-                                        <div className="col-span-2"><dt className="text-slate-400 text-xs">ID Assinatura EFI</dt><dd className="font-mono text-xs">{detail.assinatura.subscription_efi_id}</dd></div>
+                                        <div className="col-span-2 space-y-1 pt-2">
+                                            <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">ID Acordo EFI</dt>
+                                            <dd className="font-mono text-[10px] font-bold text-slate-400 bg-slate-50 p-2 rounded-lg border border-slate-100/50 break-all">{detail.assinatura.acordo_efi_id}</dd>
+                                        </div>
                                     )}
                                 </dl>
                             </section>
@@ -117,7 +171,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                         detail.cobrancas.map((c: any) => (
                                             <div key={c.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-slate-50 text-sm">
                                                 <span className="text-slate-500">{formatDate(c.data)}</span>
-                                                <span className="font-bold text-[#00173F]">{formatCurrency(c.valor)}</span>
+                                                <span className="font-bold text-[#0B0F1A]">{formatCurrency(c.valor)}</span>
                                                 <span className={`flex items-center gap-1 text-xs font-bold ${c.status === 'PAGO' ? 'text-green-600' : 'text-red-600'}`}>
                                                     {c.status === 'PAGO'
                                                         ? <><CheckCircle className="w-3 h-3" />Pago</>
@@ -180,6 +234,20 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                             </AlertDialogContent>
                         </AlertDialog>
                     </div>
+                )}
+
+                {detail && (
+                    <ChangePlanDialog
+                        open={changePlanOpen}
+                        onOpenChange={setChangePlanOpen}
+                        contratanteId={id as string}
+                        currentPlanTier={detail.assinatura?.plano_tier || ''}
+                        currentPlanName={detail.assinatura?.plano || 'Sem Plano'}
+                        currentPrice={detail.assinatura?.valor_mensal || 0}
+                        subscriptionStatus={detail.assinatura?.status || ''}
+                        alunosAtivos={detail.alunos_ativos || 0}
+                        onChanged={load}
+                    />
                 )}
             </SheetContent>
         </Sheet>

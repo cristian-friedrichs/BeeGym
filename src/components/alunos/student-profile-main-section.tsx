@@ -121,7 +121,7 @@ export function StudentProfileMainSection({
                         variant="outline"
                         className={`h-10 w-10 rounded-[10px] p-0 transition-all shadow-sm ${variant === 'danger'
                             ? 'bg-red-50 border-red-100 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-600'
-                            : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-bee-orange hover:bg-orange-50 hover:border-orange-100'
+                            : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-bee-amber hover:bg-amber-50 hover:border-orange-100'
                             }`}
                     >
                         <Icon className="h-4.5 w-4.5" />
@@ -143,7 +143,7 @@ export function StudentProfileMainSection({
                         <AvatarImage src={student.avatar_url || ''} className="object-cover" />
                         <AvatarFallback className="text-4xl bg-orange-100 text-orange-600 font-black">{initials}</AvatarFallback>
                     </Avatar>
-                    <button onClick={onEdit} className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-orange transition-all hover:scale-110">
+                    <button onClick={onEdit} className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-all hover:scale-110">
                         <Edit className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -178,7 +178,7 @@ export function StudentProfileMainSection({
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Treinos / Aulas</span>
-                        <span className="text-2xl font-black text-bee-orange leading-none">{completedCount}</span>
+                        <span className="text-2xl font-black text-bee-amber leading-none">{completedCount}</span>
                     </div>
                     <div className="flex flex-col gap-1.5">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Altura</span>

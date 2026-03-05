@@ -44,6 +44,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
         const assinatura = sub ? {
             plano: sub.saas_plans?.name || sub.saas_plans?.tier || 'Sem Plano',
+            plano_tier: sub.saas_plans?.tier || sub.plan_tier || null,
+            saas_plan_id: sub.saas_plan_id,
             metodo: sub.metodo,
             status: sub.status,
             valor_mensal: sub.valor_mensal,
@@ -52,6 +54,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             subscription_efi_id: sub.subscription_efi_id,
         } : {
             plano: 'Sem Assinatura',
+            plano_tier: null,
+            saas_plan_id: null,
             metodo: '-',
             status: org.subscription_status?.toUpperCase() || 'INATIVA',
             valor_mensal: 0,
@@ -59,6 +63,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             acordo_efi_id: null,
             subscription_efi_id: null,
         };
+
+        // Contar alunos ativos
+        const { count: alunosAtivos } = await supabase
+            .from('students')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', id)
+            .in('status', ['ACTIVE', 'TRIALING']);
 
         // 3. Busca Histórico de Cobranças na tabela saas_charges
         const { data: charges } = await supabase
@@ -74,7 +85,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             status: c.status
         }));
 
-        return NextResponse.json({ contratante, assinatura, cobrancas });
+        return NextResponse.json({ contratante, assinatura, cobrancas, alunos_ativos: alunosAtivos || 0 });
 
     } catch (err: any) {
         console.error('[Admin Contratante] Erro interno:', err);

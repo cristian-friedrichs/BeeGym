@@ -465,7 +465,7 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-bee-orange hover:bg-orange-600 text-white font-bold gap-2"
+                        className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold gap-2"
                     >
                         <Check className="h-4 w-4" /> {loading ? 'Criando...' : 'Criar Aula'}
                     </Button>

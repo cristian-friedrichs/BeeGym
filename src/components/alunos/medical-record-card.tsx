@@ -28,7 +28,7 @@ export function MedicalRecordCard({ data, onEdit }: MedicalRecordCardProps) {
                     variant="ghost"
                     size="icon"
                     onClick={onEdit}
-                    className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                    className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-amber-50 transition-colors"
                 >
                     <Edit className="h-4 w-4" />
                 </Button>
@@ -70,7 +70,7 @@ export function MedicalRecordCard({ data, onEdit }: MedicalRecordCardProps) {
                             <ClipboardList className="h-6 w-6 text-slate-300" />
                         </div>
                         <p className="text-sm text-slate-400 font-medium tracking-tight">Nenhuma informação médica registrada.</p>
-                        <Button variant="outline" size="sm" onClick={onEdit} className="mt-4 border-dashed border-slate-300 text-slate-500 hover:text-orange-600 hover:bg-orange-50 transition-colors rounded-xl font-bold uppercase tracking-widest text-[10px] h-8 px-4">
+                        <Button variant="outline" size="sm" onClick={onEdit} className="mt-4 border-dashed border-slate-300 text-slate-500 hover:text-orange-600 hover:bg-amber-50 transition-colors rounded-xl font-bold uppercase tracking-widest text-[10px] h-8 px-4">
                             Clique para preencher
                         </Button>
                     </div>

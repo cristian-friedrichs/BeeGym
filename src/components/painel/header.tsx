@@ -314,7 +314,7 @@ export function Header({ className }: { className?: string }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/app/login');
   };
 
   const ThemeIcon = effectiveTheme === 'dark' ? Moon : Sun;
@@ -343,10 +343,14 @@ export function Header({ className }: { className?: string }) {
       "bg-white border-b border-[#E2E8F0] px-6 h-16 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-200",
       className
     )}>
-      <div className="flex-1 md:flex-none">
-        <div className="hidden md:flex items-center bg-slate-50 hover:bg-slate-100 rounded-[8px] px-4 py-2 w-80 lg:w-96 border border-slate-100 focus-within:border-bee-orange transition-all group">
-          <Search className="h-4 w-4 text-slate-400 group-focus-within:text-bee-orange" />
-          <input className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full text-foreground placeholder-slate-400 font-sans" placeholder={t.searchPlaceholder} type="text" />
+      <div className="flex-1 md:flex-none w-full max-w-md">
+        <div className="relative hidden md:block w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder}
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#0B0F1A] transition-all placeholder:text-slate-400 font-medium font-sans"
+          />
         </div>
       </div>
 
@@ -431,15 +435,15 @@ export function Header({ className }: { className?: string }) {
               <div className="flex items-center gap-3 cursor-pointer">
                 <Avatar className="h-9 w-9 border-2 border-background shadow-sm ring-1 ring-slate-100">
                   <AvatarImage src={userProfile?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-orange-100 text-bee-orange font-bold font-sans">
+                  <AvatarFallback className="bg-orange-100 text-bee-amber font-bold font-sans">
                     {getInitials(userProfile?.full_name || '')}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden sm:block">
+                <div className="hidden sm:block text-right">
                   <p className="text-sm font-bold text-deep-midnight leading-tight font-sans">
-                    {userProfile?.full_name || <Loader2 className="h-3 w-3 animate-spin" />}
+                    {userProfile?.full_name ? `Olá, ${userProfile.full_name.split(' ')[0]}` : <Loader2 className="h-3 w-3 animate-spin" />}
                   </p>
-                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider font-sans">Admin</p>
+                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider font-sans">Gestor</p>
                 </div>
                 <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
               </div>
@@ -452,7 +456,7 @@ export function Header({ className }: { className?: string }) {
                 </div>
               </div>
               <DropdownMenuSeparator className="sm:hidden" />
-              <DropdownMenuItem asChild><Link href="/configuracoes/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild><Link href="/app/configuracoes/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">{t.support}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer group">

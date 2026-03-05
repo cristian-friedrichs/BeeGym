@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface TipoClienteData {
@@ -15,7 +14,7 @@ interface TipoClienteChartProps {
     data: TipoClienteData[];
 }
 
-const COLORS = ['#0f172a', '#ff8c00', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
+const COLORS = ['#0f172a', '#FFBF00', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#64748b'];
 
 const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -55,50 +54,49 @@ export function TipoClienteChart({ data }: TipoClienteChartProps) {
     };
 
     return (
-        <Card className="rounded-2xl border-slate-100 shadow-sm h-full p-2">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-bold text-slate-800 tracking-tight">
-                    Tipo de Cliente
-                </CardTitle>
+        <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200">
+            <div className="mb-5 flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-bold text-[#0B0F1A]">Tipo de Cliente</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Segmentos por tipo de negócio</p>
+                </div>
                 <Select value={viewMode} onValueChange={(val: 'value' | 'receita') => setViewMode(val)}>
-                    <SelectTrigger className="w-[140px] h-8 text-xs font-medium border-slate-200">
+                    <SelectTrigger className="w-[130px] h-7 text-xs font-medium border-slate-200">
                         <SelectValue placeholder="Visualizar por" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="receita" className="text-xs">Por Receita (R$)</SelectItem>
-                        <SelectItem value="value" className="text-xs">Por Clientes (Qtd)</SelectItem>
+                        <SelectItem value="receita" className="text-xs">Por Receita</SelectItem>
+                        <SelectItem value="value" className="text-xs">Por Clientes</SelectItem>
                     </SelectContent>
                 </Select>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[280px] w-full mt-4 relative">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Tooltip content={<CustomTooltip />} />
-                            <Pie
-                                data={data}
-                                cx="50%" cy="50%"
-                                innerRadius={50} outerRadius={110}
-                                paddingAngle={2}
-                                dataKey={viewMode}
-                                stroke="none"
-                                labelLine={false}
-                                label={renderLabel(viewMode)}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Legend
-                                verticalAlign="bottom"
-                                height={36}
-                                iconType="square"
-                                wrapperStyle={{ fontSize: '12px', fontWeight: 500, color: '#64748b', paddingTop: '10px' }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+            <div className="h-[240px] w-full relative">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Tooltip content={<CustomTooltip />} />
+                        <Pie
+                            data={data}
+                            cx="50%" cy="50%"
+                            innerRadius={55} outerRadius={95}
+                            paddingAngle={2}
+                            dataKey={viewMode}
+                            stroke="none"
+                            labelLine={false}
+                            label={renderLabel(viewMode)}
+                        >
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Legend
+                            verticalAlign="bottom"
+                            height={36}
+                            iconType="square"
+                            wrapperStyle={{ fontSize: '12px', fontWeight: 500, color: '#64748b', paddingTop: '10px' }}
+                        />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
     );
 }

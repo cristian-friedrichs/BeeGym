@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Poppins, Roboto } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from '@/lib/utils';
@@ -9,16 +9,12 @@ import { AuthProvider } from '@/lib/auth/AuthContext';
 // Validate env vars at startup
 validateEnv();
 
-const poppins = Poppins({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '500', '600', '700', '800', '900'],
-});
-
-const roboto = Roboto({
+// Inter — BeeGym Brand UI & Body Font
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-body',
-  weight: ['400', '500', '700'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -34,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={cn(poppins.variable, roboto.variable)}
+      className={cn(inter.variable)}
       suppressHydrationWarning
     >
       <body className="antialiased" suppressHydrationWarning>

@@ -59,7 +59,7 @@ export function MeasurementEvolutionChart({ data, studentId }: MeasurementEvolut
                     </Select>
 
                     <Link href={`/alunos/${studentId}/measurements`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-orange-500 hover:bg-amber-50 transition-colors">
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </Link>

@@ -19,17 +19,10 @@ export async function syncAuthMetadata() {
         return { error: 'Usuário não autenticado' }
     }
 
-    // 1. Buscar Perfil e Organização vinculada
+    // 1. Buscar Perfil
     const { data: profile } = await supabase
         .from('profiles')
-        .select(`
-            organization_id, 
-            status,
-            organizations (
-                subscription_status,
-                onboarding_completed
-            )
-        `)
+        .select('organization_id, status')
         .eq('id', user.id)
         .single()
 
@@ -37,12 +30,17 @@ export async function syncAuthMetadata() {
         return { error: 'Perfil incompleto' }
     }
 
-    const org = (profile as any).organizations;
+    // 2. Buscar Organização separadamente (sem FK join)
+    const { data: org } = await supabase
+        .from('organizations')
+        .select('subscription_status, onboarding_completed')
+        .eq('id', profile.organization_id)
+        .single()
 
     // ✅ SEGURANÇA: Só retorna sucesso (que causa o redirect p/ painel)
-    // se o onboarding foi concluído E se a assinatura está ativa/trial.
+    // se o onboarding foi concluído E se a assinatura está ativa/trial/teste.
     const hasAccess = org?.onboarding_completed &&
-        (org?.subscription_status === 'active' || org?.subscription_status === 'trial');
+        (org?.subscription_status === 'active' || org?.subscription_status === 'trial' || org?.subscription_status === 'teste');
 
     if (!hasAccess) {
         return {

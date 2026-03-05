@@ -37,106 +37,135 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getSession()
 
     const url = request.nextUrl.clone()
-    const isAuthPage = url.pathname.startsWith('/login') ||
-        url.pathname.startsWith('/register') ||
-        url.pathname.startsWith('/signup')
+
+    // Base routes
+    const isAppAuthPage = url.pathname.startsWith('/app/login') ||
+        url.pathname.startsWith('/app/register') ||
+        url.pathname.startsWith('/app/signup')
+
+    const isAdminAuthPage = url.pathname.startsWith('/admin/login')
 
     const isPublicRoute = url.pathname.startsWith('/api/webhook') ||
         url.pathname.startsWith('/_next') ||
         url.pathname.startsWith('/favicon') ||
         url.pathname.includes('.')
 
-    const isProtectedRoute = !isAuthPage && !isPublicRoute
+    const isAppRoute = url.pathname.startsWith('/app')
+    const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin')
+    const isRootRoute = url.pathname === '/' || url.pathname === '/app'
 
-    // 1. Redirecionar não autenticados
-    if (!session) {
-        if (isProtectedRoute) {
-            url.pathname = '/login'
-            url.searchParams.set('redirect', request.nextUrl.pathname)
-            return NextResponse.redirect(url)
-        }
+    // Redirecionar raiz ou /app vazio para o dashboard/login correto
+    if (isRootRoute) {
+        url.pathname = session ? '/app/painel' : '/app/login'
+        return NextResponse.redirect(url)
+    }
+
+    // Se é pública, libera direto
+    if (isPublicRoute) {
         return response
     }
 
-    // 2. LOGADO: Validar Perfil e Organização (apenas se não for rota de asset pública)
-    if (!isPublicRoute) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select(`
-                organization_id, 
-                status,
-                role,
-                organizations (
-                    subscription_status,
-                    onboarding_completed
-                )
-            `)
-            .eq('id', session.user.id)
+    // Lógica para usuários NÃO AUTENTICADOS
+    if (!session) {
+        // Tentando acessar APP protegido
+        if (isAppRoute && !isAppAuthPage && !url.pathname.startsWith('/api/')) {
+            url.pathname = '/app/login'
+            url.searchParams.set('redirect', request.nextUrl.pathname)
+            return NextResponse.redirect(url)
+        }
+
+        // Tentando acessar ADMIN protegido
+        if (isAdminRoute && !isAdminAuthPage && !url.pathname.startsWith('/api/')) {
+            url.pathname = '/admin/login'
+            url.searchParams.set('redirect', request.nextUrl.pathname)
+            return NextResponse.redirect(url)
+        }
+
+        return response
+    }
+
+    // LÓGICA LOGADO: Validar Perfil e Organização
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id, status, role')
+        .eq('id', session.user.id)
+        .single()
+
+    // Fetch organization separately (no FK relationship in schema)
+    let org: any = null
+    if (profile?.organization_id) {
+        const { data: orgData } = await supabase
+            .from('organizations')
+            .select('subscription_status, onboarding_completed')
+            .eq('id', profile.organization_id)
             .single()
+        org = orgData
+    }
 
-        // 👑 SEGREGAÇÃO DE SISTEMAS: ADMIN VS SAAS
-        // Define o usuário como Admin se ele tiver a role no banco OU for o e-mail Master do sistema
-        const isMasterEmail = session.user.email === 'cristian_friedrichs@live.com'
-        const isAdminUser = profile?.role === 'BEEGYM_ADMIN' || isMasterEmail
-        const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin')
+    // 👑 SEGREGAÇÃO DE SISTEMAS: ADMIN VS SAAS
+    const isMasterEmail = session.user.email === 'cristian_friedrichs@live.com'
+    const isAdminUser = profile?.role === 'BEEGYM_ADMIN' || isMasterEmail
 
-        // 👑 1. ROTEAMENTO EXCLUSIVO PARA ROTA /ADMIN
-        if (isAdminRoute) {
-            if (!isAdminUser) {
-                // Usuário comum tentando acessar o admin -> Volta pro painel
-                if (url.pathname.startsWith('/api/')) {
-                    return NextResponse.json({ error: 'Acesso negado: Requer privilégios de administrador.' }, { status: 403 })
-                }
-                url.pathname = '/painel'
-                return NextResponse.redirect(url)
-            }
-            return response // Admin acessando admin = OK
+    // LÓGICA PARA ADMINS
+    if (isAdminUser) {
+        // Admin acessando rotas de login (SaaS ou Admin)
+        if (isAdminAuthPage) {
+            url.pathname = '/admin'
+            return NextResponse.redirect(url)
         }
 
-        // 👑 2. ROTEAMENTO EXCLUSIVO PARA USUÁRIO ADMIN 
-        if (isAdminUser) {
-            // Se o admin logado tentar acessar rotas SaaS ou a raiz, mandar para o /admin
-            if (isAuthPage || url.pathname === '/' || url.pathname.startsWith('/painel') || url.pathname.startsWith('/onboarding')) {
-                url.pathname = '/admin'
-                return NextResponse.redirect(url)
-            }
-            return response // Libera outras rotas (ex: APIs) caso não tenham sido barradas
+        if (isAppAuthPage) {
+            // Se o admin acessar o login do app, joga para o painel do app
+            url.pathname = '/app/painel'
+            return NextResponse.redirect(url)
         }
 
-        // 🏢 3. ROTEAMENTO EXCLUSIVO PARA CLIENTES SAAS
-        // Chega aqui apenas clientes SaaS em rotas do SaaS
-        const org = profile?.organizations as any
-        const hasActiveSubscription = org?.subscription_status === 'active' || org?.subscription_status === 'trial'
+        // Pode transitar livremente por rotas do admin e do app (se ele também tiver um plano ou quiser testar)
+        return response
+    }
+
+    // LÓGICA PARA USUÁRIOS SAAS (NÃO ADMIN)
+    if (!isAdminUser) {
+        // Se SaaS tentar acessar QUALQUER rota Admin -> Joga pro app/painel
+        if (isAdminRoute || isAdminAuthPage) {
+            if (url.pathname.startsWith('/api/')) {
+                return NextResponse.json({ error: 'Acesso negado: Requer privilégios de administrador.' }, { status: 403 })
+            }
+            url.pathname = '/app/painel'
+            return NextResponse.redirect(url)
+        }
+
+        const hasActiveSubscription = org?.subscription_status === 'active' || org?.subscription_status === 'trial' || org?.subscription_status === 'teste'
         const isAccountActive = org?.onboarding_completed && hasActiveSubscription
-        const isOnboardingPath = url.pathname.startsWith('/onboarding') || url.pathname.startsWith('/api/onboarding')
+        const isOnboardingPath = url.pathname.startsWith('/app/onboarding') || url.pathname.startsWith('/api/onboarding')
 
-        // 🟢 CASO SaaS 1: Página de Login/Register
-        if (isAuthPage) {
+        // 🟢 SaaS em página de Login (e já está logado)
+        if (isAppAuthPage) {
             if (isAccountActive) {
                 const redirect = request.nextUrl.searchParams.get('redirect')
                 if (redirect && redirect !== '/') {
                     return NextResponse.redirect(new URL(redirect, request.url))
                 }
-                return NextResponse.redirect(new URL('/painel', request.url))
+                return NextResponse.redirect(new URL('/app/painel', request.url))
             }
-            return response // Deixa logado no login se não for ativo
+            // Se inativo, vai seguir as regras abaixo
         }
 
-        // 🔴 CASO SaaS 2: Rota Protegida (Raiz / ou Painel) mas conta Inapta
-        if (!isAccountActive && !isOnboardingPath && !url.pathname.startsWith('/pending-activation')) {
-            if (org?.subscription_status && org?.subscription_status !== 'active' && org?.subscription_status !== 'trial') {
-                url.pathname = '/onboarding/pagamento'
+        // 🔴 Conta inativa tentando acessar rotas do App protegidas
+        if (!isAccountActive && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
+            if (org?.subscription_status && org?.subscription_status !== 'active' && org?.subscription_status !== 'trial' && org?.subscription_status !== 'teste') {
+                url.pathname = '/app/onboarding/pagamento'
             } else if (profile?.organization_id && !org?.onboarding_completed) {
-                url.pathname = '/onboarding/step-3'
+                url.pathname = '/app/onboarding/step-3'
             } else {
-                url.pathname = '/onboarding'
+                url.pathname = '/app/onboarding'
             }
             return NextResponse.redirect(url)
         }
 
-        // 🔵 CASO SaaS 3: Ativo tentando entrar no Onboarding via URL
+        // 🔵 Ativo tentando entrar no Onboarding
         if (isAccountActive && isOnboardingPath) {
-            url.pathname = '/painel'
+            url.pathname = '/app/painel'
             return NextResponse.redirect(url)
         }
     }

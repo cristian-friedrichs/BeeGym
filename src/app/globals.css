@@ -1,4 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Roboto:wght@400;500;700&display=swap');
+/* ===============================================
+   BeeGym - Global Design System
+   Brand Manual v2025 — Satoshi + Inter
+   =============================================== */
+
+/* --- Satoshi Display Font (Brand Primary Typography) --- */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,600,500,400&display=swap');
+
+/* --- Inter UI Font (Body & Interface Typography) --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,93 +15,91 @@
 
 @layer base {
   html {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   :root {
-    /* BeeGym Brand Colors - Official Hex Codes */
-    --bee-orange: 33 100% 50%;
-    /* #FF8C00 */
-    --deep-midnight: 216 100% 12%;
-    /* #00173F */
-    --pure-white: 255 255 255;
-    /* #FFFFFF */
+    /* =========================================
+       BeeGym Brand Palette — Official HEX Codes
+         Pure Amber       #FFBF00  → CTA, Brand
+         Burnt Orange     #E67E22  → Hover/Active
+         Midnight Ink     #0B0F1A  → Dark Base
+         Slate Gray 100   #F5F7FA  → Light BG
+         Slate Gray 400   #AAB2BD  → Borders
+         Slate Gray 700   #4E5F70  → Body Text
+         Emerald Green    #2ECC71  → Success
+         Coral Red        #E74C3C  → Destructive
+       ========================================= */
 
-    --background: 210 20% 97%;
-    /* #F4F6F8 (Cinza Background) */
-    --foreground: 216 100% 12%;
-    /* #00173F (Deep Midnight) */
+    /* Background: Slate Gray 100 for light mode */
+    --background: 214 17% 97%;       /* #F5F7FA */
+    --foreground: 229 24% 12%;       /* near #1A1F2E – dark text */
 
-    --card: 0 0% 100%;
-    /* #FFFFFF */
-    --card-foreground: 216 100% 12%;
+    /* Card surfaces */
+    --card: 0 0% 100%;               /* #FFFFFF */
+    --card-foreground: 229 24% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 216 100% 12%;
+    --popover-foreground: 229 24% 12%;
 
-    --primary: 33 100% 50%;
-    /* #FF8C00 (Bee Orange) */
-    --primary-foreground: 0 0% 100%;
-    /* #FFFFFF */
+    /* Primary: Pure Amber #FFBF00 */
+    --primary: 45 100% 50%;
+    --primary-foreground: 229 42% 7%; /* Dark text on amber */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 216 100% 12%;
+    /* Secondary: Slate Gray background tone */
+    --secondary: 214 17% 93%;
+    --secondary-foreground: 229 24% 12%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* Muted: Slate Gray 400 tones */
+    --muted: 214 17% 93%;
+    --muted-foreground: 208 18% 50%; /* Slate Gray 700 #4E5F70 */
 
-    --accent: 33 100% 50%;
-    /* #FF8C00 */
+    /* Accent: Burnt Orange (hover CTA) */
+    --accent: 28 79% 52%;             /* #E67E22 */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 354 70% 54%;
-    /* #DC3545 (Vermelho Alert) */
-    --destructive-foreground: 0 0% 98%;
+    /* Semantic: Coral Red #E74C3C */
+    --destructive: 5 75% 57%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 33 100% 50%;
+    /* Borders: Slate Gray 400 */
+    --border: 213 13% 64%;            /* #AAB2BD */
+    --input: 213 13% 64%;
+    --ring: 45 100% 50%;             /* Amber ring */
 
     --radius: 8px;
-    /* Standard 8px corner radius for buttons and CTAs */
   }
 
   .dark {
-    --background: 0 0% 4%;
-    /* #0B0B0B */
-    --foreground: 0 0% 95%;
-    /* #F2F2F2 */
+    /* Background: Midnight Ink #0B0F1A */
+    --background: 229 42% 7%;        /* #0B0F1A */
+    --foreground: 0 0% 95%;          /* near white */
 
-    --card: 0 0% 9%;
-    /* #161616 */
+    --card: 229 35% 11%;             /* slightly lighter than bg */
     --card-foreground: 0 0% 95%;
-    /* #F2F2F2 */
 
-    --popover: 0 0% 9%;
+    --popover: 229 35% 11%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 33 100% 50%;
-    /* #FF8C00 - Orange */
-    --primary-foreground: 0 0% 100%;
+    /* Primary: Pure Amber stays in dark mode */
+    --primary: 45 100% 50%;
+    --primary-foreground: 229 42% 7%;
 
-    --secondary: 0 0% 12%;
-    /* #1F1F1F */
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 229 30% 16%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 70%;
-    /* #B3B3B3 */
+    --muted: 229 30% 16%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 33 100% 50%;
+    --accent: 28 79% 52%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 354 70% 54%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 5 75% 57%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 12%;
-    /* #1F1F1F */
-    --input: 0 0% 12%;
-    --ring: 33 100% 50%;
+    --border: 229 25% 20%;
+    --input: 229 25% 20%;
+    --ring: 45 100% 50%;
   }
 }
 
@@ -103,18 +110,22 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-body);
+    font-family: 'Inter', var(--font-body), sans-serif;
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-display;
+  /* Display: Satoshi for all headings */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Satoshi', var(--font-display), sans-serif;
+    @apply font-semibold;
+    letter-spacing: -0.01em;
   }
 
+  /* Tighter tracking for large display headings */
+  h1 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -124,12 +135,12 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #AAB2BD; /* Slate Gray 400 */
     border-radius: 3px;
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    background: #4b5563;
+    background: #4E5F70; /* Slate Gray 700 */
   }
 }
 
@@ -148,7 +159,7 @@
     height: 100%;
     width: 100%;
     border-radius: 9999px;
-    background-color: #ef4444;
+    background-color: #E74C3C; /* Coral Red */
     opacity: 0.75;
     animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
@@ -160,11 +171,10 @@
     border-radius: 9999px;
     height: 0.75rem;
     width: 0.75rem;
-    background-color: #ef4444;
+    background-color: #E74C3C; /* Coral Red */
   }
 
   @keyframes ping {
-
     75%,
     100% {
       transform: scale(2);

@@ -128,7 +128,7 @@ export function RoleList({ initialRoles, organizationId }: RoleListProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-[#00173F]">Perfis de Acesso</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-[#0B0F1A]">Perfis de Acesso</h2>
                     <p className="text-muted-foreground">
                         Defina o que cada tipo de funcionário pode acessar no sistema.
                     </p>
@@ -175,7 +175,7 @@ export function RoleList({ initialRoles, organizationId }: RoleListProps) {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Shield className="h-4 w-4 text-primary" />
-                                                    <span className="font-medium text-sm text-[#00173F]">
+                                                    <span className="font-medium text-sm text-[#0B0F1A]">
                                                         {role.name}
                                                     </span>
                                                 </div>

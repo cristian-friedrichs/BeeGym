@@ -212,8 +212,8 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
     return (
         <div className="space-y-5">
             {/* Dados do cartão */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dados do Cartão</h4>
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 font-display">Dados do Cartão</h4>
                 <div className="space-y-3">
                     <div>
                         <Label className="text-xs">Número do Cartão</Label>
@@ -222,6 +222,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                             value={card.number}
                             onChange={e => setCard(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
                             maxLength={19}
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                     <div>
@@ -230,6 +231,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                             placeholder="Como impresso no cartão"
                             value={card.name}
                             onChange={e => setCard(p => ({ ...p, name: e.target.value.toUpperCase() }))}
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -240,6 +242,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 value={card.expiry}
                                 onChange={e => setCard(p => ({ ...p, expiry: formatExpiry(e.target.value) }))}
                                 maxLength={5}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                         <div>
@@ -250,6 +253,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 value={card.cvv}
                                 onChange={e => setCard(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
                                 maxLength={4}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                     </div>
@@ -257,8 +261,8 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
             </div>
 
             {/* Titular */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Dados do Titular</h4>
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 font-display">Dados do Titular</h4>
                 <div className="space-y-3">
                     <div>
                         <Label className="text-xs">Nome Completo</Label>
@@ -266,6 +270,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                             placeholder="Seu nome completo"
                             value={customer.name}
                             onChange={e => setCustomer(p => ({ ...p, name: e.target.value }))}
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
@@ -276,6 +281,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 value={customer.cpf}
                                 onChange={e => setCustomer(p => ({ ...p, cpf: formatDoc(e.target.value) }))}
                                 maxLength={18}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                         <div>
@@ -285,6 +291,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 value={customer.phone_number}
                                 onChange={e => setCustomer(p => ({ ...p, phone_number: formatPhone(e.target.value) }))}
                                 maxLength={15}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                     </div>
@@ -294,14 +301,15 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                             type="date"
                             value={customer.birth}
                             onChange={e => setCustomer(p => ({ ...p, birth: e.target.value }))}
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                 </div>
             </div>
 
             {/* Endereço de Cobrança */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-4 space-y-4">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Endereço de Cobrança</h4>
+            <div className="bg-white rounded-3xl border border-slate-100 p-6 space-y-6 shadow-sm">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 font-display">Endereço de Cobrança</h4>
                 <div className="space-y-3">
                     <div>
                         <Label className="text-xs">CEP</Label>
@@ -328,6 +336,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 placeholder="Rua Exemplo"
                                 value={billing.street}
                                 onChange={e => setBilling(p => ({ ...p, street: e.target.value }))}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                         <div>
@@ -336,6 +345,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 placeholder="123"
                                 value={billing.number}
                                 onChange={e => setBilling(p => ({ ...p, number: e.target.value }))}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                     </div>
@@ -346,6 +356,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 placeholder="Bairro"
                                 value={billing.neighborhood}
                                 onChange={e => setBilling(p => ({ ...p, neighborhood: e.target.value }))}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                         <div>
@@ -354,6 +365,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                                 placeholder="Cidade"
                                 value={billing.city}
                                 onChange={e => setBilling(p => ({ ...p, city: e.target.value }))}
+                                className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                             />
                         </div>
                     </div>
@@ -364,6 +376,7 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                             value={billing.state}
                             onChange={e => setBilling(p => ({ ...p, state: e.target.value.toUpperCase().slice(0, 2) }))}
                             maxLength={2}
+                            className="h-12 text-sm rounded-2xl border-slate-100 focus:border-bee-amber focus:ring-bee-amber/20"
                         />
                     </div>
                 </div>
