@@ -63,6 +63,9 @@ export class CreateSubscriptionUseCase {
         let manualDiscountPercentage = undefined;
         let couponDuration = undefined;
 
+        let baseDiscountPrice = promoPrice !== null ? promoPrice : valorMensal;
+        let finalPrice = baseDiscountPrice;
+
         // Apply Coupon if provided
         if (input.couponId) {
             const { SupabaseCouponRepository } = await import('@/application/repositories/SupabaseCouponRepository');
@@ -70,19 +73,20 @@ export class CreateSubscriptionUseCase {
             if (coupon && coupon.is_active) {
                 if (coupon.discount_type === 'PERCENTAGE') {
                     manualDiscountPercentage = coupon.discount_value;
-                    valorMensal = Math.max(0, valorMensal * (1 - (coupon.discount_value / 100)));
+                    finalPrice = Math.max(0, baseDiscountPrice * (1 - (coupon.discount_value / 100)));
                 } else if (coupon.discount_type === 'FIXED_AMOUNT') {
                     manualDiscountAmount = coupon.discount_value;
-                    valorMensal = Math.max(0, valorMensal - coupon.discount_value);
+                    finalPrice = Math.max(0, baseDiscountPrice - coupon.discount_value);
                 } else if (coupon.discount_type === 'FREE_MONTHS') {
-                    promoPrice = 0;
-                    promoMonths = coupon.discount_value;
+                    finalPrice = 0;
                 }
                 couponDuration = coupon.duration_months;
             }
         }
 
-        const valorCentavos = Math.round(valorMensal * 100);
+        // absoluteDiscountValue represents the DIFFERENCE between original `valorMensal` and `finalPrice`
+        const absoluteDiscountValue = Math.max(0, valorMensal - finalPrice);
+        const valorTotalPlanoCents = Math.round(valorMensal * 100);
 
         // ---------
         // PIX AUTOMÁTICO
@@ -95,7 +99,7 @@ export class CreateSubscriptionUseCase {
             const acordo = await efiPixAutomatico.criarAcordo({
                 devedor: { cpf: input.devedorCpf, nome: input.devedorNome },
                 valor: { fixo: valorMensal.toFixed(2) },
-                valorPromo: promoPrice ? promoPrice.toFixed(2) : undefined,
+                valorPromo: absoluteDiscountValue > 0 ? finalPrice.toFixed(2) : undefined,
                 descricao: `Assinatura BeeGym — ${plano.name}`,
                 chave: efiConfig.chavePixAutomatico || '',
                 recorrencia: { tipo: 'MENSAL', diaVencimento },
@@ -111,8 +115,8 @@ export class CreateSubscriptionUseCase {
                 acordoEfiId: acordo.acordoId,
                 diaVencimento,
                 valorMensal,
-                promoPrice: promoPrice || undefined,
-                promoMonthsRemaining: promoMonths,
+                promoPrice: absoluteDiscountValue > 0 ? finalPrice : undefined,
+                promoMonthsRemaining: couponDuration !== undefined ? (couponDuration ?? undefined) : (promoMonths || undefined),
                 couponId: input.couponId,
                 manualDiscountAmount,
                 manualDiscountPercentage
@@ -140,13 +144,19 @@ export class CreateSubscriptionUseCase {
                 throw new Error(`Plano '${plano.name}' não tem efi_plan_id configurado para ${efiConfig.ambiente}.`);
             }
 
+            const discountPayload = absoluteDiscountValue > 0 ? {
+                type: 'currency' as const,
+                value: Math.round(absoluteDiscountValue * 100)
+            } : undefined;
+
             const assinaturaEfi = await efiCardRecorrente.criarAssinaturaRecorrente(efiPlanId, {
-                items: [{ name: plano.name || 'BeeGym', value: valorCentavos, amount: 1 }],
+                items: [{ name: plano.name || 'BeeGym', value: valorTotalPlanoCents, amount: 1 }],
                 customer: input.customerData,
                 payment: {
                     payment_token: input.paymentToken!,
                     billing_address: input.billingAddress,
                 },
+                discount: discountPayload,
                 repeats: null,
                 interval: 1,
             });
@@ -166,8 +176,8 @@ export class CreateSubscriptionUseCase {
                 subscriptionEfiId: assinaturaEfi.subscription_id,
                 diaVencimento,
                 valorMensal,
-                promoPrice: promoPrice || undefined,
-                promoMonthsRemaining: promoMonths,
+                promoPrice: absoluteDiscountValue > 0 ? finalPrice : undefined,
+                promoMonthsRemaining: couponDuration !== undefined ? (couponDuration ?? undefined) : (promoMonths || undefined),
                 proximoVencimento: proximoMesNoDia(diaVencimento),
                 couponId: input.couponId,
                 manualDiscountAmount,

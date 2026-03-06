@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { BEEGYM_PLANS } from '@/config/plans';
+import { efiPlansService } from '@/payments/efi/efi.plans';
+import { efiConfig } from '@/payments/efi/efi.config';
 
 export async function GET() {
     try {
@@ -18,7 +20,7 @@ export async function GET() {
         const { data: subs, error: subsError } = await supabase
             .from('saas_subscriptions')
             .select('saas_plan_id, status')
-            .in('status', ['active', 'trialing']);
+            .in('status', ['ATIVO', 'TRIAL', 'PENDENTE']);
 
         if (subsError) throw subsError;
 
@@ -59,7 +61,22 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const supabase = supabaseAdmin;
 
-        // Insere novo plano do SaaS
+        // 1. Cria o Plano na Efí primeiro (Para garantir que não teremos planos "órfãos" no DB sem id na EFI)
+        const isPrd = efiConfig.ambiente === 'producao';
+        let newEfiId = null;
+
+        try {
+            newEfiId = await efiPlansService.criarPlano({
+                name: `BeeGym ${body.nome}`,
+                interval: 1, // mensal forçado por padrão na EFI
+                repeats: null // contínuo
+            });
+        } catch (efiError: any) {
+            console.error('[Admin Planos POST] Erro ao criar na EFI:', efiError.message);
+            return NextResponse.json({ error: 'Falha ao criar plano no gateway de pagamento (EFI).' }, { status: 400 });
+        }
+
+        // 2. Insere novo plano do SaaS com a ID da EFI preenchida
         const { data: novoPlano, error } = await supabase
             .from('saas_plans')
             .insert({
@@ -67,7 +84,9 @@ export async function POST(request: NextRequest) {
                 description: body.descricao,
                 tier: body.tier,
                 price: body.valor_mensal,
-                interval: body.intervalo || 'Mensal'
+                interval: body.intervalo || 'Mensal',
+                efi_plan_id_hml: isPrd ? null : newEfiId,
+                efi_plan_id_prd: isPrd ? newEfiId : null,
             })
             .select('*')
             .single();
@@ -92,3 +111,4 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Falha ao criar plano' }, { status: 500 });
     }
 }
+

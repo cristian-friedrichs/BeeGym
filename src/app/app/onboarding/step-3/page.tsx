@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Check, Users, User, Dumbbell, Building2, Crown, Zap } from 'lucide-react'
+import { Loader2, Check, Users, User, Dumbbell, Building2, Crown, Zap, ArrowRight } from 'lucide-react'
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
 import { completeOnboardingAction } from '@/actions/onboarding'
@@ -26,67 +26,7 @@ interface Plan {
     bgClass: string
 }
 
-const localPlans: Plan[] = [
-    {
-        id: '12532d9c-ace2-400d-81a7-4daf951966f8',
-        name: 'STARTER',
-        description: 'Ideal para profissionais independentes e iniciantes.',
-        max_students: 20,
-        price: 19.90,
-        promo_price: 9.90,
-        features: ['Gestão de Alunos e Pagamentos', 'Calendário Completo', 'Controle de Frequência e Treinos', 'Relatórios e Alertas'],
-        icon: User,
-        colorClass: 'text-amber-600',
-        bgClass: 'bg-amber-50'
-    },
-    {
-        id: '03f4ca44-ec71-4321-b425-634ab7c85791',
-        name: 'PLUS',
-        description: 'Para quem está crescendo e precisa de mais espaço.',
-        max_students: 40,
-        price: 29.90,
-        promo_price: 19.90,
-        features: ['Tudo do STARTER', 'App do Aluno', 'Chat'],
-        icon: Zap,
-        colorClass: 'text-blue-600',
-        bgClass: 'bg-blue-50'
-    },
-    {
-        id: 'd37dadee-1f91-4a2c-ae7e-00f94392bda0',
-        name: 'STUDIO',
-        description: 'Perfeito para Studios e Boxes com turmas e treinos coletivos.',
-        max_students: 100,
-        price: 49.90,
-        promo_price: 29.90,
-        features: ['Tudo do PLUS', 'Aulas Coletivas e Turmas', 'Múltiplos Agendamentos'],
-        icon: Dumbbell,
-        colorClass: 'text-teal-600',
-        bgClass: 'bg-teal-50'
-    },
-    {
-        id: '20a6a4a6-6b9d-4880-b6d3-bdc3693be00d',
-        name: 'PRO',
-        description: 'Gestão completa para Academias de médio porte.',
-        max_students: 400,
-        price: 79.90,
-        promo_price: 49.90,
-        features: ['Tudo do STUDIO', 'Múltiplos Usuários/Instrutores', 'Automatização de Cobrança'],
-        icon: Building2,
-        colorClass: 'text-slate-600',
-        bgClass: 'bg-slate-50'
-    },
-    {
-        id: '5dd1476d-23f7-4c05-8fa7-cc2da8f99baa',
-        name: 'ENTERPRISE',
-        description: 'Solução ilimitada para grandes redes e franqueadoras.',
-        max_students: null,
-        price: 0,
-        features: ['Tudo do PRO', 'Multipropriedade (Redes)', 'Integração API Externa', 'CRM e Relacionamento'],
-        icon: Crown,
-        colorClass: 'text-orange-600',
-        bgClass: 'bg-orange-50'
-    }
-]
+// Planos removidos daqui para serem puxados direto do BD
 
 export default function OnboardingStep3() {
     const router = useRouter()
@@ -123,13 +63,46 @@ export default function OnboardingStep3() {
 
     const minStudents = getMinStudents(data.studentRange)
 
-    // Show all plans, mark which ones are compatible
+    // Puxa planos do banco de dados
     useEffect(() => {
-        setPlans(localPlans)
-    }, [])
+        const fetchPlans = async () => {
+            const { data: dbPlans, error } = await supabase
+                .from('saas_plans')
+                .select('*')
+                .eq('active', true)
+                .order('price', { ascending: true })
+
+            if (dbPlans && !error) {
+                const tierStyles: Record<string, { icon: any, colorClass: string, bgClass: string }> = {
+                    STARTER: { icon: User, colorClass: 'text-amber-600', bgClass: 'bg-amber-50' },
+                    PLUS: { icon: Zap, colorClass: 'text-blue-600', bgClass: 'bg-blue-50' },
+                    STUDIO: { icon: Dumbbell, colorClass: 'text-teal-600', bgClass: 'bg-teal-50' },
+                    PRO: { icon: Building2, colorClass: 'text-slate-600', bgClass: 'bg-slate-50' },
+                    ENTERPRISE: { icon: Crown, colorClass: 'text-orange-600', bgClass: 'bg-orange-50' },
+                }
+
+                const mapped = (dbPlans as any[]).map(p => {
+                    const style = tierStyles[p.tier] || { icon: Crown, colorClass: 'text-slate-600', bgClass: 'bg-slate-50' }
+                    return {
+                        id: p.id,
+                        name: p.name,
+                        description: p.description || '',
+                        max_students: p.max_students,
+                        price: p.price,
+                        promo_price: p.promo_price,
+                        features: p.features || [],
+                        ...style
+                    }
+                })
+                setPlans(mapped)
+            }
+        }
+
+        fetchPlans()
+    }, [supabase])
 
     const isPlanCompatible = (plan: Plan): boolean => {
-        if (plan.max_students === null) return true // Unlimited
+        if (plan.max_students === null || plan.max_students === undefined) return true // Unlimited
         return plan.max_students >= minStudents
     }
 

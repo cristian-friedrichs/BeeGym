@@ -13,14 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 
-// Planos disponíveis (sincronizado com step-3)
-const planosMap: Record<string, PlanoInfo> = {
-    '12532d9c-ace2-400d-81a7-4daf951966f8': { id: '12532d9c-ace2-400d-81a7-4daf951966f8', name: 'STARTER', tier: 'STARTER', price: 9.90, description: 'Ideal para profissionais independentes.', features: ['Gestão de Alunos e Pagamentos', 'Calendário Completo', 'Controle de Frequência', 'Relatórios e Alertas'] },
-    '03f4ca44-ec71-4321-b425-634ab7c85791': { id: '03f4ca44-ec71-4321-b425-634ab7c85791', name: 'PLUS', tier: 'PLUS', price: 19.90, description: 'Para quem está crescendo.', features: ['Tudo do Starter', 'App do Aluno', 'Chat'] },
-    'd37dadee-1f91-4a2c-ae7e-00f94392bda0': { id: 'd37dadee-1f91-4a2c-ae7e-00f94392bda0', name: 'STUDIO', tier: 'STUDIO', price: 29.90, description: 'Perfeito para Studios e Boxes.', features: ['Tudo do Plus', 'Aulas Coletivas', 'Múltiplos Agendamentos'] },
-    '20a6a4a6-6b9d-4880-b6d3-bdc3693be00d': { id: '20a6a4a6-6b9d-4880-b6d3-bdc3693be00d', name: 'PRO', tier: 'PRO', price: 49.90, description: 'Gestão completa para médio porte.', features: ['Tudo do Studio', 'Múltiplos Instrutores', 'Automatização de Cobrança'] },
-    '5dd1476d-23f7-4c05-8fa7-cc2da8f99baa': { id: '5dd1476d-23f7-4c05-8fa7-cc2da8f99baa', name: 'ENTERPRISE', tier: 'ENTERPRISE', price: 79.90, description: 'Solução ilimitada para grandes redes.', features: ['Tudo do Pro', 'Multipropriedade', 'Integração API', 'CRM'] },
-};
+// O plano é carregado dinamicamente do BD no useEffect
 
 export default function PagamentoPage() {
     const router = useRouter();
@@ -86,16 +79,34 @@ export default function PagamentoPage() {
         init();
     }, [router]);
 
-    // Carregar plano do context
+    // Carregar plano do BD
     useEffect(() => {
-        if (isHydrated) {
-            const planId = onboardingData.planId;
-            if (!planId || !planosMap[planId]) {
-                router.replace('/app/onboarding/step-3');
-                return;
+        const fetchPlan = async () => {
+            if (isHydrated) {
+                const planId = onboardingData.planId;
+                if (!planId) {
+                    router.replace('/app/onboarding/step-3');
+                    return;
+                }
+                const supabase = createClient();
+                const { data: dbPlan } = await supabase.from('saas_plans').select('*').eq('id', planId).single() as { data: any };
+                if (dbPlan) {
+                    setPlano({
+                        id: dbPlan.id,
+                        name: dbPlan.name,
+                        tier: dbPlan.tier,
+                        price: dbPlan.price,
+                        description: dbPlan.description || '',
+                        features: dbPlan.features || [],
+                        promo_price: dbPlan.promo_price,
+                        promo_months: dbPlan.promo_months
+                    });
+                } else {
+                    router.replace('/app/onboarding/step-3');
+                }
             }
-            setPlano(planosMap[planId]);
-        }
+        };
+        fetchPlan();
     }, [isHydrated, onboardingData.planId, router]);
 
     const handleAssinar = async () => {
@@ -193,12 +204,14 @@ export default function PagamentoPage() {
         );
     }
 
-    let discountedPrice = plano.price;
+    let discountedPrice = plano.promo_price ?? plano.price;
+    let baseDiscountPrice = plano.promo_price ?? plano.price;
+
     if (appliedCoupon) {
         if (appliedCoupon.discount_type === 'PERCENTAGE') {
-            discountedPrice = Math.max(0, plano.price * (1 - (appliedCoupon.discount_value / 100)));
+            discountedPrice = Math.max(0, baseDiscountPrice * (1 - (appliedCoupon.discount_value / 100)));
         } else if (appliedCoupon.discount_type === 'FIXED_AMOUNT') {
-            discountedPrice = Math.max(0, plano.price - appliedCoupon.discount_value);
+            discountedPrice = Math.max(0, baseDiscountPrice - appliedCoupon.discount_value);
         } else if (appliedCoupon.discount_type === 'FREE_MONTHS') {
             discountedPrice = 0; // Promocional
         }

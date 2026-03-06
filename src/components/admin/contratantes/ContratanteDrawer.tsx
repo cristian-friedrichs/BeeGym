@@ -12,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { ContratanteEditDialog } from './ContratanteEditDialog';
 import { ContratanteBillingDialog } from './ContratanteBillingDialog';
 import { ChangePlanDialog } from './ChangePlanDialog';
-import { ArrowRightLeft } from 'lucide-react';
+import { ContratanteDiscountDialog } from './ContratanteDiscountDialog';
+import { ArrowRightLeft, DollarSign } from 'lucide-react';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('pt-BR');
 const formatCurrency = (v: number) =>
@@ -27,6 +28,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
     const [detail, setDetail] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [changePlanOpen, setChangePlanOpen] = useState(false);
+    const [discountOpen, setDiscountOpen] = useState(false);
     const { toast } = useToast();
 
     const load = useCallback(() => {
@@ -122,6 +124,9 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                         <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Assinatura Atual</h3>
                                     </div>
                                     <div className="flex gap-2">
+                                        <Button variant="ghost" size="sm" className="text-xs h-9 gap-2 font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl px-4" onClick={() => setDiscountOpen(true)}>
+                                            <DollarSign className="w-3.5 h-3.5" />Desconto Manual
+                                        </Button>
                                         <Button variant="ghost" size="sm" className="text-xs h-9 gap-2 font-bold text-bee-midnight hover:bg-slate-100 rounded-xl px-4" onClick={() => setChangePlanOpen(true)}>
                                             <ArrowRightLeft className="w-3.5 h-3.5" />Alterar Plano
                                         </Button>
@@ -146,7 +151,30 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                     </div>
                                     <div className="space-y-1">
                                         <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Valor Mensal</dt>
-                                        <dd className="font-bold text-bee-midnight text-base tracking-tight">{formatCurrency(detail.assinatura.valor_mensal)}</dd>
+                                        <dd className="font-bold text-bee-midnight text-base tracking-tight flex items-center gap-2">
+                                            {(() => {
+                                                const original = detail.assinatura.valor_mensal || 0;
+                                                const hasFixedDiscount = !!detail.assinatura.manual_discount_amount;
+                                                const hasPercentDiscount = !!detail.assinatura.manual_discount_percentage;
+                                                let discounted = original;
+
+                                                if (hasFixedDiscount) {
+                                                    discounted = Math.max(0, original - detail.assinatura.manual_discount_amount);
+                                                } else if (hasPercentDiscount) {
+                                                    discounted = Math.max(0, original * (1 - (detail.assinatura.manual_discount_percentage / 100)));
+                                                }
+
+                                                if (hasFixedDiscount || hasPercentDiscount) {
+                                                    return (
+                                                        <>
+                                                            <span className="line-through text-slate-300 text-sm">{formatCurrency(original)}</span>
+                                                            <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md font-black">{formatCurrency(discounted)}</span>
+                                                        </>
+                                                    );
+                                                }
+                                                return <span>{formatCurrency(original)}</span>;
+                                            })()}
+                                        </dd>
                                     </div>
                                     <div className="space-y-1">
                                         <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Próx. Vencimento</dt>
@@ -246,6 +274,17 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                         currentPrice={detail.assinatura?.valor_mensal || 0}
                         subscriptionStatus={detail.assinatura?.status || ''}
                         alunosAtivos={detail.alunos_ativos || 0}
+                        onChanged={load}
+                    />
+                )}
+                {detail && (
+                    <ContratanteDiscountDialog
+                        open={discountOpen}
+                        onOpenChange={setDiscountOpen}
+                        contratanteId={id as string}
+                        currentPrice={detail.assinatura?.valor_mensal || 0}
+                        currentDiscountAmount={detail.assinatura?.manual_discount_amount}
+                        currentDiscountPercentage={detail.assinatura?.manual_discount_percentage}
                         onChanged={load}
                     />
                 )}

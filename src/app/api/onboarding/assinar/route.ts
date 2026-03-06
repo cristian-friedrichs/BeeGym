@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { planoId, metodo, paymentToken, billingAddress, customerData, devedorNome, devedorCpf } = body;
+        const { planoId, metodo, paymentToken, billingAddress, customerData, devedorNome, devedorCpf, couponId } = body;
 
         // Validações básicas
         if (!planoId || !metodo) {
@@ -96,6 +96,7 @@ export async function POST(req: NextRequest) {
             customerData,
             devedorCpf: (devedorCpf || org.cpf_cnpj)?.replace(/\D/g, ''),
             devedorNome: devedorNome || org.name,
+            couponId
         });
 
         // Se existia assinatura pendente, atualizar ao invés de duplicar

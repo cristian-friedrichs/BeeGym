@@ -141,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut()
         setUser(null)
         setProfile(null)
-        router.push('/app/login')
+        router.push('/login')
     }
 
     return (

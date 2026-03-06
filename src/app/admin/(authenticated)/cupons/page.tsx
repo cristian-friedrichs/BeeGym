@@ -12,14 +12,14 @@ export default function AdminCuponsPage() {
     return (
         <div className="space-y-6 pb-12">
             <SectionHeader
-                title="Cupons e Ofertas"
+                title="Ofertas"
                 subtitle="Crie e gerencie descontos, gratuidades e promoções automáticas"
                 action={
                     <Button
                         className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold gap-2 shadow-sm"
                         onClick={() => setOpenNew(true)}
                     >
-                        <Plus className="w-4 h-4" /> Novo Cupom
+                        <Plus className="w-4 h-4" /> Nova Oferta
                     </Button>
                 }
             />

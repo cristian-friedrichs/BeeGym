@@ -72,7 +72,7 @@ function RegisterForm() {
                     title: 'Conta criada!',
                     description: 'Por favor, verifique seu e-mail para ativar sua conta.',
                 })
-                router.push('/app/login')
+                router.push('/login')
             }
         } catch (err: any) {
             setError(err.message || 'Ocorreu um erro ao criar sua conta.')
@@ -424,7 +424,7 @@ function RegisterForm() {
                         <div className="form-field field-6" style={{ textAlign: 'center', marginTop: '24px' }}>
                             <p style={{ color: '#64748b', fontSize: '13px' }}>
                                 Já tem uma conta?{' '}
-                                <Link href="/app/login" style={{ color: '#FFBF00', fontWeight: 600, textDecoration: 'none' }}>
+                                <Link href="/login" style={{ color: '#FFBF00', fontWeight: 600, textDecoration: 'none' }}>
                                     Entrar
                                 </Link>
                             </p>

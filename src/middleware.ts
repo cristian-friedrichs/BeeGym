@@ -39,9 +39,9 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
 
     // Base routes
-    const isAppAuthPage = url.pathname.startsWith('/app/login') ||
-        url.pathname.startsWith('/app/register') ||
-        url.pathname.startsWith('/app/signup')
+    const isAppAuthPage = url.pathname.startsWith('/login') ||
+        url.pathname.startsWith('/register') ||
+        url.pathname.startsWith('/signup')
 
     const isAdminAuthPage = url.pathname.startsWith('/admin/login')
 
@@ -52,11 +52,9 @@ export async function middleware(request: NextRequest) {
 
     const isAppRoute = url.pathname.startsWith('/app')
     const isAdminRoute = url.pathname.startsWith('/admin') || url.pathname.startsWith('/api/admin')
-    const isRootRoute = url.pathname === '/' || url.pathname === '/app'
-
-    // Redirecionar raiz ou /app vazio para o dashboard/login correto
-    if (isRootRoute) {
-        url.pathname = session ? '/app/painel' : '/app/login'
+    // Redirecionar /app vazio para o dashboard/login correto
+    if (url.pathname === '/app') {
+        url.pathname = session ? '/app/painel' : '/login'
         return NextResponse.redirect(url)
     }
 
@@ -69,7 +67,7 @@ export async function middleware(request: NextRequest) {
     if (!session) {
         // Tentando acessar APP protegido
         if (isAppRoute && !isAppAuthPage && !url.pathname.startsWith('/api/')) {
-            url.pathname = '/app/login'
+            url.pathname = '/login'
             url.searchParams.set('redirect', request.nextUrl.pathname)
             return NextResponse.redirect(url)
         }
@@ -152,7 +150,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // 🔴 Conta inativa tentando acessar rotas do App protegidas
-        if (!isAccountActive && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
+        if (!isAccountActive && isAppRoute && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
             if (org?.subscription_status && org?.subscription_status !== 'active' && org?.subscription_status !== 'trial' && org?.subscription_status !== 'teste') {
                 url.pathname = '/app/onboarding/pagamento'
             } else if (profile?.organization_id && !org?.onboarding_completed) {

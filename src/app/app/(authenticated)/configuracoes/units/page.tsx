@@ -11,7 +11,7 @@ export default async function UnitsPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect('/app/login');
+        redirect('/login');
     }
 
     // Get current user's organization from profiles (Source of Truth)

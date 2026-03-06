@@ -22,7 +22,7 @@ const navGroups = [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
             { icon: Users, label: 'Clientes', href: '/admin/contratantes' },
             { icon: Package, label: 'Planos', href: '/admin/planos' },
-            { icon: Ticket, label: 'Cupons e Ofertas', href: '/admin/cupons' },
+            { icon: Ticket, label: 'Ofertas', href: '/admin/cupons' },
             { icon: FileBarChart, label: 'Relatórios', href: '/admin/relatorios' },
         ],
     },

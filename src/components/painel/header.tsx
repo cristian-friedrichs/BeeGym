@@ -314,7 +314,7 @@ export function Header({ className }: { className?: string }) {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/app/login');
+    router.push('/login');
   };
 
   const ThemeIcon = effectiveTheme === 'dark' ? Moon : Sun;

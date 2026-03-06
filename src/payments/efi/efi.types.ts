@@ -239,6 +239,10 @@ export interface CriarAssinaturaCartaoInput {
             state: string;       // UF — ex: "SP"
         };
     };
+    discount?: {
+        type: 'currency' | 'percentage';
+        value: number;
+    };
     // Configuração da recorrência
     repeats: number | null;  // null = repetir indefinidamente
     interval: 1;             // 1 = mensal (padrão EFI)

@@ -11,7 +11,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
     '/admin/dashboard': { title: 'Dashboard', subtitle: 'Visão geral da plataforma' },
     '/admin/contratantes': { title: 'Clientes', subtitle: 'Gerencie clientes e assinaturas' },
     '/admin/planos': { title: 'Planos', subtitle: 'Configure planos de assinatura' },
-    '/admin/cupons': { title: 'Cupons e Ofertas', subtitle: 'Gerencie descontos e promoções' },
+    '/admin/cupons': { title: 'Ofertas', subtitle: 'Gerencie descontos e promoções' },
     '/admin/relatorios': { title: 'Relatórios', subtitle: 'Análises e exportações' },
 };
 

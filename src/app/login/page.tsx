@@ -510,7 +510,7 @@ function LoginForm() {
               <p style={{ color: '#64748b', fontSize: '13px' }}>
                 Não tem uma conta?{' '}
                 <Link
-                  href="/app/register"
+                  href="/register"
                   style={{ color: '#FFBF00', fontWeight: 600, textDecoration: 'none' }}
                   onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                   onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}

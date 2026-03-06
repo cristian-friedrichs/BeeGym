@@ -52,6 +52,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             proximo_vencimento: sub.proximo_vencimento,
             acordo_efi_id: sub.acordo_efi_id,
             subscription_efi_id: sub.subscription_efi_id,
+            manual_discount_amount: sub.manual_discount_amount,
+            manual_discount_percentage: sub.manual_discount_percentage,
         } : {
             plano: 'Sem Assinatura',
             plano_tier: null,
@@ -62,6 +64,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             proximo_vencimento: null,
             acordo_efi_id: null,
             subscription_efi_id: null,
+            manual_discount_amount: null,
+            manual_discount_percentage: null,
         };
 
         // Contar alunos ativos

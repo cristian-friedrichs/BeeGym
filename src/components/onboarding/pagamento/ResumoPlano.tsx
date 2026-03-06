@@ -9,6 +9,8 @@ export interface PlanoInfo {
     price: number;
     description?: string;
     features: string[];
+    promo_price?: number | null;
+    promo_months?: number | null;
 }
 
 const tierBadgeClass: Record<string, string> = {
@@ -42,13 +44,25 @@ export function ResumoPlano({ plano, hidePrice, isPromo }: Props) {
                 </div>
                 {!hidePrice && (
                     <div className="text-right flex flex-col items-end">
-                        <p className="text-3xl font-black text-bee-midnight font-display tracking-tighter">
-                            {preco}
-                            <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter ml-1">/mês</span>
-                        </p>
-                        {isPromo && (
+                        {plano.promo_price ? (
+                            <>
+                                <p className="text-sm font-bold text-slate-400 font-display tracking-tighter line-through mb-[-4px]">
+                                    {preco}
+                                </p>
+                                <p className="text-3xl font-black text-emerald-600 font-display tracking-tighter">
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plano.promo_price)}
+                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter ml-1">/mês</span>
+                                </p>
+                            </>
+                        ) : (
+                            <p className="text-3xl font-black text-bee-midnight font-display tracking-tighter">
+                                {preco}
+                                <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter ml-1">/mês</span>
+                            </p>
+                        )}
+                        {(isPromo || plano.promo_months) && (
                             <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md mt-1 border border-emerald-200 shadow-sm leading-tight text-center max-w-[120px]">
-                                Promocional por 3 meses
+                                Promocional por {plano.promo_months || 3} {plano.promo_months === 1 ? 'mês' : 'meses'}
                             </span>
                         )}
                     </div>

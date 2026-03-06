@@ -33,10 +33,7 @@ export function getEfiConfig(): EfiConfig {
     const webhookPixAutomaticoSecret = process.env.EFI_WEBHOOK_PIX_AUTOMATICO_SECRET;
     const webhookCardRecorrenteSecret = process.env.EFI_WEBHOOK_CARD_RECORRENTE_SECRET;
 
-    const planStarter = parseInt(isProd ? process.env.EFI_PLAN_ID_STARTER_PRD || '0' : process.env.EFI_PLAN_ID_STARTER_HML || '0', 10);
-    const planPro = parseInt(isProd ? process.env.EFI_PLAN_ID_PRO_PRD || '0' : process.env.EFI_PLAN_ID_PRO_HML || '0', 10);
-    const planEnterprise = parseInt(isProd ? process.env.EFI_PLAN_ID_ENTERPRISE_PRD || '0' : process.env.EFI_PLAN_ID_ENTERPRISE_HML || '0', 10);
-
+    // plan IDs removed: we use dynamic resolution from saas_plans now
     if (!clientId || !clientSecret) {
         throw new EfiAuthError(`As credenciais EFI_CLIENT_ID e EFI_CLIENT_SECRET para o ambiente '${ambiente}' não estão configuradas no .env`);
     }
@@ -67,11 +64,7 @@ export function getEfiConfig(): EfiConfig {
         chavePixAutomatico,
         webhookPixAutomaticoSecret,
         webhookCardRecorrenteSecret,
-        planosCartao: (planStarter && planPro && planEnterprise) ? {
-            STARTER: planStarter,
-            PRO: planPro,
-            ENTERPRISE: planEnterprise
-        } : undefined
+        // planosCartao removido: planos são processados dinamicamente via DB
     };
 }
 

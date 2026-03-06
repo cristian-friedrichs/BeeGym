@@ -8,7 +8,7 @@ export default async function RolesPage() {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect('/app/login');
+    if (!user) redirect('/login');
 
     const { data: profile } = await supabase
         .from('profiles')

@@ -130,13 +130,14 @@ export function PlanoFormModal({ open, onOpenChange, plano, onSaved }: PlanoForm
                                     value={form.valor_mensal}
                                     onChange={e => set('valor_mensal', Number(e.target.value))}
                                     placeholder="249"
-                                    className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm"
+                                    disabled={isEditing}
+                                    className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm disabled:opacity-50 disabled:bg-slate-50"
                                 />
                             </div>
                             <div className="space-y-2 group">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 group-focus-within:text-bee-amber transition-colors">Intervalo</Label>
-                                <Select value={form.intervalo} onValueChange={v => set('intervalo', v)}>
-                                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 focus:ring-bee-amber/10 focus:border-bee-amber shadow-sm">
+                                <Select value={form.intervalo} onValueChange={v => set('intervalo', v)} disabled={isEditing}>
+                                    <SelectTrigger className="h-12 rounded-2xl border-slate-200 focus:ring-bee-amber/10 focus:border-bee-amber shadow-sm disabled:opacity-50 disabled:bg-slate-50">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2">

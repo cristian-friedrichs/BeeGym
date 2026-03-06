@@ -10,7 +10,7 @@ export default async function TeamPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect('/app/login');
+        redirect('/login');
     }
 
     // BUSCA NA FONTE DE VERDADE

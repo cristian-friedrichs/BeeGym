@@ -50,7 +50,7 @@ export default function OnboardingStep1() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
-        router.push('/app/login')
+        router.push('/login')
         router.refresh()
     }
 
