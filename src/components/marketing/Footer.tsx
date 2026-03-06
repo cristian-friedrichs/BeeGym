@@ -10,7 +10,6 @@ export function Footer() {
                     <div className="flex flex-col items-center md:items-start gap-4">
                         <Link href="/" className="flex items-center gap-2">
                             <BeeGymLogo className="h-8 w-8 text-bee-amber" />
-                            <span className="font-display font-bold text-xl tracking-tight text-white">BeeGym</span>
                         </Link>
                         <p className="text-sm">Plataforma SaaS de Gestão para Academias.</p>
                     </div>

@@ -22,7 +22,6 @@ export function Navbar() {
                 <div className="flex items-center gap-2">
                     <Link href="/" className="flex items-center gap-2 transition-transform hover:scale-105 active:scale-95">
                         <BeeGymLogo className="h-8 w-8 text-bee-amber" />
-                        <span className="font-display font-bold text-xl tracking-tight text-bee-midnight">BeeGym</span>
                     </Link>
                 </div>
 
