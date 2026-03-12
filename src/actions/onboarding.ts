@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { randomUUID } from 'node:crypto'
 
 interface CompleteOnboardingData {
     organizationName: string
@@ -52,7 +53,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
     const { data: orgData, error: orgError } = await supabaseAdmin
         .from('organizations')
         .insert({
-            id: crypto.randomUUID(),
+            id: randomUUID(),
             name: data.organizationName,
             business_type: data.businessType,
             email: data.email,

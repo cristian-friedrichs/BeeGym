@@ -209,7 +209,12 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
 
             if (data) {
                 console.log('[StudentModal] All Plans fetched:', data.length);
-                const fetchedPlans = data as Plan[];
+                const fetchedPlans = (data as any[]).map(p => ({
+                    ...p,
+                    type: p.plan_type, // Alias for frontend usage
+                    frequency: p.recurrence, // Alias for frontend usage
+                    checkin_limit: p.credits // Alias for frontend usage
+                })) as Plan[];
                 // Filter to keep active plans OR the currently assigned plan
                 const filteredPlans = fetchedPlans.filter(p => 
                     p.active || 
@@ -368,7 +373,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
 
             // 1. If we have a temporary ID for new student, we need it for the avatar filename
             // For updates, we use studentToEdit.id
-            const studentId = studentToEdit?.id || crypto.randomUUID();
+            const studentId = studentToEdit?.id || (typeof window !== 'undefined' ? window.crypto.randomUUID() : 'temp-' + Date.now());
 
             // 2. Upload Avatar if changed
             if (avatarFile) {
