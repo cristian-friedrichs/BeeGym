@@ -3,6 +3,17 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -15,7 +26,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
     CheckCircle2, XCircle, Edit, Dumbbell, Trash2, Plus, Users, Search, AlertCircle, ChevronsUpDown, Check,
-    Clock, MapPin, User, Calendar as CalendarIcon, X, LogOut, ArrowRight, Home, Loader2
+    Clock, MapPin, User, Calendar as CalendarIcon, X, LogOut, ArrowRight, Home, Loader2, AlertTriangle
 } from 'lucide-react';
 import { DynamicIcon } from '@/components/ui/dynamic-icon';
 import { cn } from '@/lib/utils';
@@ -60,6 +71,8 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     // Workout Log State
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [workoutLogs, setWorkoutLogs] = useState<WorkoutLogItem[]>([]);
+    const [showCancelDialog, setShowCancelDialog] = useState(false);
+    const [showMissedDialog, setShowMissedDialog] = useState(false);
     const [rpe, setRpe] = useState<number>(5);
     const [notes, setNotes] = useState('');
 
@@ -88,15 +101,20 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         }
     }, [open, event]);
 
+    const isModernEvent = event?.eventType === 'CLASS' || event?.eventType === 'TRAINING';
+
     const fetchParticipants = async () => {
         // Pega o ID de forma dinâmica dependendo de como a prop chega no componente
         const currentEventId = event?.id || (event as any)?.classData?.id;
         if (!currentEventId) return;
 
+        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
+        const foreignKey = isModernEvent ? 'event_id' : 'class_id';
+
         try {
             // Busca na tabela ponte já trazendo os dados do aluno embutidos (Join Nativo)
             const { data, error } = await (supabase as any)
-                .from('class_attendees')
+                .from(table)
                 .select(`
                     id,
                     student_id,
@@ -108,10 +126,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                         avatar_url
                     )
                 `)
-                .eq('class_id', currentEventId);
+                .eq(foreignKey, currentEventId);
 
             if (error) {
-                console.error("Erro Supabase na busca de matrículas:", error);
+                console.error(`Erro Supabase na busca de matrículas (${table}):`, error);
                 throw error;
             }
 
@@ -161,6 +179,9 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         setSearchResults([]);
         setLoading(true);
 
+        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
+        const foreignKey = isModernEvent ? 'event_id' : 'class_id';
+
         try {
             // 1. Get organization_id of current user
             const { data: { user } } = await supabase.auth.getUser();
@@ -172,34 +193,38 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                 throw new Error("Organização não encontrada para o usuário logado.");
             }
 
-            // 2. Check if already enrolled in class_attendees
+            // 2. Check if already enrolled
             const { data: existing } = await (supabase as any)
-                .from('class_attendees')
+                .from(table)
                 .select('id')
-                .eq('class_id', currentEventId)
+                .eq(foreignKey, currentEventId)
                 .eq('student_id', studentId)
                 .maybeSingle();
 
             if (existing) throw new Error("Este aluno já está matriculado nesta aula.");
 
-            // 3. Insert into class_attendees with organization_id
+            // 3. Insert into the correct table
+            const enrollmentData: any = {
+                student_id: studentId,
+                status: isModernEvent ? 'CONFIRMED' : 'Confirmado',
+                organization_id: profile.organization_id
+            };
+            enrollmentData[foreignKey] = currentEventId;
+
             const { error: insertError } = await (supabase as any)
-                .from('class_attendees')
-                .insert({
-                    class_id: currentEventId,
-                    student_id: studentId,
-                    status: 'Confirmado',
-                    organization_id: profile.organization_id
-                });
+                .from(table)
+                .insert(enrollmentData);
 
             if (insertError) {
                 if (insertError.code === '23505') throw new Error("Este aluno já está matriculado nesta aula.");
                 throw insertError;
             }
 
-            // 4. Update attendees_count manually in classes table
-            const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
-            await (supabase as any).from('classes').update({ attendees_count: (currentClass?.attendees_count || 0) + 1 }).eq('id', currentEventId);
+            // 4. Update attendees_count manually ONLY for legacy classes
+            if (!isModernEvent) {
+                const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
+                await (supabase as any).from('classes').update({ attendees_count: (currentClass?.attendees_count || 0) + 1 }).eq('id', currentEventId);
+            }
 
             toast({ title: "Aluno matriculado com sucesso!" });
             await fetchParticipants();
@@ -216,18 +241,22 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         if (!currentEventId) return;
 
         setLoading(true);
+        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
+        setLoading(true);
         try {
-            // 1. Delete from class_attendees
+            // 1. Delete from the correct table
             const { error: deleteError } = await (supabase as any)
-                .from('class_attendees')
+                .from(table)
                 .delete()
                 .eq('id', attendeeId);
 
             if (deleteError) throw deleteError;
 
-            // 2. Decrement count in classes
-            const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
-            await (supabase as any).from('classes').update({ attendees_count: Math.max(0, (currentClass?.attendees_count || 1) - 1) }).eq('id', currentEventId);
+            // 2. Decrement count ONLY for legacy classes
+            if (!isModernEvent) {
+                const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
+                await (supabase as any).from('classes').update({ attendees_count: Math.max(0, (currentClass?.attendees_count || 1) - 1) }).eq('id', currentEventId);
+            }
 
             toast({ title: 'Inscrição cancelada.' });
             await fetchParticipants();
@@ -240,16 +269,17 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     };
 
     const updateAttendance = async (attendeeId: string, status: 'PRESENT' | 'ABSENT' | 'CONFIRMED' | 'Confirmado' | 'Faltou') => {
+        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
         setLoading(true);
         try {
             const { error } = await (supabase as any)
-                .from('class_attendees')
+                .from(table)
                 .update({ status })
                 .eq('id', attendeeId);
 
             if (error) throw error;
 
-            toast({ title: status === 'PRESENT' || status === 'Confirmado' ? 'Presença confirmada' : status === 'ABSENT' || status === 'Faltou' ? 'Falta registrada' : 'Status resetado' });
+            toast({ title: status === 'PRESENT' || status === 'Confirmado' || status === 'CONFIRMED' ? 'Presença confirmada' : status === 'ABSENT' || status === 'Faltou' ? 'Falta registrada' : 'Status resetado' });
             await fetchParticipants(); // Refresh list to update UI
         } catch (error) {
             console.error('Error updating attendance:', error);
@@ -261,16 +291,23 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
 
     // Alterna entre Confirmado (Presença) e Faltou
     const handleToggleAttendance = async (attendeeId: string, currentStatus: string) => {
-        const newStatus = currentStatus === 'Faltou' ? 'Confirmado' : 'Faltou';
+        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
+        let newStatus = '';
+        if (isModernEvent) {
+            newStatus = currentStatus === 'ABSENT' ? 'CONFIRMED' : 'ABSENT';
+        } else {
+            newStatus = currentStatus === 'Faltou' ? 'Confirmado' : 'Faltou';
+        }
+
         try {
             const { error } = await (supabase as any)
-                .from('class_attendees')
+                .from(table)
                 .update({ status: newStatus })
                 .eq('id', attendeeId);
 
             if (error) throw error;
 
-            toast({ title: newStatus === 'Faltou' ? "Falta registrada no sistema." : "Presença confirmada." });
+            toast({ title: (newStatus === 'Faltou' || newStatus === 'ABSENT') ? "Falta registrada no sistema." : "Presença confirmada." });
             fetchParticipants(); // Recarrega a lista
         } catch (error: any) {
             toast({ title: "Erro ao atualizar presença", description: error.message, variant: "destructive" });
@@ -306,8 +343,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     // Cancela o evento inteiro (Workouts ou Aulas)
     const handleCancelEvent = async () => {
         if (!event) return;
-        if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
+        setShowCancelDialog(true);
+    };
 
+    const handleCancelConfirm = async () => {
         setLoading(true);
         try {
             const { error } = await (supabase as any)
@@ -335,8 +374,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     // Marca o evento inteiro como FALTA (Workouts apenas)
     const handleMissedEvent = async () => {
         if (!event) return;
-        if (!confirm('Confirmar falta neste treino?')) return;
+        setShowMissedDialog(true);
+    };
 
+    const handleMissedConfirm = async () => {
         setLoading(true);
         try {
             // 1. Update Event Status
@@ -567,51 +608,47 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
             <SheetContent className="sm:max-w-[600px] flex flex-col h-full overflow-y-auto p-0 gap-0">
                 <SheetDescription className="sr-only">Detalhes do evento</SheetDescription>
 
-                {/* Modern Header */}
-                <div className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent z-0" />
+                <SheetHeader className="relative p-0 mb-8 mt-[-24px] mx-[-24px] overflow-hidden rounded-t-[2rem]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-bee-midnight via-slate-900 to-bee-midnight" />
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay" />
+                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-bee-amber/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-bee-amber/5 rounded-full blur-3xl" />
 
-                    <SheetHeader className="relative z-10 p-6 pr-12 space-y-0">
-                        <div className="flex items-center gap-4">
-                            {/* Icon Container */}
-                            <div
-                                className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 flex-shrink-0 shadow-sm bg-white"
-                                style={{
-                                    borderColor: `${display.color}20`,
-                                    backgroundColor: `${display.color}05`,
-                                    color: display.color,
-                                }}
-                            >
-                                <DynamicIcon
-                                    name={display.icon}
-                                    className="h-8 w-8"
-                                />
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <SheetTitle className="text-2xl font-bold text-deep-midnight tracking-tight truncate">
-                                    {display.title}
-                                </SheetTitle>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <Badge
-                                        className={cn(
-                                            "px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider border-none text-white shadow-sm",
-                                            getStatusColor(display.status)
-                                        )}
-                                    >
-                                        {getStatusLabel(display.status)}
-                                    </Badge>
-                                    <span className="text-muted-foreground text-sm font-semibold truncate capitalize">
-                                        {display.modality.toLowerCase()}
-                                    </span>
+                    <div className="relative px-8 pt-10 pb-8 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-bee-amber to-amber-600 p-[1px] shadow-lg shadow-bee-amber/20 group animate-in zoom-in-50 duration-500">
+                                    <div className="flex h-full w-full items-center justify-center rounded-[15px] bg-bee-midnight/90 backdrop-blur-xl transition-colors group-hover:bg-bee-midnight/40">
+                                        <DynamicIcon
+                                            name={display.icon}
+                                            className="h-7 w-7 text-bee-amber animate-pulse"
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <SheetTitle className="text-3xl font-black text-white tracking-tight leading-none font-display mb-2 truncate max-w-[300px]">
+                                        {display.title}
+                                    </SheetTitle>
+                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                        <Badge
+                                            className={cn(
+                                                "px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider border-none text-white shadow-sm shrink-0 rounded-full",
+                                                getStatusColor(display.status)
+                                            )}
+                                        >
+                                            {getStatusLabel(display.status)}
+                                        </Badge>
+                                        <div className="h-1 w-1 rounded-full bg-slate-700" />
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] uppercase tracking-wider font-sans">
+                                            {display.modality}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </SheetHeader>
-
-                    <Separator className="bg-border/40" />
-                </div>
-
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-bee-amber/20 to-transparent" />
+                </SheetHeader>
                 <div className="flex-1 p-6 overflow-y-auto">
                     {view === 'participants' ? (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 ease-out">
@@ -817,7 +854,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                                                 {idx + 1}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className="text-sm font-bold text-slate-700 truncate">{ex.exercise?.name || 'Exercício'}</p>
+                                                                <p className="text-sm font-bold text-slate-700 truncate">{ex.exercise?.name || ex.exercise_name || 'Exercício'}</p>
                                                                 <p className="text-[11px] text-muted-foreground uppercase font-semibold tracking-wider">{ex.exercise?.muscle_group || 'Geral'}</p>
                                                             </div>
                                                         </div>
@@ -865,7 +902,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                                     placeholder="Buscar aluno para adicionar..."
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                                    className="pl-8 border-dashed border-primary/50 focus-visible:ring-primary/50 h-9 text-xs"
+                                                    className="pl-8 border-dashed border-primary/50 focus-visible:ring-primary/50 h-11 text-xs"
                                                 />
                                                 {isSearching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 animate-spin text-slate-400" />}
                                             </div>
@@ -999,7 +1036,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                         {(event.eventType === 'WORKOUT' || event.type === 'WORKOUT') && (
                                             <>
                                                 <Button
-                                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white h-11 shadow-sm"
+                                                    className="flex-1 bg-green-600 hover:bg-green-700 text-white h-10 shadow-sm"
                                                     onClick={() => setView('log')}
                                                 >
                                                     <CheckCircle2 className="w-4 h-4 mr-2" />
@@ -1007,8 +1044,8 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                                 </Button>
                                                 <Button
                                                     variant="outline"
-                                                    className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-11"
-                                                    onClick={handleMissedEvent}
+                                                    className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-10"
+                                                    onClick={() => setShowMissedDialog(true)}
                                                 >
                                                     <XCircle className="w-4 h-4 mr-2" />
                                                     Falta
@@ -1016,11 +1053,11 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                             </>
                                         )}
 
-                                        <Button variant="outline" className="h-11 px-3" onClick={() => onEdit?.(event)} title="Editar">
+                                        <Button variant="outline" className="h-10 px-3" onClick={() => onEdit?.(event)} title="Editar">
                                             <Edit className="w-4 h-4" />
                                         </Button>
 
-                                        <Button variant="outline" className="text-muted-foreground hover:text-destructive border-transparent hover:bg-destructive/5 h-11 px-3" onClick={handleCancelEvent} title="Cancelar Agendamento">
+                                        <Button variant="outline" className="text-muted-foreground hover:text-destructive border-transparent hover:bg-destructive/5 h-10 px-3" onClick={() => setShowCancelDialog(true)} title="Cancelar Agendamento">
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </>
@@ -1049,7 +1086,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                     <div className="sm:col-span-4 lg:col-span-1 space-y-1.5">
                                         <Label className="text-xs font-semibold uppercase text-muted-foreground">Exercício</Label>
                                         <Select value={newExerciseId} onValueChange={setNewExerciseId}>
-                                            <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                            <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                                 <SelectValue placeholder="Selecione..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -1062,19 +1099,19 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                                     <div className="col-span-3 sm:col-span-2 lg:col-span-2 grid grid-cols-3 gap-2">
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-semibold uppercase text-muted-foreground">Carga (kg)</Label>
-                                            <Input type="number" className="h-9 text-xs bg-white" value={newWeight} onChange={e => setNewWeight(Number(e.target.value))} />
+                                            <Input type="number" className="h-11 text-xs bg-white" value={newWeight} onChange={e => setNewWeight(Number(e.target.value))} />
                                         </div>
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-semibold uppercase text-muted-foreground">Reps</Label>
-                                            <Input className="h-9 text-xs bg-white" value={newReps} onChange={e => setNewReps(e.target.value)} />
+                                            <Input className="h-11 text-xs bg-white" value={newReps} onChange={e => setNewReps(e.target.value)} />
                                         </div>
                                         <div className="space-y-1.5">
                                             <Label className="text-xs font-semibold uppercase text-muted-foreground">Séries</Label>
-                                            <Input type="number" className="h-9 text-xs bg-white" value={newSets} onChange={e => setNewSets(Number(e.target.value))} />
+                                            <Input type="number" className="h-11 text-xs bg-white" value={newSets} onChange={e => setNewSets(Number(e.target.value))} />
                                         </div>
                                     </div>
                                     <div className="col-span-3 sm:col-span-1 lg:col-span-1">
-                                        <Button size="sm" className="w-full h-9 bg-primary hover:bg-primary/90" onClick={handleAddLogItem} disabled={!newExerciseId}>
+                                        <Button size="sm" className="w-full h-10 bg-primary hover:bg-primary/90" onClick={handleAddLogItem} disabled={!newExerciseId}>
                                             <Plus className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1151,10 +1188,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                             </div>
 
                             <div className="flex justify-between pt-4 gap-4">
-                                <Button variant="ghost" onClick={() => setView('details')} disabled={loading}>
+                                <Button variant="ghost" onClick={() => setView('details')} disabled={loading} className="h-10 rounded-full font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-wider text-xs">
                                     Voltar
                                 </Button>
-                                <Button className="bg-green-600 hover:bg-green-700 text-white gap-2 flex-1 shadow-md hover:shadow-lg transition-all" onClick={handleCompleteWorkout} disabled={loading}>
+                                <Button className="bg-green-600 hover:bg-green-700 text-white gap-2 flex-1 h-10 rounded-full shadow-lg shadow-green-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black uppercase tracking-wider text-xs" onClick={handleCompleteWorkout} disabled={loading}>
                                     {loading ? 'Salvando...' : 'Finalizar Treino'} <ArrowRight className="h-4 w-4" />
                                 </Button>
                             </div>
@@ -1162,6 +1199,74 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                     )}
                 </div>
             </SheetContent>
+
+            {/* Cancel Confirmation */}
+            <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+                    <div className="bg-white p-8 space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 border border-red-100">
+                                <AlertTriangle className="h-7 w-7 text-red-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <AlertDialogTitle className="text-xl font-black font-display text-bee-midnight">
+                                    Cancelar Agendamento?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-semibold text-slate-400">
+                                    Esta ação não pode ser desfeita e o horário ficará livre no calendário.
+                                </AlertDialogDescription>
+                            </div>
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-row gap-3 pt-2">
+                            <AlertDialogCancel asChild>
+                                <Button variant="ghost" className="flex-1 h-11 rounded-full font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-wider text-xs">
+                                    Voltar
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                                <Button onClick={handleCancelConfirm} disabled={loading} className="flex-1 h-10 rounded-full bg-red-500 hover:bg-red-600 text-white font-black shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider text-xs">
+                                    {loading ? 'Cancelando...' : 'Sim, Cancelar'}
+                                </Button>
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Missed Confirmation */}
+            <AlertDialog open={showMissedDialog} onOpenChange={setShowMissedDialog}>
+                <AlertDialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+                    <div className="bg-white p-8 space-y-6">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 border border-slate-200">
+                                <XCircle className="h-7 w-7 text-slate-600" />
+                            </div>
+                            <div className="space-y-1">
+                                <AlertDialogTitle className="text-xl font-black font-display text-bee-midnight">
+                                    Registrar Falta?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-semibold text-slate-400">
+                                    O aluno será marcado como ausente e o treino será encerrado.
+                                </AlertDialogDescription>
+                            </div>
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-row gap-3 pt-2">
+                            <AlertDialogCancel asChild>
+                                <Button variant="ghost" className="flex-1 h-11 rounded-full font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-wider text-xs">
+                                    Voltar
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                                <Button onClick={handleMissedConfirm} disabled={loading} className="flex-1 h-10 rounded-full bg-slate-900 hover:bg-black text-white font-black shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider text-xs">
+                                    {loading ? 'Registrando...' : 'Confirmar Falta'}
+                                </Button>
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </Sheet>
     );
 }

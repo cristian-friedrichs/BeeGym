@@ -1,18 +1,27 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, Construction } from 'lucide-react';
+import { SectionHeader } from '@/components/ui/section-header';
 
 export default function InstructorsPage() {
     return (
         <div className="space-y-6">
-            <Card className="rounded-[16px] shadow-sm border-slate-100 overflow-hidden bg-white">
+            <SectionHeader
+                title="Instrutores & Professores"
+                subtitle="Gerencie sua equipe técnica e qualificações"
+            />
+
+            <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">
                 <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                    <div className="flex items-center gap-2">
-                        <div className="h-5 w-5 text-orange-500">
-                            <GraduationCap className="h-5 w-5" />
+                    <div className="flex items-center gap-3">
+                        <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
+                        <div className="flex items-center gap-2">
+                            <div className="h-5 w-5 text-bee-amber">
+                                <GraduationCap className="h-5 w-5" />
+                            </div>
+                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Cadastro de Instrutores</CardTitle>
                         </div>
-                        <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Instrutores</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>

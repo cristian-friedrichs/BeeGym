@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PlanList } from '@/components/configuracoes/plans/plan-list';
 import { redirect } from 'next/navigation';
 import { getServerPlan } from '@/lib/server-plan';
+import { SectionHeader } from '@/components/ui/section-header';
 
 export default async function PlansPage() {
     const supabase = await createClient();
@@ -18,7 +19,7 @@ export default async function PlansPage() {
     // Get profile to find organization_id
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('id', user.id)
         .single();
 
@@ -35,7 +36,11 @@ export default async function PlansPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    if (!isActive || !plan.allowedFeatures.includes('cobranca_automatizada')) {
+    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
+        profile.role === 'ADMIN' ||
+        profile.role === 'BEEGYM_ADMIN';
+
+    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('automacao_cobranca'))) {
         redirect('/app/configuracoes');
     }
 
@@ -43,15 +48,13 @@ export default async function PlansPage() {
         .from('membership_plans')
         .select('*')
         .eq('organization_id', profile.organization_id)
-        .order('name', { ascending: true }); // Changed from created_at to name
+        .order('name', { ascending: true });
 
     if (error) {
         console.error('Error fetching plans:', error);
     }
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <PlanList plans={plans || []} organizationId={profile.organization_id} />
-        </div>
+        <PlanList plans={plans || []} organizationId={profile.organization_id} />
     );
 }

@@ -39,7 +39,8 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { NewTrainingModal } from '@/components/painel/modals/new-training-modal';
+import { WorkoutModal } from '@/components/treinos/workout-modal';
+import { ClassModal } from '@/components/painel/modals/class-modal';
 import { CreateRecurringClassModal } from '@/components/painel/modals/create-recurring-class-modal';
 import { EventDetailsModal } from '@/components/painel/modals/event-details-modal';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -122,8 +123,8 @@ function MonthChip({ event, onClick }: { event: CalendarEvent; onClick: () => vo
     return (
         <button
             onClick={(e) => { e.stopPropagation(); onClick(); }}
-            className="w-full flex items-center gap-1 px-1 py-0.5 rounded-[3px] text-left hover:brightness-95 transition-all overflow-hidden"
-            style={{ borderLeft: `3px solid ${event.color}`, backgroundColor: `${event.color}14` }}
+            className="w-full flex items-center gap-1 px-2 py-0.5 rounded-full text-left hover:brightness-95 transition-all overflow-hidden border"
+            style={{ borderColor: `${event.color}40`, backgroundColor: `${event.color}14` }}
         >
             {isWorkout
                 ? <Dumbbell className="h-2.5 w-2.5 flex-shrink-0" style={{ color: event.color }} />
@@ -149,7 +150,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
                     ref={ref}
                     className={cn(
                         "flex flex-col md:flex-row md:items-center justify-between gap-4 p-4",
-                        "w-full bg-white border border-slate-200 rounded-xl cursor-pointer hover:shadow-md hover:border-slate-300 transition-all duration-200 group",
+                        "w-full bg-white border border-slate-200 rounded-2xl cursor-pointer hover:shadow-md hover:border-slate-300 transition-all duration-200 group",
                         className
                     )}
                     style={style}
@@ -161,7 +162,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
                 >
                     <div className="flex items-center gap-4 flex-1 min-w-0">
                         {/* Icon Box Premium */}
-                        <div className="h-12 w-12 flex-shrink-0 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-slate-100 transition-colors shadow-sm">
+                        <div className="h-12 w-12 flex-shrink-0 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center group-hover:bg-slate-100 transition-colors shadow-sm">
                             {isWorkout
                                 ? <Dumbbell className="h-5 w-5" style={{ color: event.color }} />
                                 : <span style={{ color: event.color }}><DynamicIcon name={event.iconName} className="h-5 w-5" /></span>
@@ -173,7 +174,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
                                 {event.title}
                             </span>
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
-                                <span className="flex items-center gap-1 font-medium bg-slate-100 px-1.5 py-0.5 rounded text-slate-700">
+                                <span className="flex items-center gap-1 font-medium bg-slate-100 px-2 py-0.5 rounded-full text-slate-700">
                                     <CalendarIcon className="h-3 w-3" />
                                     {event.time}
                                 </span>
@@ -201,7 +202,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
 
                     <div className="flex flex-wrap items-center gap-3 pt-2 md:pt-0 md:ml-auto">
                         {!isWorkout && typeof event.capacity === 'number' && (
-                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2 py-1 rounded-md">
+                            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full">
                                 <Users className="h-3 w-3 text-slate-400" />
                                 <span className="text-xs font-semibold text-slate-600">
                                     {event.enrollmentCount}/{event.capacity}
@@ -229,7 +230,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
         return (
             <div
                 ref={ref}
-                className={cn("absolute left-1 right-1 rounded-[6px] overflow-hidden cursor-pointer bg-white border border-slate-200 border-l-[4px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group", className)}
+                className={cn("absolute left-1 right-1 rounded-xl overflow-hidden cursor-pointer bg-white border border-slate-200 border-l-[4px] shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 group", className)}
                 style={{
                     ...style,
                     borderLeftColor: event.color,
@@ -263,7 +264,7 @@ const TimeGridCard = forwardRef<HTMLDivElement, { event: CalendarEvent; style?: 
                             {event.room && <><span>·</span><span className="truncate">{event.room}</span></>}
                             {isWorkout && event.studentName && <><span>·</span><span className="truncate">{event.studentName}</span></>}
                             {!isWorkout && typeof event.capacity === 'number' && (
-                                <span className="ml-auto flex items-center gap-1 shrink-0 bg-slate-50 border border-slate-200 text-slate-500 shadow-sm px-1 py-0.5 rounded">
+                                <span className="ml-auto flex items-center gap-1 shrink-0 bg-slate-50 border border-slate-200 text-slate-500 shadow-sm px-2 py-0.5 rounded-full">
                                     <Users className="h-2.5 w-2.5" />
                                     <span>{event.enrollmentCount}/{event.capacity}</span>
                                 </span>
@@ -289,8 +290,9 @@ export default function CalendarPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [lastUpdate, setLastUpdate] = useState(Date.now());
 
-    const [isRecurringClassModalOpen, setIsRecurringClassModalOpen] = useState(false);
-    const [isNewTrainingModalOpen, setIsNewTrainingModalOpen] = useState(false);
+    const [isClassModalOpen, setIsClassModalOpen] = useState(false);
+    const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
+    const [workoutToEdit, setWorkoutToEdit] = useState<any>(null);
     const [isSelectionOpen, setIsSelectionOpen] = useState(false);
     const [selectedDateForCreation, setSelectedDateForCreation] = useState<Date | undefined>(undefined);
     const [selectedEventIdForEdit, setSelectedEventIdForEdit] = useState<string | undefined>(undefined);
@@ -513,16 +515,23 @@ export default function CalendarPage() {
     const handleEventSelection = (type: 'class' | 'workout') => {
         setIsSelectionOpen(false);
         if (type === 'class') {
-            setIsRecurringClassModalOpen(true);
+            setIsClassModalOpen(true);
         } else {
-            setIsNewTrainingModalOpen(true);
+            setWorkoutToEdit(null);
+            setIsWorkoutModalOpen(true);
         }
     };
 
     const handleEditEvent = (event: any) => {
-        setSelectedEventIdForEdit(event.id);
         setIsDetailsModalOpen(false);
-        setIsNewTrainingModalOpen(true);
+        if (event.eventType === 'WORKOUT' || event.kind === 'workout') {
+            setWorkoutToEdit(event);
+            setIsWorkoutModalOpen(true);
+        } else {
+            // For class events, open the class modal or details
+            setSelectedEventIdForEdit(event.id);
+            setIsClassModalOpen(true);
+        }
     };
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -647,15 +656,15 @@ export default function CalendarPage() {
                         action={
                             <div className="flex items-center gap-3">
                                 <Button
-                                    className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4 gap-1.5"
-                                    onClick={() => setIsNewTrainingModalOpen(true)}
+                                    className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-9 px-4 gap-1.5 transition-all hover:-translate-y-0.5 active:scale-95"
+                                    onClick={() => setIsWorkoutModalOpen(true)}
                                 >
                                     <Dumbbell className="h-4 w-4 text-[#0B0F1A]" />
                                     Novo Treino
                                 </Button>
                                 <Button
-                                    className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4 gap-1.5"
-                                    onClick={() => setIsRecurringClassModalOpen(true)}
+                                    className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-9 px-4 gap-1.5 transition-all hover:-translate-y-0.5 active:scale-95"
+                                    onClick={() => setIsClassModalOpen(true)}
                                 >
                                     <Plus className="h-4 w-4 text-[#0B0F1A]" />
                                     Nova Aula
@@ -666,19 +675,19 @@ export default function CalendarPage() {
                 </div>
 
                 {/* ── Calendar Container ── */}
-                <div className="flex flex-col flex-1 bg-card border rounded-xl overflow-hidden min-h-0">
+                <div className="flex flex-col flex-1 bg-card border rounded-[2rem] overflow-hidden min-h-0">
 
                     {/* ── Calendar Toolbar ── */}
                     <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
                         {/* Left: navigation */}
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrev}>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm" onClick={handlePrev}>
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 font-medium" onClick={handleToday}>
+                            <Button variant="outline" size="sm" className="h-8 font-medium rounded-full transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm px-4" onClick={handleToday}>
                                 Hoje
                             </Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNext}>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm" onClick={handleNext}>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                             <h2 className="text-base font-semibold ml-2 capitalize">{headerTitle}</h2>
@@ -691,7 +700,7 @@ export default function CalendarPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8"
+                                        className="h-8 w-8 rounded-full transition-all hover:-translate-y-0.5 active:scale-95"
                                         onClick={handleRefresh}
                                         disabled={isLoading}
                                     >
@@ -700,16 +709,16 @@ export default function CalendarPage() {
                                 </TooltipTrigger>
                                 <TooltipContent>Atualizar</TooltipContent>
                             </Tooltip>
-                            <div className="flex rounded-lg border overflow-hidden">
+                            <div className="flex rounded-full border overflow-hidden bg-slate-50/50 p-0.5 gap-0.5">
                                 {(['day', 'week', 'month'] as const).map(v => (
                                     <button
                                         key={v}
                                         onClick={() => setView(v)}
                                         className={cn(
-                                            'px-3 py-1 text-sm font-medium transition-colors',
+                                            'px-4 py-1 text-xs font-bold uppercase tracking-wider transition-all rounded-full',
                                             view === v
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'hover:bg-muted text-muted-foreground'
+                                                ? 'bg-bee-midnight text-white shadow-sm'
+                                                : 'hover:bg-slate-200/50 text-slate-500'
                                         )}
                                     >
                                         {{ day: 'Dia', week: 'Semana', month: 'Mês' }[v]}
@@ -869,39 +878,24 @@ export default function CalendarPage() {
                 onSelect={handleEventSelection}
             />
 
-            <CreateRecurringClassModal
-                open={isRecurringClassModalOpen}
-                onOpenChange={setIsRecurringClassModalOpen}
+            <ClassModal
+                open={isClassModalOpen}
+                onOpenChange={setIsClassModalOpen}
                 onSuccess={handleRefresh}
                 initialDate={selectedDateForCreation}
                 initialTime={selectedDateForCreation ? format(selectedDateForCreation, 'HH:mm') : undefined}
             />
 
-
-
-
-
-            <NewTrainingModal
-                open={isNewTrainingModalOpen}
+            <WorkoutModal
+                open={isWorkoutModalOpen}
                 onOpenChange={(open) => {
-                    setIsNewTrainingModalOpen(open);
-                    if (!open) {
-                        setSelectedEventIdForEdit(undefined);
-                        // Also clear selected event so next time it defaults cleanly if needed
-                        // although state updates might handle it
-                    }
+                    setIsWorkoutModalOpen(open);
+                    if (!open) setWorkoutToEdit(null);
                 }}
                 onSuccess={handleRefresh}
+                workoutToEdit={workoutToEdit}
                 initialDate={selectedDateForCreation}
                 initialTime={selectedDateForCreation ? format(selectedDateForCreation, 'HH:mm') : undefined}
-                eventId={selectedEventIdForEdit}
-                // If editing, use the kind from selectedEvent; otherwise default to 'workout' (or whatever default you prefer for new)
-                // But wait,selectedEvent might be null if we just clicked "New".
-                // Actually, handleEditEvent sets selectedEventIdForEdit.
-                // We need to know the KIND of that event.
-                // We can find it in the `events` array if we have the ID, or we can store it in state when clicking edit.
-                // Let's see if I can easily get it.
-                eventKind={selectedEventIdForEdit ? (events.find(e => e.id === selectedEventIdForEdit)?.kind === 'class' ? 'class' : 'workout') : 'workout'}
             />
 
             <EventDetailsModal

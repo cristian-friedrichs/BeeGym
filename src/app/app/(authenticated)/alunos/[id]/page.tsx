@@ -10,6 +10,7 @@ import { QuickMessageModal } from "@/components/alunos/quick-message-modal";
 import { CreateMeasurementModal } from "@/components/alunos/create-measurement-modal";
 import { ManagePlanModal } from "@/components/alunos/manage-plan-modal";
 import { WorkoutModal } from "@/components/treinos/workout-modal";
+import { RecurringWorkoutModal } from "@/components/treinos/recurring-workout-modal";
 
 import { ArrowLeft, Loader2, TrendingUp, Dumbbell, RefreshCw, ClipboardList } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -37,10 +38,14 @@ export default function StudentDetailsPage() {
     const [isWorkoutModalOpen, setIsWorkoutModalOpen] = useState(false);
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false);
+    const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
 
     const fetchStudentData = async () => {
         if (!id) return;
         try {
+            // Trigger status transitions for both classes and workouts
+            await supabase.rpc('update_class_statuses' as any);
+
             // 1. Fetch Student
             const { data: studentData, error: studentError } = await supabase
                 .from('students')
@@ -57,10 +62,12 @@ export default function StudentDetailsPage() {
             if (student.plan_id) {
                 const { data: pData } = await supabase
                     .from('membership_plans')
-                    .select('name, price, recurrence, days_per_week, credits, plan_type, duration_months')
+                    .select('name, price, recurrence, days_per_week, plan_type, credits, duration_months')
                     .eq('id', student.plan_id)
                     .single();
-                if (pData) planData = { ...(pData as any) };
+                if (pData) {
+                    planData = pData;
+                }
             }
 
             // 2.1 Fetch Unit (if exists)
@@ -147,7 +154,7 @@ export default function StudentDetailsPage() {
     if (!student) return (
         <div className="flex flex-col items-center justify-center min-h-screen gap-4">
             <h1 className="text-xl font-semibold">Aluno não encontrado</h1>
-            <Link href="/alunos" className="text-orange-500 hover:underline flex items-center gap-2">
+            <Link href="/app/alunos" className="text-orange-500 hover:underline flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" /> Voltar para lista
             </Link>
         </div>
@@ -168,7 +175,7 @@ export default function StudentDetailsPage() {
         <div className="space-y-6">
             {/* Nav & Header */}
             <div className="flex flex-col gap-4 shrink-0">
-                <Link href="/alunos" className="w-fit">
+                <Link href="/app/alunos" className="w-fit">
                     <Button variant="ghost" size="sm" className="gap-2 text-slate-400 hover:text-orange-600 hover:bg-transparent transition-all font-bold uppercase tracking-widest text-[11px] h-auto p-0 group">
                         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Voltar para Alunos
                     </Button>
@@ -182,7 +189,7 @@ export default function StudentDetailsPage() {
                     currentHeight={currentHeight}
                     onEdit={() => setIsEditModalOpen(true)}
                     onMessage={() => setIsMessageModalOpen(true)}
-                    onWorkout={() => setIsWorkoutModalOpen(true)}
+                    onWorkout={() => setIsRecurringModalOpen(true)}
                     onMeasurement={() => setIsMeasurementModalOpen(true)}
                     onPlan={() => setIsPlanModalOpen(true)}
                     onInactivate={handleInactivate}
@@ -209,7 +216,7 @@ export default function StudentDetailsPage() {
             <div className="flex-1 min-h-[400px]">
                 <ActiveListSection
                     workouts={(student.workouts || []).filter((w: any) =>
-                        ['Concluido', 'Faltou', 'Cancelado', 'Realizada'].includes(w.status)
+                        ['Concluido', 'Faltou', 'Cancelado', 'Realizada', 'Agendado', 'Em Execução'].includes(w.status)
                     )}
                     invoices={student.invoices}
                     studentId={id}
@@ -248,6 +255,14 @@ export default function StudentDetailsPage() {
                 open={isWorkoutModalOpen}
                 onOpenChange={setIsWorkoutModalOpen}
                 defaultStudentId={id}
+                onSuccess={fetchStudentData}
+            />
+            <RecurringWorkoutModal
+                open={isRecurringModalOpen}
+                onOpenChange={setIsRecurringModalOpen}
+                studentId={id}
+                studentName={student?.full_name || ""}
+                organizationId={student?.organization_id || ""}
                 onSuccess={fetchStudentData}
             />
             <QuickMessageModal

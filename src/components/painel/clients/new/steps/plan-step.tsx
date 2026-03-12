@@ -59,26 +59,26 @@ export function PlanStep() {
 
         if (!userData?.organization_id) return;
 
-        // Note: 'plans' table will be available after running student_registration_migration.sql
+        // Note: transitioning to canonical plans table
         const { data: plansData, error } = await (supabase as any)
           .from('plans')
           .select('*')
           .eq('organization_id', userData.organization_id)
-          .eq('is_active', true)
+          .eq('active', true)
           .order('name');
-
+ 
         if (error) {
           console.error('Error fetching plans:', error);
           return;
         }
-
+ 
         const mappedPlans = (plansData || []).map((p: any) => ({
           ...p,
-          plan_type: p.type === 'package' ? 'PACKAGE' : 'RECURRING', // Basic mapping assumption
+          plan_type: p.type === 'checkin' ? 'PACKAGE' : 'RECURRING', 
           frequency_limit: p.checkin_limit,
-          total_credits: p.type === 'package' ? p.checkin_limit : undefined
+          total_credits: p.type === 'checkin' ? p.checkin_limit : undefined
         })) as Plan[];
-
+ 
         setPlans(mappedPlans);
       } catch (error) {
         console.error('Error in fetchPlans:', error);

@@ -34,9 +34,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Eye, Filter, X, FlaskConical } from 'lucide-react';
+import { Loader2, Eye, Filter, X, FlaskConical, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getSystemLogsAction, createTestLogAction, getTeamMembersAction } from '@/actions/logs';
+import { SectionHeader } from '@/components/ui/section-header';
 
 const filterSchema = z.object({
     dateFrom: z.string().optional(),
@@ -181,23 +182,30 @@ export default function LogsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            <SectionHeader
+                title="Logs do Sistema"
+                subtitle="Acompanhe todas as atividades e alterações realizadas na plataforma"
+                action={
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onGenerateTestLog}
+                        className="rounded-full font-bold h-11 px-8 uppercase tracking-wider hover:bg-slate-50 transition-all active:scale-95 border-bee-amber/20 text-slate-600 shadow-sm"
+                    >
+                        <FlaskConical className="mr-2 h-4 w-4 text-bee-amber" />
+                        Gerar Log de Teste
+                    </Button>
+                }
+            />
             {/* Filter Bar */}
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Filtros</CardTitle>
+                            <CardTitle>Busca Avançada</CardTitle>
                             <CardDescription>Refine a busca pelos logs do sistema.</CardDescription>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={onGenerateTestLog}
-                        >
-                            <FlaskConical className="mr-2 h-4 w-4" />
-                            Gerar Log de Teste
-                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -238,7 +246,7 @@ export default function LogsPage() {
                                             <FormLabel>Usuário</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-bee-amber/20 transition-all hover:border-slate-200">
                                                         <SelectValue placeholder="Todos" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -263,7 +271,7 @@ export default function LogsPage() {
                                             <FormLabel>Tipo de Ação</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-bee-amber/20 transition-all hover:border-slate-200">
                                                         <SelectValue placeholder="Todas" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -288,7 +296,7 @@ export default function LogsPage() {
                                             <FormLabel>Módulo</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl>
-                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                                    <SelectTrigger className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-bee-amber/20 transition-all hover:border-slate-200">
                                                         <SelectValue placeholder="Todos" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -308,7 +316,11 @@ export default function LogsPage() {
                             </div>
 
                             <div className="flex gap-2">
-                                <Button type="submit" disabled={isFiltering}>
+                                <Button
+                                    type="submit"
+                                    disabled={isFiltering}
+                                    className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold rounded-full px-6 shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-wider text-[11px]"
+                                >
                                     {isFiltering ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -321,7 +333,12 @@ export default function LogsPage() {
                                         </>
                                     )}
                                 </Button>
-                                <Button type="button" variant="outline" onClick={onClearFilters}>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={onClearFilters}
+                                    className="rounded-full font-bold px-6 hover:bg-slate-50 transition-all active:scale-95 uppercase tracking-wider text-[11px]"
+                                >
                                     <X className="mr-2 h-4 w-4" />
                                     Limpar
                                 </Button>
@@ -332,9 +349,15 @@ export default function LogsPage() {
             </Card>
 
             {/* Logs Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Histórico de Atividades</CardTitle>
+            <Card className="rounded-[2rem] border-slate-100 shadow-sm overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b border-slate-50 px-6 py-4 flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-1 h-6 bg-bee-amber rounded-full" />
+                        <div className="flex items-center gap-2">
+                            <History className="h-5 w-5 text-bee-amber" />
+                            <CardTitle className="text-lg font-bold text-slate-900 font-display">Histórico de Atividades</CardTitle>
+                        </div>
+                    </div>
                     <CardDescription>
                         {logs.length} {logs.length === 1 ? 'registro encontrado' : 'registros encontrados'}
                     </CardDescription>
@@ -399,42 +422,60 @@ export default function LogsPage() {
 
             {/* Details Dialog */}
             <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Detalhes do Log</DialogTitle>
-                        <DialogDescription>Informações técnicas do registro.</DialogDescription>
+                <DialogContent className="max-w-2xl p-0 overflow-hidden rounded-[1.5rem] border-slate-100 shadow-2xl">
+                    <DialogHeader className="p-6 border-b text-left sm:text-left flex flex-row items-center gap-4 bg-white shrink-0">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bee-amber/10 shrink-0">
+                            <Eye className="h-6 w-6 text-bee-amber" />
+                        </div>
+                        <div className="space-y-1">
+                            <DialogTitle className="text-xl font-bold text-slate-900 leading-none font-display">
+                                Detalhes do Log
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-500 font-medium text-sm">
+                                Registro completo da atividade no sistema
+                            </DialogDescription>
+                        </div>
                     </DialogHeader>
                     {selectedLog && (
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">ID</p>
-                                    <p className="text-sm font-mono">{selectedLog.id}</p>
+                        <div className="p-8 space-y-6 bg-white max-h-[70vh] overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1 p-4 rounded-xl bg-slate-50">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">ID do Registro</p>
+                                    <p className="text-xs font-mono text-slate-500 truncate">{selectedLog.id}</p>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Recurso</p>
-                                    <p className="text-sm">{selectedLog.resource}</p>
+                                <div className="space-y-1 p-4 rounded-xl bg-slate-50">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recurso/Módulo</p>
+                                    <p className="text-sm font-bold text-slate-700">{selectedLog.resource}</p>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Ação</p>
-                                    {getActionBadge(selectedLog.action)}
+                                <div className="space-y-1 p-4 rounded-xl bg-slate-50">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ação Realizada</p>
+                                    <div className="flex scale-90 origin-left">{getActionBadge(selectedLog.action)}</div>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Data</p>
-                                    <p className="text-sm">
+                                <div className="space-y-1 p-4 rounded-xl bg-slate-50">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Data e Hora</p>
+                                    <p className="text-sm font-bold text-slate-700">
                                         {format(new Date(selectedLog.created_at), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}
                                     </p>
                                 </div>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-2">Descrição</p>
-                                <p className="text-sm">{selectedLog.details}</p>
+
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Descrição</p>
+                                <div className="p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100/50 text-slate-700 leading-relaxed">
+                                    {selectedLog.details}
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-2">Metadata (JSON)</p>
-                                <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto max-h-96">
-                                    {JSON.stringify(selectedLog.metadata, null, 2)}
-                                </pre>
+
+                            <div className="space-y-3">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Metadata (JSON)</p>
+                                <div className="relative rounded-[1.5rem] overflow-hidden border border-slate-100 shadow-inner group">
+                                    <div className="absolute top-3 right-3 px-2 py-1 rounded bg-slate-900/5 backdrop-blur text-[9px] font-black uppercase tracking-tighter text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        JSON Data
+                                    </div>
+                                    <pre className="p-6 bg-slate-50 text-[12px] font-mono text-slate-600 overflow-auto max-h-64 custom-scrollbar leading-relaxed">
+                                        {JSON.stringify(selectedLog.metadata, null, 2)}
+                                    </pre>
+                                </div>
                             </div>
                         </div>
                     )}

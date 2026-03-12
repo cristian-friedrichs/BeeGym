@@ -34,15 +34,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true)
     const router = useRouter()
 
-    const fetchProfile = async (userId: string, signal?: AbortSignal) => {
+    const fetchProfile = async (userId: string) => {
         try {
             const { data, error } = await (supabase as any)
                 .from('profiles')
                 .select('id, full_name, email, role, organization_id, avatar_url, status')
                 .eq('id', userId)
                 .single()
-
-            if (signal?.aborted) return null
 
             if (error) {
                 // PGRST116 means no rows found - common for new users in onboarding
@@ -66,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             return data as UserProfile
         } catch (error: any) {
+            if (error.name === 'AbortError') return null
             console.error('❌ Erro detalhado ao buscar perfil:', {
                 message: error.message,
                 details: error.details,
@@ -84,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     useEffect(() => {
-        const controller = new AbortController()
         let isMounted = true
 
         const initializeAuth = async () => {
@@ -96,14 +94,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (session?.user) {
                     setUser(session.user)
-                    const profileData = await fetchProfile(session.user.id, controller.signal)
+                    const profileData = await fetchProfile(session.user.id)
                     if (isMounted) setProfile(profileData)
                 } else {
-                    setUser(null)
-                    setProfile(null)
+                    if (isMounted) {
+                        setUser(null)
+                        setProfile(null)
+                    }
                 }
-            } catch (error) {
-                console.error('Erro na inicialização do auth:', error)
+            } catch (error: any) {
+                if (isMounted && error.name !== 'AbortError') {
+                    console.error('Erro na inicialização do auth:', error)
+                }
             } finally {
                 if (isMounted) setLoading(false)
             }
@@ -118,21 +120,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Avoid double-processing the INITIAL_SESSION event since we handled it in initializeAuth
             if (event === 'INITIAL_SESSION') return
 
-            setUser(session?.user ?? null)
+            if (isMounted) setUser(session?.user ?? null)
 
             if (session?.user) {
-                const profileData = await fetchProfile(session.user.id, controller.signal)
+                const profileData = await fetchProfile(session.user.id)
                 if (isMounted) setProfile(profileData)
             } else {
-                setProfile(null)
+                if (isMounted) setProfile(null)
             }
 
-            setLoading(false)
+            if (isMounted) setLoading(false)
         })
 
         return () => {
             isMounted = false
-            controller.abort()
             subscription.unsubscribe()
         }
     }, [])

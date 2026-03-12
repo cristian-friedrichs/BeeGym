@@ -66,7 +66,7 @@ export function MeasurementEvolutionChart({ data, studentId }: MeasurementEvolut
                 </div>
             </CardHeader>
             <CardContent className="flex-1 p-6">
-                {chartData.length > 1 ? (
+                {chartData.length > 0 ? (
                     <div className="h-full w-full min-h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -102,8 +102,8 @@ export function MeasurementEvolutionChart({ data, studentId }: MeasurementEvolut
                         <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mb-3">
                             <TrendingUp className="h-6 w-6 text-slate-300" />
                         </div>
-                        <p className="text-sm text-slate-400 font-medium tracking-tight">Dados insuficientes para gerar gráfico.</p>
-                        <p className="text-[11px] text-slate-400">Registre pelo menos duas avaliações.</p>
+                        <p className="text-sm text-slate-400 font-medium tracking-tight font-sans">Nenhuma avaliação registrada.</p>
+                        <p className="text-[11px] text-slate-400 font-sans">Registre a primeira medida para começar a acompanhar.</p>
                     </div>
                 )}
             </CardContent>

@@ -101,8 +101,9 @@ export async function middleware(request: NextRequest) {
     }
 
     // 👑 SEGREGAÇÃO DE SISTEMAS: ADMIN VS SAAS
-    const isMasterEmail = session.user.email === 'cristian_friedrichs@live.com'
-    const isAdminUser = profile?.role === 'BEEGYM_ADMIN' || isMasterEmail
+    const isMasterEmail = session.user.email?.toLowerCase() === 'cristian_friedrichs@live.com'
+    const userRole = (profile?.role || '').toUpperCase().trim();
+    const isAdminUser = userRole === 'BEEGYM_ADMIN' || userRole === 'ADMIN' || isMasterEmail;
 
     // LÓGICA PARA ADMINS
     if (isAdminUser) {
@@ -133,13 +134,16 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        const hasActiveSubscription = org?.subscription_status === 'active' || org?.subscription_status === 'trial' || org?.subscription_status === 'teste'
+        const activeStatuses = ['active', 'trial', 'teste', 'pago', 'status_ativo', 'status_teste', 'ativo'];
+        const currentStatus = (org?.subscription_status || '').toLowerCase().trim();
+        const hasActiveSubscription = activeStatuses.includes(currentStatus);
+
         const isAccountActive = org?.onboarding_completed && hasActiveSubscription
         const isOnboardingPath = url.pathname.startsWith('/app/onboarding') || url.pathname.startsWith('/api/onboarding')
 
         // 🟢 SaaS em página de Login (e já está logado)
         if (isAppAuthPage) {
-            if (isAccountActive) {
+            if (isAccountActive || isAdminUser) {
                 const redirect = request.nextUrl.searchParams.get('redirect')
                 if (redirect && redirect !== '/') {
                     return NextResponse.redirect(new URL(redirect, request.url))
@@ -150,8 +154,9 @@ export async function middleware(request: NextRequest) {
         }
 
         // 🔴 Conta inativa tentando acessar rotas do App protegidas
-        if (!isAccountActive && isAppRoute && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
-            if (org?.subscription_status && org?.subscription_status !== 'active' && org?.subscription_status !== 'trial' && org?.subscription_status !== 'teste') {
+        // ADMINS NUNCA são bloqueados aqui
+        if (!isAdminUser && !isAccountActive && isAppRoute && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
+            if (org?.subscription_status && !activeStatuses.includes(currentStatus)) {
                 url.pathname = '/app/onboarding/pagamento'
             } else if (profile?.organization_id && !org?.onboarding_completed) {
                 url.pathname = '/app/onboarding/step-3'
@@ -161,8 +166,8 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // 🔵 Ativo tentando entrar no Onboarding
-        if (isAccountActive && isOnboardingPath) {
+        // 🔵 Ativo tentando entrar no Onboarding (Admins também voltam pro painel se tentarem entrar no onboarding)
+        if ((isAccountActive || isAdminUser) && isOnboardingPath) {
             url.pathname = '/app/painel'
             return NextResponse.redirect(url)
         }

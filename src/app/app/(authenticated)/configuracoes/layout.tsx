@@ -21,6 +21,7 @@ import {
     ScrollText,
     Crown,
     Lock,
+    LifeBuoy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -42,10 +43,11 @@ const menuItems: MenuItem[] = [
     { label: 'Equipe', href: '/app/configuracoes/team', icon: Users, feature: 'multiplos_usuarios' },
     { label: 'Perfis de Acesso', href: '/app/configuracoes/roles', icon: Shield, feature: 'multiplos_usuarios' },
     { label: 'Unidades', href: '/app/configuracoes/units', icon: Building2, feature: 'multipropriedade' },
-    { label: 'Planos', href: '/app/configuracoes/plans', icon: CreditCard, feature: 'cobranca_automatizada' },
+    { label: 'Planos', href: '/app/configuracoes/plans', icon: CreditCard, feature: 'automacao_cobranca' },
     { label: 'Salas', href: '/app/configuracoes/rooms', icon: DoorOpen },
     { label: 'Frequência', href: '/app/configuracoes/attendance', icon: Activity },
-    { label: 'Financeiro', href: '/app/configuracoes/financial', icon: Wallet, feature: 'cobranca_automatizada' },
+    { label: 'Financeiro', href: '/app/configuracoes/financial', icon: Wallet, feature: 'automacao_cobranca' },
+    { label: 'Suporte', href: '/app/configuracoes/suporte', icon: LifeBuoy },
     { label: 'Logs do Sistema', href: '/app/configuracoes/logs', icon: ScrollText },
 ];
 
@@ -59,14 +61,7 @@ export default function SettingsLayout({
     const [lockedFeature, setLockedFeature] = useState<string | null>(null);
 
     return (
-        <div className="flex flex-col h-full overflow-hidden">
-            {/* Header */}
-            <div className="mb-6 flex-shrink-0">
-                <SectionHeader
-                    title="Configurações"
-                    subtitle="Gerencie as preferências da sua conta e do aplicativo."
-                />
-            </div>
+        <div className="flex flex-col h-full overflow-hidden pt-4">
 
             {/* Main Content with Sidebar */}
             <div className="flex-1 flex gap-0 min-h-0">
@@ -82,7 +77,7 @@ export default function SettingsLayout({
                                     <button
                                         key={item.href}
                                         onClick={() => setLockedFeature(item.label)}
-                                        className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:bg-slate-50 relative group text-left"
+                                        className="w-full flex items-center justify-between gap-3 px-4 py-2 rounded-full text-sm font-medium transition-all text-muted-foreground hover:bg-slate-50/50 relative group text-left hover:-translate-y-0.5 active:scale-95"
                                     >
                                         <div className="flex items-center gap-3">
                                             <Icon className="h-4 w-4 opacity-70" />
@@ -99,10 +94,10 @@ export default function SettingsLayout({
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                                        'flex items-center gap-3 px-4 py-2 rounded-full text-sm font-bold transition-all hover:-translate-y-0.5 active:scale-95',
                                         isActive
-                                            ? 'bg-primary/10 text-primary'
-                                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                            ? 'bg-bee-amber text-bee-midnight shadow-sm'
+                                            : 'text-slate-500 hover:bg-slate-100/50 hover:text-slate-700'
                                     )}
                                 >
                                     <Icon className="h-4 w-4" />

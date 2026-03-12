@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search } from "lucide-react";
+import { Search, Plus, Filter, ArrowUpDown, MoreHorizontal, User, Mail, Phone, Calendar as CalendarIcon, Edit2, Eye, ExternalLink } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
 import { StudentModal } from '@/components/alunos/student-modal';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { useStudentLimit } from '@/hooks/useStudentLimit';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useUnit } from '@/context/UnitContext';
 
 interface Student {
     id: string;
@@ -27,14 +28,16 @@ interface Student {
     objective: string | null;
     plan: string | null;
     membership_plans?: { name: string } | null; // Join Relation
-    last_activity: string | null; // Nova coluna computada
+    last_activity: string | null; // Coluna computada restaurada
+    birth_date?: string | null;
 }
 
 export default function StudentsPage() {
     const supabase = createClient();
     const { toast } = useToast();
     const { hasReachedLimit, maxStudents } = useStudentLimit();
-    const { plan } = useSubscription();
+    const { plan, organizationId } = useSubscription();
+    const { currentUnitId } = useUnit();
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -49,18 +52,37 @@ export default function StudentsPage() {
     const fetchStudents = async () => {
         setLoading(true);
 
+        if (!currentUnitId) {
+            setStudents([]);
+            setLoading(false);
+            return;
+        }
+
         // 1. Opcional: Forçar atualização dos status das aulas passadas
         await (supabase.rpc as any)('update_finished_classes_status');
 
-        // 2. Buscar Alunos + Coluna Computada 'last_activity'
-        const { data, error } = await supabase
+        let query = supabase
             .from('students')
             .select('*, last_activity, membership_plans(name)') // Join com tabela de planos
             .order('full_name');
 
+        if (currentUnitId === organizationId) {
+            // Se é a unidade Master/Principal, queremos os alunos legados (sem unidade, associados apenas à org) 
+            // e alunos que (em teoria) possam ter a master como unit_id
+            query = query.or(`unit_id.is.null,unit_id.eq.${currentUnitId}`);
+            // Garantimos que filtramos apenas pela ORG
+            query = query.eq('organization_id', organizationId);
+        } else {
+            // Se é filial, traz apenas da filial
+            query = query.eq('unit_id', currentUnitId);
+        }
+
+        const { data, error } = await query;
+
         if (error) console.error("Erro ao buscar alunos:", error);
 
         if (data) {
+            // Also ensure we map birth_date
             setStudents(data as unknown as Student[]);
         }
         setLoading(false);
@@ -68,7 +90,7 @@ export default function StudentsPage() {
 
     useEffect(() => {
         fetchStudents();
-    }, []);
+    }, [currentUnitId]);
 
     const filteredStudents = students.filter(student => {
         const matchesSearch = student.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -110,7 +132,7 @@ export default function StudentsPage() {
                 subtitle="Gerenciamento de alunos e matrículas"
                 action={
                     <Button
-                        className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4"
+                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none"
                         onClick={() => {
                             if (hasReachedLimit) {
                                 toast({
@@ -130,19 +152,19 @@ export default function StudentsPage() {
                 }
             />
 
-            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
                 <div className="relative w-full md:w-96">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
                         placeholder="Buscar aluno..."
-                        className="pl-9 bg-slate-50 border-slate-200 rounded-lg font-sans"
+                        className="pl-9 bg-slate-50 border-slate-200 rounded-full font-sans transition-all focus:bg-white"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[180px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                        <SelectTrigger className="w-[180px] h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-full focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent className="rounded-[8px]">
@@ -155,7 +177,7 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">
@@ -176,7 +198,7 @@ export default function StudentsPage() {
                             filteredStudents.map((student) => (
                                 <TableRow key={student.id} className="hover:bg-slate-50/50 cursor-pointer group">
                                     <TableCell>
-                                        <Link href={`/alunos/${student.id}`} className="flex items-center gap-3">
+                                        <Link href={`/app/alunos/${student.id}`} className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10 border border-slate-100 ring-1 ring-slate-100 ring-offset-2">
                                                 <AvatarImage src={student.avatar_url || ''} className="object-cover" />
                                                 <AvatarFallback className="bg-orange-100 text-bee-amber font-bold">
@@ -198,8 +220,32 @@ export default function StudentsPage() {
 
                                     {/* NOVA COLUNA */}
                                     <TableCell>{formatLastActivity(student.last_activity)}</TableCell>
-
                                     <TableCell>{getStatusBadge(student.status)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex justify-end gap-1">
+                                            <Link href={`/app/alunos/${student.id}`}>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setStudentToEdit(student);
+                                                    setIsModalOpen(true);
+                                                }}
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))
                         )}

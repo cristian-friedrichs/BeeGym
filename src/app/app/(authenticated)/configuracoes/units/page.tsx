@@ -4,6 +4,7 @@ import { UnitList } from '@/components/configuracoes/units/unit-list';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2 } from 'lucide-react';
 import { getServerPlan } from '@/lib/server-plan';
+import { SectionHeader } from '@/components/ui/section-header';
 
 export default async function UnitsPage() {
     const supabase = await createClient();
@@ -17,7 +18,7 @@ export default async function UnitsPage() {
     // Get current user's organization from profiles (Source of Truth)
     const { data: profile } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('id', user.id)
         .single();
 
@@ -31,7 +32,11 @@ export default async function UnitsPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    if (!isActive || !plan.allowedFeatures.includes('multipropriedade')) {
+    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
+        (profile as any).role === 'ADMIN' ||
+        (profile as any).role === 'BEEGYM_ADMIN';
+
+    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('multipropriedade'))) {
         redirect('/app/configuracoes');
     }
 
@@ -44,11 +49,9 @@ export default async function UnitsPage() {
         .order('name');
 
     return (
-        <div className="space-y-6">
-            <UnitList
-                units={units as any[] || []}
-                organizationId={profile.organization_id}
-            />
-        </div>
+        <UnitList
+            units={units as any[] || []}
+            organizationId={profile.organization_id}
+        />
     );
 }

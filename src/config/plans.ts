@@ -2,13 +2,28 @@ import { User, Zap, Dumbbell, Building2, Crown, LucideIcon } from 'lucide-react'
 
 export type PlanFeature =
     | 'app_aluno'
-    | 'chat'
-    | 'aulas_coletivas'
+    | 'painel'
+    | 'agenda'
+    | 'aulas'
+    | 'treinos'
+    | 'alunos'
+    | 'conversas'
+    | 'pagamentos'
+    | 'exercicios'
+    | 'relatorios'
+    | 'configuracoes'
+    | 'crm'
+    | 'automacao_cobranca'
+    | 'frequencia'
+    | 'salas'
+    | 'api_acesso'
+    | 'alertas'
     | 'multiplos_agendamentos'
     | 'multiplos_usuarios'
-    | 'cobranca_automatizada'
     | 'multipropriedade'
     | 'api_externa'
+    | 'suporte_prioritario'
+    | 'white_label'
 
 export interface BeeGymPlan {
     id: string
@@ -17,6 +32,7 @@ export interface BeeGymPlan {
     max_students: number | null
     price: number
     promo_price?: number
+    promo_duration_months?: number
     startingFrom?: boolean
     featuresList: string[]
     allowedFeatures: PlanFeature[]
@@ -31,8 +47,15 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         max_students: 20,
         price: 19.90,
         promo_price: 9.90,
-        featuresList: ['Gestão de Alunos e Pagamentos', 'Calendário Completo', 'Controle de Frequência e Treinos', 'Relatórios e Alertas'],
-        allowedFeatures: [],
+        promo_duration_months: 3,
+        featuresList: [
+            'Até 20 Alunos Ativos',
+            'Gestão de Alunos e Pagamentos',
+            'Calendário Completo',
+            'Controle de Frequência e Treinos',
+            'Biblioteca de Exercícios',
+        ],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes'],
         icon: User,
     },
     plan_plus: {
@@ -42,8 +65,14 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         max_students: 40,
         price: 29.90,
         promo_price: 19.90,
-        featuresList: ['Tudo do STARTER', 'App do Aluno', 'Chat'],
-        allowedFeatures: ['app_aluno', 'chat'],
+        promo_duration_months: 3,
+        featuresList: [
+            'Até 40 Alunos Ativos',
+            'Tudo do STARTER',
+            'App do Aluno (breve)',
+            'Chat Integrado',
+        ],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas'],
         icon: Zap,
     },
     plan_studio: {
@@ -53,19 +82,34 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         max_students: 100,
         price: 49.90,
         promo_price: 29.90,
-        featuresList: ['Tudo do PLUS', 'Aulas Coletivas e Turmas', 'Múltiplos Agendamentos'],
-        allowedFeatures: ['app_aluno', 'chat', 'aulas_coletivas', 'multiplos_agendamentos'],
+        promo_duration_months: 3,
+        featuresList: [
+            'Até 100 Alunos Ativos',
+            'Tudo do PLUS',
+            'Aulas Coletivas e Turmas',
+            'Múltiplos Agendamentos',
+            'Automação de Cobrança (breve)',
+        ],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas'],
         icon: Dumbbell,
     },
     plan_pro: {
         id: 'plan_pro',
         name: 'PRO',
         description: 'Gestão completa para Academias de médio porte.',
-        max_students: 400,
+        max_students: 500,
         price: 79.90,
         promo_price: 49.90,
-        featuresList: ['Tudo do STUDIO', 'Múltiplos Usuários/Instrutores', 'Automatização de Cobrança'],
-        allowedFeatures: ['app_aluno', 'chat', 'aulas_coletivas', 'multiplos_agendamentos', 'multiplos_usuarios', 'cobranca_automatizada'],
+        promo_duration_months: 3,
+        featuresList: [
+            'Até 500 Alunos Ativos',
+            'Tudo do STUDIO',
+            'Múltiplos Usuários/Instrutores',
+            'Automação de Cobrança (breve)',
+            'CRM de Vendas (breve)',
+            'Relatórios Avançados',
+        ],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas', 'multiplos_usuarios', 'automacao_cobranca', 'crm', 'relatorios'],
         icon: Building2,
     },
     plan_enterprise: {
@@ -74,8 +118,15 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         description: 'Solução ilimitada para grandes redes e franqueadoras.',
         max_students: null, // unlimited
         price: 0, // custom
-        featuresList: ['Tudo do PRO', 'Multipropriedade (Redes)', 'Integração API Externa', 'CRM e Relacionamento'],
-        allowedFeatures: ['app_aluno', 'chat', 'aulas_coletivas', 'multiplos_agendamentos', 'multiplos_usuarios', 'cobranca_automatizada', 'multipropriedade', 'api_externa'],
+        featuresList: [
+            'Alunos Ilimitados',
+            'Tudo do PRO',
+            'Multi Propriedades e Filiais (breve)',
+            'API Externa (breve)',
+            'White Label',
+            'Suporte Prioritário',
+        ],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas', 'multiplos_usuarios', 'automacao_cobranca', 'crm', 'relatorios', 'multipropriedade', 'api_externa', 'api_acesso', 'alertas', 'white_label'],
         icon: Crown,
     },
 }

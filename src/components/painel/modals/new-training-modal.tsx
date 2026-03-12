@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +13,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { checkStudentScheduleLimits } from '@/actions/aulas';
 import {
     CalendarIcon, Users as UsersIcon, User, LayoutGrid, Dumbbell, MapPin
 } from 'lucide-react';
@@ -366,6 +368,14 @@ export function NewTrainingModal({
                         if (error) throw error;
                         toast({ title: 'Sucesso', description: 'Treino atualizado.' });
                     } else {
+                        // Plan limit guard (skip for makeup or force override)
+                        if (!isMakeup && !forceSchedule) {
+                            const dateStr = selectedDate.toISOString().split('T')[0];
+                            const limitCheck = await checkStudentScheduleLimits(selectedStudent, dateStr);
+                            if (!limitCheck.allowed) {
+                                throw new Error(limitCheck.message);
+                            }
+                        }
                         const workout = await insertWorkout(selectedDate);
                         if (workout) await saveLinkedExercises(workout[0].id);
                         toast({ title: 'Sucesso', description: 'Treino agendado.' });
@@ -431,21 +441,39 @@ export function NewTrainingModal({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-[650px] flex flex-col h-full overflow-y-auto p-0 gap-0">
-                <SheetHeader className="p-6 pb-4 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-                            <Dumbbell className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <SheetTitle className="text-xl font-semibold text-foreground/90">
-                                {eventId ? 'Editar ' : 'Novo '}
-                                {modality === 'individual' ? 'Treino' : modality === 'group' ? 'Aula em Grupo' : 'Aula Aberta'}
-                            </SheetTitle>
-                            <SheetDescription className="text-sm text-foreground/60">
-                                Preencha os detalhes abaixo para agendar.
-                            </SheetDescription>
+                <SheetHeader className="relative p-0 mb-8 mt-[-24px] mx-[-24px] overflow-hidden rounded-t-[2rem]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-bee-midnight via-slate-900 to-bee-midnight" />
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay" />
+                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-bee-amber/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-bee-amber/5 rounded-full blur-3xl" />
+
+                    <div className="relative px-8 pt-10 pb-8 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-bee-amber to-amber-600 p-[1px] shadow-lg shadow-bee-amber/20 group animate-in zoom-in-50 duration-500">
+                                    <div className="flex h-full w-full items-center justify-center rounded-[15px] bg-bee-midnight/90 backdrop-blur-xl transition-colors group-hover:bg-bee-midnight/40">
+                                        <Dumbbell className="h-7 w-7 text-bee-amber animate-pulse" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <SheetTitle className="text-3xl font-black text-white tracking-tight leading-none font-display mb-2">
+                                        {eventId ? 'Editar ' : 'Novo '}
+                                        {modality === 'individual' ? 'Treino' : modality === 'group' ? 'Aula em Grupo' : 'Aula Aberta'}
+                                    </SheetTitle>
+                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                        <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
+                                            Agendamento
+                                        </Badge>
+                                        <div className="h-1 w-1 rounded-full bg-slate-700" />
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] uppercase tracking-wider font-sans">
+                                            Preencha os detalhes abaixo
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-bee-amber/20 to-transparent" />
                 </SheetHeader>
 
                 {dataLoading ? (
@@ -495,7 +523,7 @@ export function NewTrainingModal({
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium">Aluno</Label>
                                     <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                                        <SelectTrigger className="w-full bg-white h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectTrigger className="w-full bg-white h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                             <SelectValue placeholder="Selecione um aluno" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -511,7 +539,7 @@ export function NewTrainingModal({
                                 <div className="space-y-2">
                                     <Label className="text-sm font-medium">Modalidade</Label>
                                     <Select value={activityType} onValueChange={setActivityType}>
-                                        <SelectTrigger className="w-full bg-white h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectTrigger className="w-full bg-white h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                             <SelectValue placeholder="Selecione o tipo" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -571,7 +599,7 @@ export function NewTrainingModal({
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setExercises([...exercises, { name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                            className="h-8 text-xs border-orange-200 text-orange-600 hover:bg-amber-50"
+                                            className="h-10 text-xs border-orange-200 text-orange-600 hover:bg-amber-50"
                                         >
                                             <Plus className="h-3 w-3 mr-1" /> Adicionar
                                         </Button>
@@ -610,7 +638,7 @@ export function NewTrainingModal({
                                                         <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Séries</Label>
                                                         <Input
                                                             type="number"
-                                                            className="h-8 text-sm"
+                                                            className="h-11 text-sm"
                                                             value={ex.sets}
                                                             onChange={(e) => {
                                                                 const newEx = [...exercises];
@@ -623,7 +651,7 @@ export function NewTrainingModal({
                                                         <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Reps</Label>
                                                         <Input
                                                             type="text"
-                                                            className="h-8 text-sm"
+                                                            className="h-11 text-sm"
                                                             value={ex.reps}
                                                             onChange={(e) => {
                                                                 const newEx = [...exercises];
@@ -636,7 +664,7 @@ export function NewTrainingModal({
                                                         <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Carga</Label>
                                                         <Input
                                                             type="text"
-                                                            className="h-8 text-sm"
+                                                            className="h-11 text-sm"
                                                             value={ex.weight}
                                                             onChange={(e) => {
                                                                 const newEx = [...exercises];
@@ -662,7 +690,7 @@ export function NewTrainingModal({
                                         placeholder="Ex: Treino Funcional Manhã"
                                         value={trainingName}
                                         onChange={(e) => setTrainingName(e.target.value)}
-                                        className="bg-background border-input/60"
+                                        className="bg-background border-input/60 h-11"
                                     />
                                 </div>
 
@@ -670,7 +698,7 @@ export function NewTrainingModal({
                                     <div className="space-y-2">
                                         <Label className="text-sm font-medium">Instrutor</Label>
                                         <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                                            <SelectTrigger className="h-10 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                            <SelectTrigger className="h-11 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                                 <SelectValue placeholder="Selecione" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -699,7 +727,7 @@ export function NewTrainingModal({
 
                                         {locationType === 'internal' ? (
                                             <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                                                <SelectTrigger className="h-10 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                                <SelectTrigger className="h-11 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                                     <SelectValue placeholder="Selecione sala" />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -715,7 +743,7 @@ export function NewTrainingModal({
                                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                                 <Input
                                                     placeholder="Endereço ou local externo"
-                                                    className="pl-9 bg-background border-input/60"
+                                                    className="pl-9 bg-background border-input/60 h-11"
                                                     value={address}
                                                     onChange={(e) => setAddress(e.target.value)}
                                                 />
@@ -744,7 +772,7 @@ export function NewTrainingModal({
                         <div className="space-y-4">
                             {!trainingName && modality === 'individual' && <div className="space-y-2">
                                 <Label className="font-sans font-medium text-sm text-deep-midnight">Nome do Treino *</Label>
-                                <Input placeholder="Ex: Treino A" value={trainingName} onChange={(e) => setTrainingName(e.target.value)} />
+                                <Input placeholder="Ex: Treino A" value={trainingName} onChange={(e) => setTrainingName(e.target.value)} className="h-11" />
                             </div>}
 
                             <div className="grid grid-cols-3 gap-4">
@@ -752,7 +780,7 @@ export function NewTrainingModal({
                                     <Label className="font-sans font-medium text-sm text-deep-midnight">Data *</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
+                                            <Button variant="outline" className={cn('w-full h-11 justify-start text-left font-normal', !selectedDate && 'text-muted-foreground')}>
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                 {selectedDate ? format(selectedDate, 'PPP', { locale: ptBR }) : 'Selecione'}
                                             </Button>
@@ -765,14 +793,14 @@ export function NewTrainingModal({
                                 <div className="space-y-2">
                                     <Label className="font-sans font-medium text-sm text-deep-midnight">Horário *</Label>
                                     <Select value={selectedTime} onValueChange={setSelectedTime}>
-                                        <SelectTrigger className="h-10 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200"><SelectValue placeholder="Hrs" /></SelectTrigger>
+                                        <SelectTrigger className="h-11 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200"><SelectValue placeholder="Hrs" /></SelectTrigger>
                                         <SelectContent className="max-h-[200px]">{TIME_SLOTS.map(t => (<SelectItem key={t} value={t}>{t}</SelectItem>))}</SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="font-sans font-medium text-sm text-deep-midnight">Duração *</Label>
                                     <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                                        <SelectTrigger className="h-10 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200"><SelectValue placeholder="Min" /></SelectTrigger>
+                                        <SelectTrigger className="h-11 bg-white text-[11px] font-bold uppercase tracking-wider border-slate-100 shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200"><SelectValue placeholder="Min" /></SelectTrigger>
                                         <SelectContent>{DURATION_OPTIONS.map(o => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent>
                                     </Select>
                                 </div>
@@ -782,10 +810,21 @@ export function NewTrainingModal({
                     </div>
                 )}
 
-                <SheetFooter className="p-6 pt-4 border-t flex flex-row justify-end gap-3 shrink-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
-                        {loading ? 'Salvando...' : 'Salvar'}
+                <SheetFooter className="p-8 bg-slate-50/50 backdrop-blur-sm border-t gap-3">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        disabled={loading}
+                        className="h-10 rounded-full font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-wider text-xs"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="flex-1 h-10 rounded-full bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-black shadow-lg shadow-bee-amber/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider text-xs"
+                    >
+                        {loading ? 'Salvando...' : (eventId ? 'Salvar Alterações' : 'Salvar')}
                     </Button>
                 </SheetFooter>
             </SheetContent>

@@ -56,7 +56,7 @@ export default function StudentInvoicesPage() {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col gap-4">
-                <Link href={`/alunos/${id}`} className="w-fit">
+                <Link href={`/app/alunos/${id}`} className="w-fit">
                     <Button variant="ghost" size="sm" className="gap-2 text-slate-400 hover:text-orange-600 hover:bg-transparent transition-all font-bold uppercase tracking-widest text-[11px] p-0 group">
                         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Voltar para Perfil
                     </Button>

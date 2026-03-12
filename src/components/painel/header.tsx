@@ -23,7 +23,8 @@ import {
   LogOut,
   UserCircle,
   Loader2,
-  User
+  User,
+  LifeBuoy
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
@@ -132,6 +133,8 @@ export function Header({ className }: { className?: string }) {
     }
     return name.slice(0, 2).toUpperCase();
   };
+
+  const [isSignOutLoading, setIsSignOutLoading] = useState(false);
 
   const syncStateFromStorage = () => {
     const storedUnits = JSON.parse(localStorage.getItem('units_data') || '[]');
@@ -313,8 +316,17 @@ export function Header({ className }: { className?: string }) {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
+    setIsSignOutLoading(true);
+
+    // Give a tiny moment for the loading UI to mount before the hard navigation begins
+    setTimeout(() => {
+      // Step 1: Client side sign out (non-blocking)
+      supabase.auth.signOut();
+
+      // Step 2: Hard redirect to our server-side signout route
+      // This is the most robust way as it forces a clean state via a GET request
+      window.location.href = '/auth/signout';
+    }, 300);
   };
 
   const ThemeIcon = effectiveTheme === 'dark' ? Moon : Sun;
@@ -349,7 +361,7 @@ export function Header({ className }: { className?: string }) {
           <input
             type="text"
             placeholder={t.searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-[#0B0F1A] transition-all placeholder:text-slate-400 font-medium font-sans"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#0B0F1A] transition-all placeholder:text-slate-400 font-medium font-sans focus:bg-white"
           />
         </div>
       </div>
@@ -359,7 +371,7 @@ export function Header({ className }: { className?: string }) {
           <>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors">
+                <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95">
                   <ThemeIcon className="h-5 w-5" />
                 </button>
               </DropdownMenuTrigger>
@@ -376,7 +388,7 @@ export function Header({ className }: { className?: string }) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-1">
                   <Globe className="h-5 w-5" />
                   <span className="text-xs font-bold">{language}</span>
                 </button>
@@ -405,7 +417,7 @@ export function Header({ className }: { className?: string }) {
         {hasMultipleUnits ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="relative p-2 text-muted-foreground hover:text-primary transition-colors flex items-center gap-2">
+              <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
                 <Building className="h-5 w-5" />
                 <span className="text-xs font-bold max-w-[100px] truncate">{displayUnitName}</span>
                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -457,14 +469,30 @@ export function Header({ className }: { className?: string }) {
               </div>
               <DropdownMenuSeparator className="sm:hidden" />
               <DropdownMenuItem asChild><Link href="/app/configuracoes/profile" className="cursor-pointer flex items-center gap-2"><User className="h-4 w-4" />{t.myProfile}</Link></DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">{t.support}</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/app/configuracoes/suporte" className="cursor-pointer flex items-center gap-2">
+                  <LifeBuoy className="h-4 w-4" />
+                  {t.support}
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive cursor-pointer group">
+              <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive cursor-pointer group">
                 <LogOut className="mr-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 <span>{t.logout}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        )}
+        {isSignOutLoading && (
+          <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <div className="w-12 h-12 border-4 border-bee-amber/20 rounded-full animate-spin"></div>
+                <div className="absolute inset-0 w-12 h-12 border-4 border-bee-amber border-t-transparent rounded-full animate-spin"></div>
+              </div>
+              <p className="text-sm font-bold text-deep-midnight animate-pulse uppercase tracking-widest">Saindo...</p>
+            </div>
+          </div>
         )}
       </div>
     </header>

@@ -93,11 +93,28 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             organization_id: orgData.id,
             status: 'ACTIVE',
             role: 'OWNER',
+            is_instructor: true,
         })
 
     if (userError) {
         console.error('Error updating user:', userError)
-        return { error: `Erro ao atualizar perfil do usuário: ${userError.message}` }
+        return { error: `Erro do atualizar perfil do usuário: ${userError.message}` }
+    }
+
+    // 2.1 Create Instructor record for the owner
+    const { error: instructorError } = await supabaseAdmin
+        .from('instructors')
+        .insert({
+            id: user.id,
+            organization_id: orgData.id,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || 'Administrador',
+            user_id: user.id,
+            allowed_unit_ids: [],
+        })
+
+    if (instructorError) {
+        console.error('Error creating instructor record for owner:', instructorError)
+        // Non-blocking, but logged
     }
 
     // 3. Update Auth Metadata (Critical for Middleware)
@@ -116,16 +133,27 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
     }
 
     // 4. Create saas_subscriptions with AGUARDANDO_PAGAMENTO
-    // Plano é salvo AGORA, independente do pagamento
+    // Reads price/promo from saas_plans to ensure EFI charges use admin-configured values
     if (data.planId) {
+        // Fetch plan pricing from saas_plans (source of truth)
+        const { data: planData } = await supabaseAdmin
+            .from('saas_plans')
+            .select('price, promo_price, promo_months, tier')
+            .eq('id', data.planId)
+            .single()
+
         const { error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
             .insert({
                 organization_id: orgData.id,
                 saas_plan_id: data.planId,
+                plan_paid_id: data.planId,
+                plan_tier: planData?.tier || null,
                 status: 'AGUARDANDO_PAGAMENTO',
                 metodo: 'PENDENTE',
-                valor_mensal: 0,
+                valor_mensal: planData?.price ?? 0,
+                promo_price: planData?.promo_price ?? null,
+                promo_months_remaining: planData?.promo_months ?? 0,
                 dia_vencimento: new Date().getDate(),
             })
 

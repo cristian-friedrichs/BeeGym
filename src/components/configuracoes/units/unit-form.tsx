@@ -17,7 +17,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
+import {
+    Building2,
+    User,
+    Mail,
+    Phone,
+    MapPin,
+    Hash,
+    CheckCircle2,
+    X,
+    Dumbbell,
+    Loader2
+} from 'lucide-react';
 import { maskCEP, maskPhone } from '@/lib/masks';
 
 const unitSchema = z.object({
@@ -40,9 +51,11 @@ interface UnitFormProps {
     initialData?: any;
     onSubmit: (values: UnitFormValues) => Promise<void>;
     isLoading?: boolean;
+    showButtons?: boolean;
+    formId?: string;
 }
 
-export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
+export function UnitForm({ initialData, onSubmit, isLoading, showButtons = true, formId }: UnitFormProps) {
     const { toast } = useToast();
     const [isSearchingZip, setIsSearchingZip] = useState(false);
     const [serviceInput, setServiceInput] = useState('');
@@ -118,16 +131,23 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nome da Unidade</FormLabel>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Nome da Unidade</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ex: BeeGym - Filial Centro" {...field} />
+                                    <div className="relative group">
+                                        <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                        <Input
+                                            placeholder="Ex: BeeGym - Unidade Central"
+                                            {...field}
+                                            className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                        />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -138,9 +158,16 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                         name="manager_name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Nome do Gerente</FormLabel>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Nome do Gerente</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ex: João Silva" {...field} />
+                                    <div className="relative group">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                        <Input
+                                            placeholder="Ex: João Silva"
+                                            {...field}
+                                            className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                        />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -151,9 +178,17 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email</FormLabel>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Email</FormLabel>
                                 <FormControl>
-                                    <Input type="email" placeholder="unidade@exemplo.com" {...field} />
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                        <Input
+                                            type="email"
+                                            placeholder="unidade@exemplo.com"
+                                            {...field}
+                                            className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                        />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -164,13 +199,17 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Telefone</FormLabel>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Telefone</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        placeholder="(00) 00000-0000"
-                                        {...field}
-                                        onChange={(e) => field.onChange(maskPhone(e.target.value))}
-                                    />
+                                    <div className="relative group">
+                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                        <Input
+                                            placeholder="(00) 00000-0000"
+                                            {...field}
+                                            onChange={(e) => field.onChange(maskPhone(e.target.value))}
+                                            className="h-14 pl-12 rounded-2xl border-slate-100 bg-slate-50/30 focus:bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                        />
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -178,28 +217,33 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                     />
                 </div>
 
-                <div className="border-t pt-4 mt-4 space-y-4">
-                    <h3 className="text-sm font-medium">Serviços e Atividades</h3>
+                <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100 space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                            <Dumbbell className="h-4 w-4 text-bee-amber" />
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Serviços e Atividades</h3>
+                    </div>
+
                     <FormField
                         control={form.control}
                         name="services"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Atividades Oferecidas</FormLabel>
+                                <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Atividades Oferecidas</FormLabel>
                                 <FormControl>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {/* Display existing tags */}
                                         {field.value.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
+                                            <div className="flex flex-wrap gap-2 p-3 rounded-2xl bg-white border border-slate-100 ring-1 ring-slate-200/50">
                                                 {field.value.map((service) => (
                                                     <Badge
                                                         key={service}
-                                                        variant="secondary"
-                                                        className="gap-1 pr-1"
+                                                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 border-none font-bold py-1.5 px-3 rounded-full gap-2 transition-colors"
                                                     >
                                                         {service}
                                                         <X
-                                                            className="h-3 w-3 cursor-pointer hover:text-destructive"
+                                                            className="h-3.5 w-3.5 cursor-pointer hover:text-red-500 transition-colors"
                                                             onClick={() => handleRemoveService(service)}
                                                         />
                                                     </Badge>
@@ -208,17 +252,21 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                                         )}
 
                                         {/* Input for adding new tags */}
-                                        <Input
-                                            placeholder="Digite o nome da atividade e pressione Enter ou vírgula"
-                                            value={serviceInput}
-                                            onChange={(e) => setServiceInput(e.target.value)}
-                                            onKeyDown={handleServiceKeyDown}
-                                            onBlur={handleAddService}
-                                        />
+                                        <div className="relative group">
+                                            <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                            <Input
+                                                placeholder="Digite a atividade (Enter ou vírgula)"
+                                                value={serviceInput}
+                                                onChange={(e) => setServiceInput(e.target.value)}
+                                                onKeyDown={handleServiceKeyDown}
+                                                onBlur={handleAddService}
+                                                className="h-12 pl-12 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                            />
+                                        </div>
                                     </div>
                                 </FormControl>
-                                <FormDescription>
-                                    Digite o nome da atividade e pressione <kbd className="px-1.5 py-0.5 text-xs font-semibold border rounded">Enter</kbd> ou <kbd className="px-1.5 py-0.5 text-xs font-semibold border rounded">,</kbd> para adicionar
+                                <FormDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                                    Pressione <kbd className="px-1.5 py-0.5 text-xs font-black bg-slate-100 border rounded-md">Enter</kbd> para adicionar
                                 </FormDescription>
                                 <FormMessage />
                             </FormItem>
@@ -226,25 +274,33 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                     />
                 </div>
 
-                <div className="border-t pt-4 mt-4">
-                    <h3 className="text-sm font-medium mb-3">Endereço</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100 space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                            <MapPin className="h-4 w-4 text-bee-amber" />
+                        </div>
+                        <h3 className="text-sm font-black uppercase tracking-wider text-slate-700">Localização e Endereço</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField
                             control={form.control}
                             name="address_zip"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>CEP</FormLabel>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">CEP</FormLabel>
                                     <FormControl>
-                                        <div className="relative">
+                                        <div className="relative group">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
                                             <Input
                                                 placeholder="00000-000"
                                                 {...field}
                                                 onChange={handleZipChange}
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
                                             />
                                             {isSearchingZip && (
-                                                <div className="absolute right-3 top-2.5">
-                                                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                                                    <Loader2 className="animate-spin h-5 w-5 text-bee-amber" />
                                                 </div>
                                             )}
                                         </div>
@@ -259,9 +315,16 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                                 name="address_street"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Logradouro</FormLabel>
+                                        <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Logradouro</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ex: Rua das Flores" {...field} />
+                                            <div className="relative group">
+                                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                                <Input
+                                                    placeholder="Ex: Rua das Flores"
+                                                    {...field}
+                                                    className="h-14 pl-12 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                                />
+                                            </div>
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -273,9 +336,16 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                             name="address_number"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Número</FormLabel>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Número</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="123" {...field} />
+                                        <div className="relative group">
+                                            <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                            <Input
+                                                placeholder="123"
+                                                {...field}
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                            />
+                                        </div>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -286,23 +356,34 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                             name="address_neighborhood"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Bairro</FormLabel>
+                                    <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Bairro</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ex: Centro" {...field} />
+                                        <div className="relative group">
+                                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-bee-amber transition-colors" />
+                                            <Input
+                                                placeholder="Ex: Centro"
+                                                {...field}
+                                                className="h-14 pl-12 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700"
+                                            />
+                                        </div>
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
                                 name="address_city"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Cidade</FormLabel>
+                                        <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">Cidade</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ex: São Paulo" {...field} />
+                                            <Input
+                                                placeholder="Ex: São Paulo"
+                                                {...field}
+                                                className="h-14 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700 px-5"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -313,9 +394,14 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                                 name="address_state"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Estado</FormLabel>
+                                        <FormLabel className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">UF</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="UF" maxLength={2} {...field} />
+                                            <Input
+                                                placeholder="UF"
+                                                maxLength={2}
+                                                {...field}
+                                                className="h-14 rounded-2xl border-slate-100 bg-white focus:ring-4 focus:ring-bee-amber/5 transition-all font-bold text-slate-700 text-center uppercase"
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -325,14 +411,17 @@ export function UnitForm({ initialData, onSubmit, isLoading }: UnitFormProps) {
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                    <Button type="button" variant="outline" onClick={() => form.reset()} disabled={isLoading}>
-                        Limpar
-                    </Button>
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading ? 'Salvando...' : 'Salvar Unidade'}
-                    </Button>
-                </div>
+
+                {showButtons && (
+                    <div className="flex justify-end gap-3 pt-4 border-t">
+                        <Button type="button" variant="outline" onClick={() => form.reset()} disabled={isLoading}>
+                            Limpar
+                        </Button>
+                        <Button type="submit" disabled={isLoading}>
+                            {isLoading ? 'Salvando...' : 'Salvar Unidade'}
+                        </Button>
+                    </div>
+                )}
             </form>
         </Form>
     );

@@ -207,14 +207,21 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-[640px] flex flex-col h-full overflow-y-auto p-0 gap-0">
-                <SheetHeader className="p-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                            <Dumbbell className="h-5 w-5 text-primary" />
+                <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white/50 backdrop-blur-sm">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-bee-amber/[0.03] rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/[0.05] rounded-full -mr-16 -mt-16 blur-2xl opacity-50" />
+                    <div className="flex items-center gap-5 relative text-left">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-bee-amber/20 via-bee-amber/10 to-transparent border border-bee-amber/20 shadow-inner group transition-all">
+                            <Dumbbell className="h-8 w-8 text-bee-amber drop-shadow-sm" />
                         </div>
-                        <div>
-                            <SheetTitle className="text-xl font-bold">Novo Treino</SheetTitle>
-                            <SheetDescription>Crie ou gere um treino com IA</SheetDescription>
+                        <div className="space-y-1.5">
+                            <SheetTitle className="text-2xl font-black font-display tracking-tight text-bee-midnight">
+                                Novo Treino
+                            </SheetTitle>
+                            <SheetDescription className="text-xs font-semibold text-slate-400 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-bee-amber animate-pulse" />
+                                Crie ou gere um treino com IA
+                            </SheetDescription>
                         </div>
                     </div>
                 </SheetHeader>
@@ -260,11 +267,11 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Nome do Treino</Label>
-                                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Treino A" />
+                                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Treino A" className="h-11" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Meta/Foco</Label>
-                                    <Input value={goal} onChange={e => setGoal(e.target.value)} placeholder="Ex: Hipertrofia" />
+                                    <Input value={goal} onChange={e => setGoal(e.target.value)} placeholder="Ex: Hipertrofia" className="h-11" />
                                 </div>
                             </div>
 
@@ -293,7 +300,7 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
                                                     type="number"
                                                     value={ex.sets}
                                                     onChange={e => updateExercise(i, 'sets', Number(e.target.value))}
-                                                    className="h-10 text-sm"
+                                                    className="h-11 text-sm"
                                                 />
                                             </div>
                                             <div className="col-span-2">
@@ -301,7 +308,7 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
                                                 <Input
                                                     value={ex.reps}
                                                     onChange={e => updateExercise(i, 'reps', e.target.value)}
-                                                    className="h-10 text-sm"
+                                                    className="h-11 text-sm"
                                                 />
                                             </div>
                                             <div className="col-span-3">
@@ -309,7 +316,7 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
                                                 <Input
                                                     value={ex.notes || ''}
                                                     onChange={e => updateExercise(i, 'notes', e.target.value)}
-                                                    className="h-10 text-sm"
+                                                    className="h-11 text-sm"
                                                 />
                                             </div>
                                             <div className="col-span-1">
@@ -334,10 +341,10 @@ export function NewWorkoutModal({ open, onOpenChange, onSuccess, studentId }: Ne
                 </div>
 
                 <SheetFooter className="p-6 pt-4 border-t gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="gap-2 h-10">
                         <X className="h-4 w-4" /> Cancelar
                     </Button>
-                    <Button onClick={handleSaveWorkout} disabled={loading} className="gap-2">
+                    <Button onClick={handleSaveWorkout} disabled={loading} className="gap-2 h-10">
                         <Check className="h-4 w-4" /> {loading ? 'Salvando...' : 'Salvar Treino'}
                     </Button>
                 </SheetFooter>

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { RoleList } from '@/components/configuracoes/roles/role-list';
+import { SectionHeader } from '@/components/ui/section-header';
 import { getServerPlan } from '@/lib/server-plan';
 import type { AppRole } from '@/types/permissions';
 
@@ -12,7 +13,7 @@ export default async function RolesPage() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('id', user.id)
         .single();
 
@@ -20,7 +21,11 @@ export default async function RolesPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    if (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios')) {
+    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
+        (profile as any).role === 'ADMIN' ||
+        (profile as any).role === 'BEEGYM_ADMIN';
+
+    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
         redirect('/app/configuracoes');
     }
 
@@ -30,5 +35,7 @@ export default async function RolesPage() {
         .eq('organization_id', profile.organization_id)
         .order('name') as { data: AppRole[] | null };
 
-    return <RoleList initialRoles={roles || []} organizationId={profile.organization_id} />;
+    return (
+        <RoleList initialRoles={roles || []} organizationId={profile.organization_id} />
+    );
 }

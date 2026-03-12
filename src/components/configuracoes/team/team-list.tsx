@@ -26,8 +26,9 @@ import { Switch } from '@/components/ui/switch';
 import { MoreHorizontal, Mail, UserCog, Ban, CheckCircle2, Crown } from 'lucide-react';
 import { AddMemberModal } from '@/components/configuracoes/team/add-member-modal';
 import { EditMemberModal } from '@/components/configuracoes/team/edit-member-modal';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { SectionHeader } from '@/components/ui/section-header';
 
 interface TeamListProps {
     initialUsers: any[];
@@ -91,159 +92,157 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
                     </Badge>
                 );
             case 'ADMIN':
-                return <Badge variant="destructive" className="bg-red-600 hover:bg-red-700">Admin</Badge>;
+                return <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20">Admin</Badge>;
             case 'INSTRUCTOR':
-                return <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">Instrutor</Badge>;
+                return <Badge variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20">Instrutor</Badge>;
             case 'MANAGER':
-                return <Badge variant="outline" className="border-orange-500 text-orange-500">Gerente</Badge>;
+                return <Badge variant="outline" className="border-bee-amber text-bee-amber">Gerente</Badge>;
             default:
                 return <Badge variant="secondary">Equipe</Badge>;
         }
     };
 
     return (
-        <Card className="rounded-[16px] shadow-sm border-slate-100 overflow-hidden bg-white">
-            <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 text-orange-500">
-                        <UserCog className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Equipe & Permissões</CardTitle>
-                    </div>
-                </div>
-                {currentOrgId && <AddMemberModal organizationId={currentOrgId} />}
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Membro</TableHead>
-                            <TableHead>Cargo</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Ações</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {users.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                                    Nenhum membro encontrado.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            users.map((member) => {
-                                const memberIsOwner = isOwner(member);
-                                return (
-                                    <TableRow key={member.id}>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-9 w-9">
-                                                    <AvatarImage src={member.avatar_url || ''} />
-                                                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                                        {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium text-sm text-[#0B0F1A]">{member.name}</span>
-                                                    <span className="text-xs text-muted-foreground">{member.email}</span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                {getRoleBadge(member.role)}
-                                                {member.is_instructor && member.role !== 'INSTRUCTOR' && (
-                                                    <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
-                                                        Instrutor
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {memberIsOwner ? (
-                                                <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
-                                                    <Crown className="h-3 w-3" /> Sempre ativo
-                                                </span>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        checked={member.active}
-                                                        onCheckedChange={() => toggleUserStatus(member.id, member.active)}
-                                                    />
-                                                    <span className="text-xs font-medium">
-                                                        {member.active ? (
-                                                            <span className="text-green-600 flex items-center gap-1">
-                                                                <CheckCircle2 className="h-3 w-3" /> Ativo
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-muted-foreground flex items-center gap-1">
-                                                                <Ban className="h-3 w-3" /> Inativo
-                                                            </span>
-                                                        )}
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            {memberIsOwner ? (
-                                                <span className="text-xs text-muted-foreground italic">Protegido</span>
-                                            ) : (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                                                        <DropdownMenuItem
-                                                            className="gap-2"
-                                                            onClick={() => openEdit(member)}
-                                                        >
-                                                            <UserCog className="h-4 w-4" /> Editar Perfil
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem className="gap-2">
-                                                            <Mail className="h-4 w-4" /> Enviar Convite
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        {member.active ? (
-                                                            <DropdownMenuItem
-                                                                className="text-destructive gap-2"
-                                                                onClick={() => toggleUserStatus(member.id, member.active)}
-                                                            >
-                                                                <Ban className="h-4 w-4" /> Desativar Membro
-                                                            </DropdownMenuItem>
-                                                        ) : (
-                                                            <DropdownMenuItem
-                                                                className="text-green-600 gap-2"
-                                                                onClick={() => toggleUserStatus(member.id, member.active)}
-                                                            >
-                                                                <CheckCircle2 className="h-4 w-4" /> Reativar Membro
-                                                            </DropdownMenuItem>
-                                                        )}
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-
-            {/* Edit Member Modal */}
-            <EditMemberModal
-                open={editModalOpen}
-                onOpenChange={(open) => {
-                    setEditModalOpen(open);
-                    if (!open) setEditingMember(null);
-                }}
-                member={editingMember}
-                organizationId={currentOrgId}
+        <div className="space-y-6">
+            <SectionHeader
+                title="Equipe & Permissões"
+                subtitle="Gerencie os membros da sua equipe e seus níveis de acesso"
+                action={currentOrgId && <AddMemberModal organizationId={currentOrgId} />}
             />
-        </Card>
+
+            <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Membro</TableHead>
+                                <TableHead>Cargo</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {users.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                        Nenhum membro encontrado.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                users.map((member) => {
+                                    const memberIsOwner = isOwner(member);
+                                    return (
+                                        <TableRow key={member.id}>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9">
+                                                        <AvatarImage src={member.avatar_url || ''} />
+                                                        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                                            {member.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-sm text-[#0B0F1A]">{member.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{member.email}</span>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    {getRoleBadge(member.role)}
+                                                    {member.is_instructor && member.role !== 'INSTRUCTOR' && (
+                                                        <Badge variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20">
+                                                            Instrutor
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {memberIsOwner ? (
+                                                    <span className="text-xs font-medium text-amber-600 flex items-center gap-1">
+                                                        <Crown className="h-3 w-3" /> Sempre ativo
+                                                    </span>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <Switch
+                                                            checked={member.active}
+                                                            onCheckedChange={() => toggleUserStatus(member.id, member.active)}
+                                                            className="data-[state=checked]:bg-bee-amber"
+                                                        />
+                                                        <span className="text-xs font-medium">
+                                                            {member.active ? (
+                                                                <span className="text-green-600 flex items-center gap-1">
+                                                                    <CheckCircle2 className="h-3 w-3" /> Ativo
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-muted-foreground flex items-center gap-1">
+                                                                    <Ban className="h-3 w-3" /> Inativo
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {memberIsOwner ? (
+                                                    <span className="text-xs text-muted-foreground italic">Protegido</span>
+                                                ) : (
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                                                            <DropdownMenuItem
+                                                                className="gap-2"
+                                                                onClick={() => openEdit(member)}
+                                                            >
+                                                                <UserCog className="h-4 w-4" /> Editar Perfil
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="gap-2">
+                                                                <Mail className="h-4 w-4" /> Enviar Convite
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            {member.active ? (
+                                                                <DropdownMenuItem
+                                                                    className="text-destructive gap-2"
+                                                                    onClick={() => toggleUserStatus(member.id, member.active)}
+                                                                >
+                                                                    <Ban className="h-4 w-4" /> Desativar Membro
+                                                                </DropdownMenuItem>
+                                                            ) : (
+                                                                <DropdownMenuItem
+                                                                    className="text-green-600 gap-2"
+                                                                    onClick={() => toggleUserStatus(member.id, member.active)}
+                                                                >
+                                                                    <CheckCircle2 className="h-4 w-4" /> Reativar Membro
+                                                                </DropdownMenuItem>
+                                                            )}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+
+                {/* Edit Member Modal */}
+                <EditMemberModal
+                    open={editModalOpen}
+                    onOpenChange={(open) => {
+                        setEditModalOpen(open);
+                        if (!open) setEditingMember(null);
+                    }}
+                    member={editingMember}
+                    organizationId={currentOrgId}
+                />
+            </Card>
+        </div>
     );
 }

@@ -7,15 +7,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Save, X, User, CreditCard, Tag, CalendarIcon, AlertCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import { addMonths, format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Camera, Trash2 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import {
+    Loader2, UserPlus, Save, X, User, CreditCard, Tag,
+    CalendarIcon, AlertCircle, Check, Camera, Trash2,
+    Mail, Phone, Hash, Shield, Info, Lock, ChevronRight
+} from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useStudentLimit } from '@/hooks/useStudentLimit';
+import { UpgradePromptModal } from '@/components/ui/upgrade-prompt-modal';
+import { format, addMonths } from 'date-fns';
+import { useUnit } from '@/context/UnitContext';
 
 interface StudentModalProps {
     open: boolean;
@@ -31,7 +38,7 @@ interface Plan {
     description: string | null;
     plan_type: 'membership' | 'pack';
     duration_months: number | null;
-    recurrence: 'monthly' | 'quarterly' | 'yearly' | null;
+    recurrence: 'monthly' | 'quarterly' | 'yearly' | 'one_time' | null;
     days_per_week: number | null;
     credits: number | null;
     active: boolean;
@@ -44,9 +51,13 @@ const recurrenceLabel: Record<string, string> = {
 };
 
 export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: StudentModalProps) {
-    const supabase = createClient();
+    const supabase = createClient(); // Instantiate the client locally like other modals
     const { toast } = useToast();
+    const { maxStudents, organizationId } = useSubscription();
+    const { canAddStudent, hasReachedLimit, activeCount } = useStudentLimit();
+    const { currentUnitId } = useUnit();
     const [loading, setLoading] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     // Student Basic Info
     const [fullName, setFullName] = useState('');
@@ -54,6 +65,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     const [phone, setPhone] = useState('');
     const [planId, setPlanId] = useState('');
     const [objective, setObjective] = useState('');
+    const [birthDate, setBirthDate] = useState('');
     const [status, setStatus] = useState('ACTIVE');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -61,6 +73,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
 
     // Plans & Discounts
     const [plans, setPlans] = useState<Plan[]>([]);
+    const [plansLoading, setPlansLoading] = useState(false);
     const [selectedPlanDetails, setSelectedPlanDetails] = useState<Plan | null>(null);
     const [canManageDiscounts, setCanManageDiscounts] = useState(false); // Permission check
     const [discountActive, setDiscountActive] = useState(false);
@@ -68,84 +81,148 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     const [discountValue, setDiscountValue] = useState<string>('');
     const [discountDuration, setDiscountDuration] = useState<string>('indefinite');
 
+    // Priority 1: Current student's org
+    // Priority 2: Current context organizationId
+    // Priority 3: Try to find organizationId from profiles if still missing (for SuperAdmins)
     useEffect(() => {
-        if (open) {
-            fetchPlans();
-            checkPermissions();
+        if (!open) return;
 
-            if (studentToEdit) {
-                setFullName(studentToEdit.full_name || '');
-                setEmail(studentToEdit.email || '');
-                setPhone(studentToEdit.phone || '');
-                setPlanId(studentToEdit.plan || ''); // Note: 'plan' column might store name or ID depending on legacy. Assuming ID/Value matching select now.
-                setObjective(studentToEdit.objective || '');
-                setStatus(studentToEdit.status || 'ACTIVE');
+        const resolveAndFetch = async () => {
+            console.log('[StudentModal] Resolving organizationId...', { 
+                studentToEditOrg: studentToEdit?.organization_id, 
+                subscriptionOrg: organizationId 
+            });
 
-                // Load existing discount if any
-                if (studentToEdit.discount_type && studentToEdit.discount_value) {
-                    setDiscountActive(true);
-                    setDiscountType(studentToEdit.discount_type);
-                    setDiscountValue(studentToEdit.discount_value.toString());
-                    // Rough logic to determine duration key from date would be complex;
-                    // For editing, we might just show "Custom" or the date.
-                    // For now, let's reset duration select or handle 'indefinite' if null
-                    setDiscountDuration(studentToEdit.discount_end_date ? 'custom' : 'indefinite');
-                } else {
-                    setDiscountActive(false);
-                    setDiscountType('percent');
-                    setDiscountValue('');
-                    setDiscountDuration('indefinite');
+            let targetOrgId = studentToEdit?.organization_id || organizationId;
+
+            if (!targetOrgId) {
+                const { data: { user: currentUser } } = await supabase.auth.getUser();
+                if (currentUser) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('organization_id')
+                        .eq('id', currentUser.id)
+                        .single() as { data: { organization_id: string } | null };
+
+                    if (profile?.organization_id) {
+                        console.log('[StudentModal] Resolved org from profile:', profile.organization_id);
+                        targetOrgId = profile.organization_id;
+                    }
                 }
+            }
 
-                setAvatarUrl(studentToEdit.avatar_url || null);
-                setAvatarPreview(studentToEdit.avatar_url || null);
-                setAvatarFile(null);
-
+            if (targetOrgId) {
+                console.log('[StudentModal] Organization resolved. Fetching plans for:', targetOrgId);
+                fetchPlans(targetOrgId);
+                checkPermissions();
             } else {
-                // New Student Reset
-                setFullName(''); setEmail(''); setPhone('');
-                setPlanId(''); setObjective(''); setStatus('ACTIVE');
+                console.warn('[StudentModal] No organizationId found after resolution attempt.');
+            }
+        };
+
+        resolveAndFetch();
+    }, [open, studentToEdit?.organization_id, organizationId]);
+
+    // Separate useEffect for data initialization to avoid logic conflicts
+    useEffect(() => {
+        if (open && studentToEdit) {
+            console.log('[StudentModal] Initializing with student data:', studentToEdit.full_name);
+            setFullName(studentToEdit.full_name || '');
+            setEmail(studentToEdit.email || '');
+            setPhone(studentToEdit.phone || '');
+            setPlanId(studentToEdit.plan_id || studentToEdit.plan || '');
+            setObjective(studentToEdit.objective || '');
+            setBirthDate(studentToEdit.birth_date ? studentToEdit.birth_date.split('T')[0] : '');
+            setStatus(studentToEdit.status || 'ACTIVE');
+
+            // Load existing discount if any
+            if (studentToEdit.discount_type && studentToEdit.discount_value) {
+                setDiscountActive(true);
+                setDiscountType(studentToEdit.discount_type);
+                setDiscountValue(studentToEdit.discount_value.toString());
+                setDiscountDuration(studentToEdit.discount_end_date ? 'custom' : 'indefinite');
+            } else {
                 setDiscountActive(false);
                 setDiscountType('percent');
                 setDiscountValue('');
                 setDiscountDuration('indefinite');
-                setAvatarUrl(null);
-                setAvatarPreview(null);
-                setAvatarFile(null);
             }
+
+            setAvatarUrl(studentToEdit.avatar_url || null);
+            setAvatarPreview(studentToEdit.avatar_url || null);
+            setAvatarFile(null);
+        } else if (open && !studentToEdit) {
+            console.log('[StudentModal] Resetting for new student');
+            // New Student Reset
+            setFullName(''); setEmail(''); setPhone('');
+            setPlanId(''); setObjective(''); setBirthDate(''); setStatus('ACTIVE');
+            setDiscountActive(false);
+            setDiscountType('percent');
+            setDiscountValue('');
+            setDiscountDuration('indefinite');
+            setAvatarUrl(null);
+            setAvatarPreview(null);
+            setAvatarFile(null);
         }
     }, [open, studentToEdit]);
 
     // Update selectedPlanDetails when planId changes or plans loads
     useEffect(() => {
         if (planId && plans.length > 0) {
-            const found = plans.find(p => p.name === planId) || plans.find(p => p.id === planId);
-            // Fallback strategy: if planId is "Plano Gold", try to find name "Plano Gold"
-            // If planId matches a fallback ID, use that.
-            setSelectedPlanDetails(found || null);
+            // Priority: Match by exact ID, then by name (legacy support)
+            const found = plans.find(p => p.id === planId) || plans.find(p => p.name === planId);
+
+            if (found) {
+                // If it's a name match (legacy), silently normalize to ID
+                if (found.name === planId && found.id !== planId) {
+                    setPlanId(found.id);
+                }
+                setSelectedPlanDetails(found);
+            } else {
+                setSelectedPlanDetails(null);
+            }
         } else {
             setSelectedPlanDetails(null);
         }
     }, [planId, plans]);
 
-    const fetchPlans = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: profile } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user?.id || '')
-                .single();
+    const fetchPlans = async (orgId?: string) => {
+        const targetOrgId = orgId || organizationId;
+        if (!targetOrgId) return;
 
-            const { data, error } = await (supabase as any)
+        setPlansLoading(true);
+        try {
+            console.log('[StudentModal] Fetching plans for org:', targetOrgId);
+            const { data, error } = await supabase
                 .from('membership_plans')
-                .select('id, name, description, price, plan_type, duration_months, recurrence, days_per_week, credits, active')
-                .eq('active', true)
-                .eq('organization_id', profile?.organization_id || '')
-                .order('price');
-            if (!error && data) setPlans(data as Plan[]);
+                .select('*')
+                .eq('organization_id', targetOrgId)
+                .order('name');
+
+            if (error) {
+                console.error('[StudentModal] Supabase error fetching plans:', error);
+                throw error;
+            }
+
+            if (data) {
+                console.log('[StudentModal] All Plans fetched:', data.length);
+                const fetchedPlans = data as Plan[];
+                // Filter to keep active plans OR the currently assigned plan
+                const filteredPlans = fetchedPlans.filter(p => 
+                    p.active || 
+                    (studentToEdit && (p.id === studentToEdit.plan_id || p.name === studentToEdit.plan))
+                );
+                setPlans(filteredPlans);
+            }
         } catch (error) {
-            console.error('Error fetching plans:', error);
+            console.error('[StudentModal] Error fetching plans:', error);
+            toast({
+                title: 'Erro ao carregar planos',
+                description: 'Não foi possível carregar os planos de venda.',
+                variant: 'destructive'
+            });
+        } finally {
+            setPlansLoading(false);
         }
     };
 
@@ -249,24 +326,41 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             return;
         }
 
+        // --- STUDENT LIMIT GUARD ---
+        // Block new student creation when limit is reached
+        if (!studentToEdit && !canAddStudent) {
+            setShowUpgradeModal(true);
+            return;
+        }
+
+        // Block reactivation (INACTIVE → ACTIVE) when limit is reached
+        if (studentToEdit && status === 'ACTIVE' && studentToEdit.status !== 'ACTIVE' && hasReachedLimit) {
+            setShowUpgradeModal(true);
+            return;
+        }
+        // ----------------------------
+
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Usuário não autenticado");
 
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
+            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single() as { data: { organization_id: string } | null };
+            const organizationId = profile?.organization_id;
 
             const payload: any = {
                 full_name: fullName,
                 email,
                 phone,
-                plan: selectedPlanDetails?.name || planId, // Legacy text column
-                plan_id: selectedPlanDetails?.id,          // FK Relation
+                plan: selectedPlanDetails?.name || '', // Legacy text column
+                plan_id: selectedPlanDetails?.id || null, // FK Relation
                 // Initialize credits if pack plan
-                ...(selectedPlanDetails?.plan_type === 'pack' ? { credits_balance: selectedPlanDetails.credits } : {}),
+                ...(selectedPlanDetails?.type === 'checkin' ? { credits_balance: selectedPlanDetails.checkin_limit } : {}),
                 objective,
+                birth_date: birthDate || null,
                 status,
-                organization_id: profile?.organization_id
+                organization_id: studentToEdit?.organization_id || organizationId,
+                unit_id: studentToEdit?.unit_id || (currentUnitId === organizationId ? null : currentUnitId)
             };
 
             // 1. If we have a temporary ID for new student, we need it for the avatar filename
@@ -294,15 +388,50 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             }
 
             let error;
+            let studentData: any;
             if (studentToEdit) {
-                const { error: updateError } = await (supabase as any).from('students').update(payload).eq('id', studentToEdit.id);
+                const { error: updateError, data: updatedData } = await (supabase as any).from('students').update(payload).eq('id', studentToEdit.id).select().single();
                 error = updateError;
+                studentData = updatedData;
             } else {
-                const { error: insertError } = await (supabase as any).from('students').insert(payload);
+                const { error: insertError, data: insertedData } = await (supabase as any).from('students').insert(payload).select().single();
                 error = insertError;
+                studentData = insertedData;
             }
 
             if (error) throw error;
+
+            if (!organizationId) {
+                console.error('Organization ID missing during post-save processing');
+                return;
+            }
+
+            // --- AUTOMATED INVOICE GENERATION ---
+            // If it's a new student and they selected a plan with a price > 0, generate the first invoice
+            if (!studentToEdit && studentData && selectedPlanDetails && selectedPlanDetails.price > 0) {
+                const finalPrice = calculateFinalPrice();
+                const firstInvoice = {
+                    organization_id: organizationId,
+                    student_id: studentData.id,
+                    plan_id: selectedPlanDetails.id,
+                    amount: finalPrice,
+                    status: 'PENDENTE',
+                    due_date: new Date().toISOString(), // First payment is due today (enrollment day)
+                    description: `Matrícula: ${selectedPlanDetails.name}`,
+                    created_at: new Date().toISOString()
+                };
+
+                const { error: invoiceError } = await (supabase as any)
+                    .from('invoices')
+                    .insert(firstInvoice);
+
+                if (invoiceError) {
+                    console.error('Error creating first invoice:', invoiceError);
+                    // We don't throw here to not block student creation success, 
+                    // but we log it.
+                }
+            }
+            // ------------------------------------
 
             toast({ title: studentToEdit ? "Aluno atualizado!" : "Aluno cadastrado com sucesso!" });
             onSuccess();
@@ -328,260 +457,420 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
         setPhone(formatPhoneNumber(e.target.value));
     };
 
-    return (
+    return (<>
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[650px] flex flex-col h-full overflow-y-auto w-full">
-                <SheetHeader className="space-y-3 pb-6 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                            <UserPlus className="h-5 w-5 text-orange-600" />
+            <SheetContent side="right" className="sm:max-w-2xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
+                    <div className="flex items-center gap-2">
+                        <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
+                            <UserPlus className="h-6 w-6 text-bee-amber" />
                         </div>
-                        <div>
-                            <SheetTitle className="text-xl">
-                                {studentToEdit ? 'Editar Aluno' : 'Novo Aluno'}
-                            </SheetTitle>
-                            <SheetDescription>
-                                {studentToEdit ? 'Atualize as informações do aluno e do plano.' : 'Preencha os dados básicos e selecione um plano.'}
+                        <div className="text-left">
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
+                                    {studentToEdit ? 'Editar Aluno' : 'Nova Matrícula'}
+                                </SheetTitle>
+                                <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tight h-5 px-2 rounded-full">
+                                    Inscrição
+                                </Badge>
+                            </div>
+                            <SheetDescription className="text-slate-400 font-medium text-xs">
+                                {studentToEdit ? 'Atualize as informações e o plano do aluno.' : 'Preencha os dados para realizar uma nova matrícula.'}
                             </SheetDescription>
                         </div>
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 py-6 space-y-6">
-                    {/* Avatar Upload Selection */}
-                    <div className="flex flex-col items-center justify-center p-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 gap-4">
-                        <div className="relative group">
-                            <Avatar className="h-24 w-24 border-4 border-white shadow-sm ring-1 ring-slate-100">
-                                <AvatarImage src={avatarPreview || ''} className="object-cover" />
-                                <AvatarFallback className="bg-orange-100 text-orange-600 font-black text-2xl">
-                                    {fullName ? fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <User className="h-10 w-10 text-orange-300" />}
-                                </AvatarFallback>
-                            </Avatar>
-                            <label className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-all cursor-pointer hover:scale-110">
-                                <Camera className="h-4 w-4" />
-                                <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
-                            </label>
-                            {(avatarPreview || avatarUrl) && (
-                                <button
-                                    onClick={() => { setAvatarPreview(null); setAvatarFile(null); setAvatarUrl(null); }}
-                                    className="absolute -top-1 -right-1 h-6 w-6 bg-red-500 rounded-full shadow-sm text-white flex items-center justify-center hover:bg-red-600 transition-all scale-0 group-hover:scale-100"
-                                >
-                                    <Trash2 className="h-3 w-3" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="text-center">
-                            <p className="text-sm font-bold text-deep-midnight">Foto do Aluno</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">PNG, JPG até 5MB</p>
-                        </div>
-                    </div>
+                <div className="flex-1 overflow-y-auto">
+                    <div className="p-8 space-y-8">
+                        {/* Avatar Upload Selection */}
+                        <div className="flex flex-col items-center justify-center p-10 bg-slate-50/50 rounded-[40px] border border-slate-100 gap-6 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/[0.03] rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/[0.02] rounded-full -ml-16 -mb-16 blur-3xl opacity-50" />
 
-                    {/* Dados Pessoais */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                            <User className="h-4 w-4" /> DADOS PESSOAIS
-                        </h3>
-                        <div className="space-y-3">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Nome Completo *</Label>
-                                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Ex: João da Silva" />
+                            <div className="relative group/avatar">
+                                <Avatar className="h-32 w-32 border-4 border-white shadow-2xl ring-1 ring-slate-100 transition-all duration-500 group-hover/avatar:scale-105 group-hover/avatar:rotate-1">
+                                    <AvatarImage src={avatarPreview || ''} className="object-cover" />
+                                    <AvatarFallback className="bg-gradient-to-br from-bee-amber/10 to-amber-200/20 text-bee-amber font-black text-4xl">
+                                        {fullName ? fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : <User className="h-12 w-12 opacity-30" />}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <label className="absolute bottom-1 right-1 h-10 w-10 bg-white rounded-2xl shadow-xl border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-all cursor-pointer hover:scale-110 active:scale-90 z-20 hover:rotate-6">
+                                    <Camera className="h-5 w-5" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                                </label>
+                                {(avatarPreview || avatarUrl) && (
+                                    <button
+                                        onClick={() => { setAvatarPreview(null); setAvatarFile(null); setAvatarUrl(null); }}
+                                        className="absolute -top-1 -right-1 h-8 w-8 bg-red-500 rounded-xl shadow-lg text-white flex items-center justify-center hover:bg-red-600 transition-all scale-0 group-hover/avatar:scale-100 active:scale-90 z-20 rotate-12"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                )}
                             </div>
+                            <div className="text-center space-y-1.5 relative">
+                                <p className="text-sm font-black text-bee-midnight uppercase tracking-tight">Foto de Identificação</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center justify-center gap-1.5">
+                                    <Info className="h-3 w-3 text-slate-400" />
+                                    PNG ou JPG até 5MB
+                                </p>
+                            </div>
+                        </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Email *</Label>
-                                    <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="joao@email.com" />
+                        {/* Dados Pessoais */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                    <User className="h-4 w-4 text-bee-amber" />
                                 </div>
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Dados Pessoais</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-5">
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-medium text-slate-700">Telefone</Label>
-                                    <Input value={phone} onChange={handlePhoneChange} placeholder="(11) 99999-9999" maxLength={15} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Plano e Financeiro */}
-                    <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" /> PLANO E FINANCEIRO
-                        </h3>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Plano Selecionado</Label>
-                                <Select value={planId} onValueChange={setPlanId}>
-                                    <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                        <SelectValue placeholder="Selecione um plano..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {plans.map(p => (
-                                            <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem> // Value matches DB 'plan' column usage (often name)
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-sm font-medium text-slate-700">Status da Matrícula</Label>
-                                <Select value={status} onValueChange={setStatus}>
-                                    <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="ACTIVE">Ativo</SelectItem>
-                                        <SelectItem value="INACTIVE">Inativo</SelectItem>
-                                        <SelectItem value="OVERDUE">Inadimplente</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        {/* Resumo do Plano */}
-                        {selectedPlanDetails && (
-                            <Card className="bg-slate-50 border-slate-200">
-                                <CardContent className="p-4 flex justify-between items-center gap-4">
-                                    <div className="flex flex-col gap-1">
-                                        <p className="font-semibold text-slate-800">{selectedPlanDetails.name}</p>
-                                        {selectedPlanDetails.description && (
-                                            <p className="text-xs text-slate-500">{selectedPlanDetails.description}</p>
-                                        )}
-                                        <div className="flex gap-2 mt-1 flex-wrap">
-                                            {selectedPlanDetails.plan_type === 'pack' ? (
-                                                <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">{selectedPlanDetails.credits} Créditos</Badge>
-                                            ) : selectedPlanDetails.days_per_week ? (
-                                                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700">{selectedPlanDetails.days_per_week}x por semana</Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">Acesso Ilimitado</Badge>
-                                            )}
-                                            {selectedPlanDetails.recurrence && (
-                                                <Badge variant="outline" className="text-xs">{recurrenceLabel[selectedPlanDetails.recurrence] || selectedPlanDetails.recurrence}</Badge>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                        <p className="text-2xl font-bold text-orange-600">
-                                            {(selectedPlanDetails.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Área de Desconto (Restrita) */}
-                        {canManageDiscounts && (
-                            <div className="space-y-4 border rounded-lg p-4 border-dashed border-slate-300">
-                                <div className="flex items-center justify-between">
-                                    <Label className="flex items-center gap-2 cursor-pointer" htmlFor="discount-toggle">
-                                        <Tag className="h-4 w-4 text-orange-500" />
-                                        <span className="font-medium text-slate-700">Aplicar Desconto Promocional</span>
-                                    </Label>
-                                    <Switch
-                                        id="discount-toggle"
-                                        checked={discountActive}
-                                        onCheckedChange={setDiscountActive}
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome Completo do Aluno</Label>
+                                    <Input
+                                        value={fullName}
+                                        onChange={e => setFullName(e.target.value)}
+                                        placeholder="Nome completo do aluno"
+                                        className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
                                     />
                                 </div>
 
-                                {discountActive && (
-                                    <div className="space-y-4 pt-2 animate-in slide-in-from-top-2 fade-in duration-300">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-slate-600">Valor do Desconto</Label>
-                                                <div className="flex gap-2">
-                                                    <Input
-                                                        type="number"
-                                                        value={discountValue}
-                                                        onChange={e => setDiscountValue(e.target.value)}
-                                                        placeholder={discountType === 'percent' ? "10" : "50.00"}
-                                                        className="flex-1"
-                                                    />
-                                                    <div className="flex bg-slate-100 rounded-md border p-1">
-                                                        <button
-                                                            className={`px-3 text-sm font-medium rounded-sm transition-colors ${discountType === 'percent' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-500 hover:text-slate-700'}`}
-                                                            onClick={() => setDiscountType('percent')}
-                                                        >
-                                                            %
-                                                        </button>
-                                                        <button
-                                                            className={`px-3 text-sm font-medium rounded-sm transition-colors ${discountType === 'fixed' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-500 hover:text-slate-700'}`}
-                                                            onClick={() => setDiscountType('fixed')}
-                                                        >
-                                                            R$
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Endereço de Email</Label>
+                                        <Input
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="email@exemplo.com"
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Celular / WhatsApp</Label>
+                                        <Input
+                                            value={phone}
+                                            onChange={handlePhoneChange}
+                                            placeholder="(00) 00000-0000"
+                                            maxLength={15}
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data de Nascimento</Label>
+                                        <Input
+                                            type="date"
+                                            value={birthDate}
+                                            onChange={e => setBirthDate(e.target.value)}
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Objetivo (Opcional)</Label>
+                                        <Input
+                                            value={objective}
+                                            onChange={e => setObjective(e.target.value)}
+                                            placeholder="Ex: Emagrecimento, Hipertrofia..."
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                            <div className="space-y-2">
-                                                <Label className="text-xs font-medium text-slate-600">Duração</Label>
-                                                <Select value={discountDuration} onValueChange={setDiscountDuration}>
-                                                    <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="1_month">1º Mês apenas</SelectItem>
-                                                        <SelectItem value="3_months">3 Meses</SelectItem>
-                                                        <SelectItem value="6_months">6 Meses</SelectItem>
-                                                        <SelectItem value="12_months">12 Meses</SelectItem>
-                                                        <SelectItem value="indefinite">Indeterminado (Sempre)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                        <Separator className="bg-slate-100/80" />
+
+                        {/* Plano e Financeiro */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                    <CreditCard className="h-4 w-4 text-bee-amber" />
+                                </div>
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Plano e Financeiro</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plano Selecionado</Label>
+                                    <Select 
+                                        value={plans.some(p => p.id === planId) ? planId : undefined} 
+                                        onValueChange={setPlanId}
+                                    >
+                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 focus:ring-bee-amber/20 focus:border-bee-amber/30 shadow-sm font-bold text-bee-midnight px-5 text-left">
+                                            <SelectValue placeholder="SELECIONE O PLANO" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2 bg-white max-h-[300px]">
+                                            {plansLoading ? (
+                                                <div className="py-6 px-4 text-center text-xs text-slate-400 font-bold uppercase tracking-widest flex items-center justify-center gap-2">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Carregando Planos...
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {plans.map(p => (
+                                                        <SelectItem key={p.id} value={p.id} className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="font-bold">{p.name}</span>
+                                                                <span className="text-[10px] text-slate-400 uppercase font-black tracking-tight">
+                                                                    {p.plan_type === 'pack'
+                                                                        ? `${p.credits ? `${p.credits} Créditos` : 'Ilimitado'}`
+                                                                        : (p.days_per_week ? `${p.days_per_week}x/Semana` : 'Ilimitado')
+                                                                    }
+                                                                    {p.price > 0 && ` • R$ ${p.price}`}
+                                                                </span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                    {plans.length === 0 && (
+                                                        <div className="py-6 px-4 text-center text-xs text-slate-400 font-bold uppercase tracking-widest">
+                                                            Nenhum plano disponível
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Status da Matrícula</Label>
+                                    <Select value={status} onValueChange={setStatus}>
+                                        <SelectTrigger className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-bold text-bee-midnight px-5 focus:ring-bee-amber/20 focus:border-bee-amber/30 shadow-sm">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2 bg-white">
+                                            <SelectItem value="ACTIVE" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                                    Matrícula Ativa
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="INACTIVE" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">
+                                                <div className="flex items-center gap-2 text-slate-400">
+                                                    <div className="w-2 h-2 rounded-full bg-slate-300" />
+                                                    Matrícula Inativa
+                                                </div>
+                                            </SelectItem>
+                                            <SelectItem value="OVERDUE" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">
+                                                <div className="flex items-center gap-2 text-red-500">
+                                                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                                                    Inadimplente
+                                                </div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            {/* Resumo do Plano */}
+                            {selectedPlanDetails && (
+                                <Card className="bg-slate-50/50 border-slate-100 shadow-sm overflow-hidden rounded-[32px] relative group/card transition-all hover:border-bee-amber/20 hover:shadow-md">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/[0.04] rounded-full -mr-16 -mt-16 blur-3xl opacity-50 group-hover/card:scale-110 transition-transform duration-700" />
+                                    <CardContent className="p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative">
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <p className="font-display font-black text-xl text-bee-midnight tracking-tight uppercase leading-none">{selectedPlanDetails.name}</p>
+                                                    <Badge variant="outline" className="text-[9px] font-black uppercase tracking-[0.15em] bg-bee-amber/10 text-bee-amber border-bee-amber/20 px-2 py-0.5 rounded-md">
+                                                        VIGENTE
+                                                    </Badge>
+                                                </div>
+                                                {selectedPlanDetails.description && (
+                                                    <p className="text-sm font-medium text-slate-400 max-w-sm leading-relaxed">{selectedPlanDetails.description}</p>
+                                                )}
+                                            </div>
+                                            <div className="flex gap-2 flex-wrap">
+                                                {selectedPlanDetails.type === 'checkin' ? (
+                                                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-blue-50/50 text-blue-600 border-blue-100/50 px-3 py-1 rounded-full whitespace-nowrap">
+                                                        {selectedPlanDetails.checkin_limit} Créditos inclusos
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider bg-green-50/50 text-green-600 border-green-100/50 px-3 py-1 rounded-full whitespace-nowrap">
+                                                        Uso Ilimitado
+                                                    </Badge>
+                                                )}
+                                                {selectedPlanDetails.frequency && selectedPlanDetails.frequency !== 'packet' && (
+                                                    <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-white border-slate-100 px-3 py-1 rounded-full whitespace-nowrap">
+                                                        Ciclo {recurrenceLabel[selectedPlanDetails.frequency] || selectedPlanDetails.frequency}
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </div>
+                                        <div className="text-right shrink-0 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                                            <p className="text-3xl font-black text-bee-amber tracking-tighter leading-none">
+                                                {(selectedPlanDetails.price || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                            </p>
+                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mt-2">Valor Base</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
 
-                                        {/* Preço Final Calculado */}
-                                        {selectedPlanDetails && (
-                                            <div className="bg-orange-50 rounded-md p-3 flex justify-between items-center text-sm border border-orange-100">
-                                                <span className="text-orange-800 font-medium">Preço Final com Desconto:</span>
-                                                <div className="text-right">
-                                                    <span className="font-bold text-orange-700 text-lg">
-                                                        {calculateFinalPrice()?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                                    </span>
-                                                    {calculateDiscountEndDate() && (
-                                                        <p className="text-xs text-orange-600">
-                                                            Válido até: {format(new Date(calculateDiscountEndDate()!), 'dd/MM/yyyy')}
-                                                        </p>
-                                                    )}
-                                                    {discountDuration === 'indefinite' && (
-                                                        <p className="text-xs text-orange-600">Válido por tempo indeterminado</p>
-                                                    )}
+                            {/* Área de Desconto (Restrita) */}
+                            {canManageDiscounts && (
+                                <div className={`rounded-[32px] overflow-hidden transition-all duration-500 border ${discountActive ? 'border-bee-amber/20 bg-bee-amber/[0.02] shadow-sm' : 'border-dashed border-slate-200 bg-slate-50/30'}`}>
+                                    <div className="p-8 space-y-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-colors ${discountActive ? 'bg-bee-amber text-bee-midnight' : 'bg-slate-100 text-slate-400'}`}>
+                                                    <Tag className="h-5 w-5" />
                                                 </div>
+                                                <div className="space-y-0.5">
+                                                    <Label className="text-base font-black text-bee-midnight tracking-tight uppercase leading-none">Desconto Promocional</Label>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Condição especial de pagamento</p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                id="discount-toggle"
+                                                checked={discountActive}
+                                                onCheckedChange={setDiscountActive}
+                                                className="data-[state=checked]:bg-bee-amber"
+                                            />
+                                        </div>
+
+                                        {discountActive && (
+                                            <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor do Desconto</Label>
+                                                        <div className="flex gap-3">
+                                                            <div className="relative flex-1 group/input">
+                                                                <Input
+                                                                    type="number"
+                                                                    value={discountValue}
+                                                                    onChange={e => setDiscountValue(e.target.value)}
+                                                                    placeholder={discountType === 'percent' ? "10" : "50.00"}
+                                                                    className="h-11 border-slate-100 bg-white rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                                                />
+                                                            </div>
+                                                            <div className="flex bg-slate-100 rounded-2xl border border-slate-200/50 p-1.5 shrink-0 shadow-inner">
+                                                                <button
+                                                                    className={`px-5 text-xs font-black rounded-xl transition-all ${discountType === 'percent' ? 'bg-white shadow-md text-bee-amber' : 'text-slate-400 hover:text-slate-600'}`}
+                                                                    onClick={() => setDiscountType('percent')}
+                                                                >
+                                                                    %
+                                                                </button>
+                                                                <button
+                                                                    className={`px-5 text-xs font-black rounded-xl transition-all ${discountType === 'fixed' ? 'bg-white shadow-md text-bee-amber' : 'text-slate-400 hover:text-slate-600'}`}
+                                                                    onClick={() => setDiscountType('fixed')}
+                                                                >
+                                                                    R$
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duração do Benefício</Label>
+                                                        <Select value={discountDuration} onValueChange={setDiscountDuration}>
+                                                            <SelectTrigger className="h-11 border-slate-100 bg-white rounded-2xl transition-all font-bold text-bee-midnight px-5 focus:ring-bee-amber/20 focus:border-bee-amber/30 shadow-sm">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2 bg-white">
+                                                                <SelectItem value="1_month" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">Apenas no 1º Mês</SelectItem>
+                                                                <SelectItem value="3_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">Durante 3 Meses</SelectItem>
+                                                                <SelectItem value="6_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">Durante 6 Meses</SelectItem>
+                                                                <SelectItem value="12_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">Durante 12 Meses (Anual)</SelectItem>
+                                                                <SelectItem value="indefinite" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">Recorrência Vitalícia</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+
+                                                {/* Preço Final Calculado */}
+                                                {selectedPlanDetails && (
+                                                    <div className="bg-white rounded-[24px] p-6 flex flex-col sm:flex-row justify-between items-center gap-4 border border-bee-amber/10 shadow-sm relative overflow-hidden group/summary">
+                                                        <div className="absolute top-0 right-0 w-24 h-24 bg-bee-amber/[0.02] rounded-full -mr-12 -mt-12 blur-2xl" />
+                                                        <div className="space-y-1 relative">
+                                                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-bee-amber/60 block">Mensalidade após desconto</span>
+                                                            <div className="text-2xl font-black text-bee-amber tracking-tight leading-none">
+                                                                {calculateFinalPrice()?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-full border border-slate-100 relative group-hover/summary:border-bee-amber/20 transition-colors">
+                                                            <CalendarIcon className="h-4 w-4 text-slate-400 group-hover/summary:text-bee-amber transition-colors" />
+                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                                                                {calculateDiscountEndDate() ? (
+                                                                    `Válido até ${format(new Date(calculateDiscountEndDate()!), 'dd/MM/yy')}`
+                                                                ) : (
+                                                                    'Por Tempo Indeterminado'
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-sm font-medium text-slate-700">Objetivo Principal</Label>
-                        <Select value={objective} onValueChange={setObjective}>
-                            <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
-                                <SelectItem value="Emagrecimento">Emagrecimento</SelectItem>
-                                <SelectItem value="Condicionamento">Condicionamento</SelectItem>
-                                <SelectItem value="Saúde/Bem-estar">Saúde/Bem-estar</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {/* Objetivo */}
+                        <div className="space-y-6 pb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                    <Hash className="h-4 w-4 text-bee-amber" />
+                                </div>
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Objetivo e Foco</h3>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Objetivo Principal do Aluno</Label>
+                                <Select value={objective} onValueChange={setObjective}>
+                                    <SelectTrigger className="h-12 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                        <SelectValue placeholder="Selecione o objetivo principal..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                        <SelectItem value="Hipertrofia" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium transition-colors">Hipertrofia (Ganho de Massa)</SelectItem>
+                                        <SelectItem value="Emagrecimento" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium transition-colors">Emagrecimento (Perda de Peso)</SelectItem>
+                                        <SelectItem value="Condicionamento" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium transition-colors">Condicionamento Físico</SelectItem>
+                                        <SelectItem value="Saúde/Bem-estar" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium transition-colors">Saúde & Bem-estar</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <SheetFooter className="mt-auto border-t pt-4 flex gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 gap-2">
-                        <X className="h-4 w-4" />
-                        Cancelar
+                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                    >
+                        <X className="mr-2 h-4 w-4" />
+                        Descartar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold gap-2">
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Salvar
+                    <Button
+                        disabled={loading}
+                        onClick={handleSubmit}
+                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processando...
+                            </>
+                        ) : (
+                            <>
+                                <Check className="mr-2 h-4 w-4 stroke-[3px]" />
+                                {studentToEdit ? 'Salvar Alterações' : 'Concluir Matrícula'}
+                            </>
+                        )}
                     </Button>
                 </SheetFooter>
             </SheetContent>
         </Sheet>
-    );
+
+        <UpgradePromptModal
+            open={showUpgradeModal}
+            onOpenChange={setShowUpgradeModal}
+            featureName={`Limite de ${maxStudents} alunos ativos`}
+        />
+    </>);
 }

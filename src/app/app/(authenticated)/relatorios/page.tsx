@@ -47,6 +47,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// Config and Context
+import { useUnit } from '@/context/UnitContext';
+
 // Export Libraries
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -121,6 +124,7 @@ const DB_STATUS_MAP: Record<string, string> = {
 export default function RelatoriosPage() {
     const supabase = createClient();
     const { toast } = useToast();
+    const { currentUnitId } = useUnit();
 
     const [activeTab, setActiveTab] = useState(REPORT_TYPES[0].id);
     const [data, setData] = useState<any[]>([]);
@@ -175,22 +179,38 @@ export default function RelatoriosPage() {
 
             switch (activeTab) {
                 case 'finance': {
-                    let query = supabase.from('vw_payments').select('id, amount, due_date, dynamic_status, payment_date, student_name').eq('organization_id', orgId).gte('due_date', startDate).lte('due_date', endDate);
+                    let query = supabase.from('vw_payments').select('id, amount, due_date, dynamic_status, payment_date, student_name, student_id').eq('organization_id', orgId).gte('due_date', startDate).lte('due_date', endDate);
                     if (dbStatus !== 'TODOS') query = query.eq('dynamic_status', dbStatus);
-                    const { data: financeData } = await query.order('due_date', { ascending: false });
-                    resultData = financeData?.map((item: any) => ({
+                    const { data: financeData, error } = await query.order('due_date', { ascending: false });
+                    if (error) throw error;
+
+                    let finalData = financeData || [];
+                    if (currentUnitId && currentUnitId !== orgId && finalData.length > 0) {
+                        const studentIds = finalData.map((item: any) => item.student_id).filter(Boolean);
+                        if (studentIds.length > 0) {
+                            const { data: validStudents } = await supabase.from('students').select('id').in('id', studentIds).eq('unit_id', currentUnitId);
+                            const validSet = new Set(validStudents?.map((s: any) => s.id) || []);
+                            finalData = finalData.filter((item: any) => validSet.has(item.student_id));
+                        }
+                    }
+
+                    resultData = finalData.map((item: any) => ({
                         'Aluno': item.student_name || 'N/A',
                         'Vencimento': format(new Date(item.due_date), 'dd/MM/yyyy'),
                         'Valor (R$)': Number(item.amount).toFixed(2),
                         'Status': STATUS_MAP[item.dynamic_status] || item.dynamic_status,
                         'Pagamento': item.payment_date ? format(new Date(item.payment_date), 'dd/MM/yyyy') : '-'
-                    })) || [];
+                    }));
                     break;
                 }
                 case 'students': {
                     let query = supabase.from('students').select('full_name, status, created_at, membership_plans(name)').eq('organization_id', orgId).gte('created_at', `${startDate}T00:00:00Z`).lte('created_at', `${endDate}T23:59:59Z`);
                     if (dbStatus !== 'TODOS') query = query.ilike('status', dbStatus);
-                    const { data: studentData } = await query.order('created_at', { ascending: false });
+                    if (currentUnitId && currentUnitId !== orgId) query = query.eq('unit_id', currentUnitId);
+                    
+                    const { data: studentData, error } = await query.order('created_at', { ascending: false });
+                    if (error) throw error;
+
                     resultData = studentData?.map((item: any) => ({
                         'Nome': item.full_name,
                         'Plano': item.membership_plans?.name || 'Sem plano',
@@ -200,34 +220,62 @@ export default function RelatoriosPage() {
                     break;
                 }
                 case 'attendance': {
-                    let query = supabase.from('class_attendees').select('status, created_at, students(full_name), classes(title, start_time)').eq('organization_id', orgId).gte('created_at', `${startDate}T00:00:00Z`).lte('created_at', `${endDate}T23:59:59Z`);
+                    let query = supabase.from('event_enrollments').select('status, created_at, student_id, students(full_name), calendar_events(title, start_datetime)').eq('organization_id', orgId).gte('created_at', `${startDate}T00:00:00Z`).lte('created_at', `${endDate}T23:59:59Z`);
                     if (dbStatus !== 'TODOS') query = query.eq('status', dbStatus);
-                    const { data: attendanceData } = await (query as any).order('created_at', { ascending: false });
-                    resultData = attendanceData?.map((item: any) => ({
+                    
+                    const { data: attendanceData, error } = await (query as any).order('created_at', { ascending: false });
+                    if (error) throw error;
+
+                    let finalData = attendanceData || [];
+                    if (currentUnitId && currentUnitId !== orgId && finalData.length > 0) {
+                        const studentIds = finalData.map((item: any) => item.student_id).filter(Boolean);
+                        if (studentIds.length > 0) {
+                            const { data: validStudents } = await supabase.from('students').select('id').in('id', studentIds).eq('unit_id', currentUnitId);
+                            const validSet = new Set(validStudents?.map((s: any) => s.id) || []);
+                            finalData = finalData.filter((item: any) => validSet.has(item.student_id));
+                        }
+                    }
+
+                    resultData = finalData.map((item: any) => ({
                         'Aluno': item.students?.full_name || 'N/A',
-                        'Aula': item.classes?.title || 'Aula Coletiva',
-                        'Data da Aula': item.classes?.start_time ? format(new Date(item.classes.start_time), 'dd/MM/yyyy HH:mm') : '-',
+                        'Aula': item.calendar_events?.title || 'Aula / Evento',
+                        'Data da Aula': item.calendar_events?.start_datetime ? format(new Date(item.calendar_events.start_datetime), 'dd/MM/yyyy HH:mm') : '-',
                         'Status': STATUS_MAP[item.status] || item.status
-                    })) || [];
+                    }));
                     break;
                 }
                 case 'workouts': {
-                    let query = supabase.from('workouts').select('title, status, scheduled_at, students(full_name)').eq('organization_id', orgId).gte('scheduled_at', `${startDate}T00:00:00Z`).lte('scheduled_at', `${endDate}T23:59:59Z`);
+                    let query = supabase.from('workouts').select('title, status, scheduled_at, student_id, students(full_name)').eq('organization_id', orgId).gte('scheduled_at', `${startDate}T00:00:00Z`).lte('scheduled_at', `${endDate}T23:59:59Z`);
                     if (dbStatus !== 'TODOS') query = query.eq('status', dbStatus);
-                    const { data: workoutData } = await (query as any).order('scheduled_at', { ascending: false });
-                    resultData = workoutData?.map((item: any) => ({
+                    
+                    const { data: workoutData, error } = await (query as any).order('scheduled_at', { ascending: false });
+                    if (error) throw error;
+
+                    let finalData = workoutData || [];
+                    if (currentUnitId && currentUnitId !== orgId && finalData.length > 0) {
+                        const studentIds = finalData.map((item: any) => item.student_id).filter(Boolean);
+                        if (studentIds.length > 0) {
+                            const { data: validStudents } = await supabase.from('students').select('id').in('id', studentIds).eq('unit_id', currentUnitId);
+                            const validSet = new Set(validStudents?.map((s: any) => s.id) || []);
+                            finalData = finalData.filter((item: any) => validSet.has(item.student_id));
+                        }
+                    }
+
+                    resultData = finalData.map((item: any) => ({
                         'Treino': item.title || 'Treino Individual',
                         'Aluno': item.students?.full_name || 'N/A',
                         'Data Agendada': item.scheduled_at ? format(new Date(item.scheduled_at), 'dd/MM/yyyy HH:mm') : '-',
                         'Status': STATUS_MAP[item.status] || item.status
-                    })) || [];
+                    }));
                     break;
                 }
             }
 
             setData(resultData);
         } catch (error: any) {
-            toast({ title: "Erro ao gerar dados", description: error.message, variant: "destructive" });
+            console.error("Relatorios Error:", error);
+            toast({ title: "Erro ao gerar dados", description: error.message || "Erro desconhecido", variant: "destructive" });
+            setData([]); // Prevent hanging UI
         } finally {
             setLoading(false);
         }
@@ -302,12 +350,12 @@ export default function RelatoriosPage() {
 
                 {/* Type Selector Tabs */}
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                    <TabsList className="bg-white border p-1 rounded-xl h-auto flex flex-wrap gap-1">
+                    <TabsList className="bg-white border p-1.5 rounded-full h-auto flex flex-wrap gap-1 shadow-sm">
                         {REPORT_TYPES.map((report) => (
                             <TabsTrigger
                                 key={report.id}
                                 value={report.id}
-                                className="flex flex-1 items-center gap-2 px-4 py-2.5 rounded-lg data-[state=active]:bg-slate-50 data-[state=active]:text-orange-600 data-[state=active]:border-orange-200 border border-transparent transition-all"
+                                className="flex flex-1 items-center gap-2 px-6 py-2.5 rounded-full data-[state=active]:bg-slate-50 data-[state=active]:text-orange-600 data-[state=active]:border-orange-200 border border-transparent transition-all hover:bg-slate-50/50"
                             >
                                 <report.icon className="w-4 h-4" />
                                 <span className="font-bold text-sm whitespace-nowrap">{report.name}</span>
@@ -317,7 +365,7 @@ export default function RelatoriosPage() {
                 </Tabs>
 
                 {/* Filter Bar */}
-                <Card className="border-slate-200 shadow-sm overflow-visible rounded-xl">
+                <Card className="border-slate-200 shadow-sm overflow-visible rounded-[2rem]">
                     <CardContent className="p-4 pt-4">
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
 
@@ -328,7 +376,7 @@ export default function RelatoriosPage() {
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-10 bg-slate-50/50 border-slate-200"
+                                        className="h-10 bg-slate-50/50 border-slate-200 rounded-full"
                                     />
                                 </div>
 
@@ -338,14 +386,14 @@ export default function RelatoriosPage() {
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-10 bg-slate-50/50 border-slate-200"
+                                        className="h-10 bg-slate-50/50 border-slate-200 rounded-full"
                                     />
                                 </div>
 
                                 <div className="space-y-1.5">
                                     <label className="text-[11px] uppercase font-bold text-slate-500 tracking-wider">Status</label>
                                     <Select value={status} onValueChange={setStatus}>
-                                        <SelectTrigger className="h-10 bg-slate-50/50 border-slate-200">
+                                        <SelectTrigger className="h-10 bg-slate-50/50 border-slate-200 rounded-full px-4">
                                             <SelectValue placeholder="Selecione o status" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -360,7 +408,7 @@ export default function RelatoriosPage() {
                             <Button
                                 onClick={fetchReportData}
                                 disabled={loading}
-                                className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-bold gap-2 px-6 shrink-0"
+                                className="h-11 bg-orange-500 hover:bg-orange-600 text-white font-bold gap-2 px-8 shrink-0 rounded-full shadow-lg shadow-orange-100 transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-wider text-xs"
                             >
                                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                                 Gerar Relatório
@@ -371,7 +419,7 @@ export default function RelatoriosPage() {
 
                 {/* Results Area — only shown after generate */}
                 {hasGenerated && (
-                    <Card className="border-slate-100 shadow-sm overflow-hidden flex flex-col bg-white rounded-xl">
+                    <Card className="border-slate-100 shadow-sm overflow-hidden flex flex-col bg-white rounded-[2rem]">
                         <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/60">
                             <div className="flex items-center gap-2">
                                 <activeReport.icon className="h-5 w-5 text-orange-500" />
@@ -389,24 +437,24 @@ export default function RelatoriosPage() {
                                     <Button
                                         variant="outline"
                                         disabled={loading || data.length === 0}
-                                        className="h-9 gap-2 border-slate-200 font-bold text-slate-700 text-[11px] uppercase tracking-wider px-4"
+                                        className="h-10 gap-2 border-slate-200 font-bold text-slate-700 text-[11px] uppercase tracking-wider px-6 rounded-full shadow-sm transition-all hover:-translate-y-0.5 active:scale-95"
                                     >
                                         <Download className="w-4 h-4" />
                                         Exportar
                                         <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="rounded-xl border-slate-100 shadow-xl p-1 bg-white min-w-[180px]">
+                                <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-xl p-1.5 bg-white min-w-[200px]">
                                     <DropdownMenuItem
                                         onClick={exportToExcel}
-                                        className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-medium text-emerald-700 focus:bg-emerald-50 cursor-pointer"
+                                        className="flex items-center gap-2 rounded-full p-2.5 px-4 text-sm font-medium text-emerald-700 focus:bg-emerald-50 cursor-pointer"
                                     >
                                         <FileSpreadsheet className="w-4 h-4" />
                                         Exportar para Excel
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={exportToPDF}
-                                        className="flex items-center gap-2 rounded-lg p-2.5 text-sm font-medium text-red-700 focus:bg-red-50 cursor-pointer"
+                                        className="flex items-center gap-2 rounded-full p-2.5 px-4 text-sm font-medium text-red-700 focus:bg-red-50 cursor-pointer"
                                     >
                                         <FileText className="w-4 h-4" />
                                         Exportar para PDF

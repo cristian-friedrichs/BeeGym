@@ -42,10 +42,15 @@ export async function GET() {
                 valor_mensal: Number(p.price),
                 intervalo: p.interval || 'Mensal',
                 assinantes_ativos: activeCountByPlan[p.id] || 0,
-                max_alunos: configPlan?.max_students || null,
+                max_alunos: p.max_students || configPlan?.max_students || null,
                 efi_plan_id_hml: p.efi_plan_id_hml,
                 efi_plan_id_prd: p.efi_plan_id_prd,
                 ativo: p.active,
+                promo_price: p.promo_price ? Number(p.promo_price) : null,
+                promo_months: p.promo_months || 0,
+                allowed_features: p.allowed_features || [],
+                marketing_subtitle: p.marketing_subtitle || '',
+                marketing_highlights: p.marketing_highlights || [],
             };
         });
 
@@ -61,7 +66,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const supabase = supabaseAdmin;
 
-        // 1. Cria o Plano na Efí primeiro (Para garantir que não teremos planos "órfãos" no DB sem id na EFI)
+        // 1. Cria o Plano na Efí primeiro
         const isPrd = efiConfig.ambiente === 'producao';
         let newEfiId = null;
 
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
             newEfiId = await efiPlansService.criarPlano({
                 name: `BeeGym ${body.nome}`,
                 interval: 1, // mensal forçado por padrão na EFI
-                repeats: null // contínuo
+                repeats: body.repeticoes === 0 ? null : body.repeticoes
             });
         } catch (efiError: any) {
             console.error('[Admin Planos POST] Erro ao criar na EFI:', efiError.message);
@@ -87,6 +92,12 @@ export async function POST(request: NextRequest) {
                 interval: body.intervalo || 'Mensal',
                 efi_plan_id_hml: isPrd ? null : newEfiId,
                 efi_plan_id_prd: isPrd ? newEfiId : null,
+                promo_price: body.promo_price || null,
+                promo_months: body.promo_months || null,
+                allowed_features: body.allowed_features || [],
+                marketing_subtitle: body.marketing_subtitle || null,
+                marketing_highlights: body.marketing_highlights || [],
+                max_students: body.max_alunos || null
             })
             .select('*')
             .single();
@@ -112,3 +123,63 @@ export async function POST(request: NextRequest) {
     }
 }
 
+export async function PUT(request: NextRequest) {
+    try {
+        const body = await request.json();
+        const supabase = supabaseAdmin;
+
+        const { id, ...updates } = body;
+
+        // No PUT, verificamos se o gateway service suporta atualizarPlano. 
+        // Como o lint avisou que não existia, vamos remover a chamada por enquanto 
+        // para não quebrar o build, até termos certeza da API da EFI.
+        /*
+        if (updates.nome) {
+            const isPrd = efiConfig.ambiente === 'producao';
+            const efiPlanId = isPrd ? updates.efi_plan_id_prd : updates.efi_plan_id_hml;
+            if (efiPlanId && efiPlansService.atualizarPlano) {
+                 await efiPlansService.atualizarPlano({ ... });
+            }
+        }
+        */
+
+        const { data: planoAtualizado, error } = await supabase
+            .from('saas_plans')
+            .update({
+                name: updates.nome,
+                description: updates.descricao,
+                tier: updates.tier,
+                price: updates.valor_mensal,
+                interval: updates.intervalo,
+                promo_price: updates.promo_price || null,
+                promo_months: updates.promo_months || null,
+                allowed_features: updates.allowed_features || [],
+                marketing_subtitle: updates.marketing_subtitle || null,
+                marketing_highlights: updates.marketing_highlights || [],
+                max_students: updates.max_alunos || null,
+                active: updates.ativo,
+            })
+            .eq('id', id)
+            .select('*')
+            .single();
+
+        if (error) throw error;
+
+        return NextResponse.json({
+            id: planoAtualizado.id,
+            nome: planoAtualizado.name,
+            descricao: planoAtualizado.description,
+            tier: planoAtualizado.tier,
+            valor_mensal: Number(planoAtualizado.price),
+            intervalo: planoAtualizado.interval,
+            assinantes_ativos: body.assinantes_ativos,
+            efi_plan_id_hml: planoAtualizado.efi_plan_id_hml,
+            efi_plan_id_prd: planoAtualizado.efi_plan_id_prd,
+            ativo: planoAtualizado.active,
+        });
+
+    } catch (err: any) {
+        console.error('[Admin Planos PUT] Erro:', err);
+        return NextResponse.json({ error: 'Falha ao atualizar plano' }, { status: 500 });
+    }
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +28,8 @@ import {
     MoreHorizontal,
     X,
     Check,
+    Save,
+    Loader2,
     type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -256,218 +259,234 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[540px] flex flex-col h-full overflow-y-auto p-0 gap-0">
-                <SheetHeader className="p-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100">
-                            <CalendarIcon className="h-5 w-5 text-orange-600" />
+            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-bee-amber/[0.03] rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+
+                    <div className="flex items-center gap-5 relative text-left">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-bee-amber/10 bg-bee-amber/5 text-bee-amber shadow-inner">
+                            <CalendarIcon className="h-8 w-8" />
                         </div>
-                        <div>
-                            <SheetTitle className="text-xl font-bold">Nova Aula</SheetTitle>
-                            <SheetDescription>Agende uma nova aula coletiva</SheetDescription>
+                        <div className="space-y-1">
+                            <SheetTitle className="text-2xl font-bold font-display tracking-tight text-bee-midnight leading-tight">
+                                Agendar Aula
+                            </SheetTitle>
+                            <SheetDescription className="flex items-center gap-2 text-sm font-medium text-slate-500">
+                                <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
+                                    Coletiva
+                                </Badge>
+                                <span>Crie uma nova turma para os alunos</span>
+                            </SheetDescription>
                         </div>
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 p-6 pt-0 space-y-4 overflow-y-auto">
-                    {/* Class Type */}
-                    <div className="space-y-2">
-                        <Label htmlFor="classType" className="text-sm font-semibold text-slate-700">
-                            Tipo de Aula *
-                        </Label>
-                        <Select value={classType} onValueChange={setClassType}>
-                            <SelectTrigger id="classType" className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione o tipo de aula">
-                                    {classType && (() => {
-                                        const selected = CLASS_TYPES.find(t => t.value === classType);
-                                        if (!selected) return null;
-                                        const Icon = selected.icon;
-                                        return (
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: selected.color + '20' }}>
-                                                    <Icon className="h-4 w-4" style={{ color: selected.color }} />
-                                                </div>
-                                                <span>{selected.label}</span>
-                                            </div>
-                                        );
-                                    })()}
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                                {CLASS_TYPES.map((type) => {
-                                    const Icon = type.icon;
-                                    return (
-                                        <SelectItem key={type.value} value={type.value}>
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: type.color + '20' }}>
-                                                    <Icon className="h-4 w-4" style={{ color: type.color }} />
-                                                </div>
-                                                <span>{type.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div className="flex-1 p-8 pt-6 space-y-6 overflow-y-auto">
+                    <div className="grid grid-cols-1 gap-6">
+                        {/* Class Type & Name row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="classType" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Tipo de Aula *
+                                </Label>
+                                <Select value={classType} onValueChange={setClassType}>
+                                    <SelectTrigger id="classType" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
+                                        <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {CLASS_TYPES.map((type) => {
+                                            const Icon = type.icon;
+                                            return (
+                                                <SelectItem key={type.value} value={type.value}>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: type.color + '20' }}>
+                                                            <Icon className="h-4 w-4" style={{ color: type.color }} />
+                                                        </div>
+                                                        <span className="text-sm">{type.label}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    {/* Class Name */}
-                    <div className="space-y-2">
-                        <Label htmlFor="className" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <Hash className="h-4 w-4 text-orange-500" />
-                            Nome da Aula *
-                        </Label>
-                        <Input
-                            id="className"
-                            placeholder="Ex: Yoga Matinal, Pilates Avançado"
-                            value={className}
-                            onChange={(e) => setClassName(e.target.value)}
-                        />
-                    </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="className" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Nome da Aula *
+                                </Label>
+                                <div className="relative">
+                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                    <Input
+                                        id="className"
+                                        placeholder="Ex: Yoga Matinal"
+                                        value={className}
+                                        onChange={(e) => setClassName(e.target.value)}
+                                        className="h-11 pl-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all font-medium"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                    {/* Room Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="room" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <Home className="h-4 w-4 text-orange-500" />
-                            Sala *
-                        </Label>
-                        <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                            <SelectTrigger id="room" className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione uma sala" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {rooms.map((room) => (
-                                    <SelectItem key={room.id} value={room.id}>
-                                        {room.name} (Cap: {room.capacity === 0 ? 'Ilimitado' : room.capacity})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        {/* Room & Instructor row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="room" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Sala *
+                                </Label>
+                                <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                                    <SelectTrigger id="room" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
+                                        <div className="flex items-center gap-2">
+                                            <Home className="h-4 w-4 text-slate-400" />
+                                            <SelectValue placeholder="Onde?" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {rooms.map((room) => (
+                                            <SelectItem key={room.id} value={room.id}>
+                                                {room.name} {room.capacity && room.capacity > 0 ? `(${room.capacity} cap.)` : '(Ilimitado)'}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                    {/* Instructor Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="instructor" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <Users className="h-4 w-4 text-orange-500" />
-                            Instrutor *
-                        </Label>
-                        <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                            <SelectTrigger id="instructor" className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione um instrutor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {instructors.map((instructor) => (
-                                    <SelectItem key={instructor.id} value={instructor.id}>
-                                        {instructor.full_name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="instructor" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Instrutor *
+                                </Label>
+                                <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
+                                    <SelectTrigger id="instructor" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-slate-400" />
+                                            <SelectValue placeholder="Quem?" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {instructors.map((instructor) => (
+                                            <SelectItem key={instructor.id} value={instructor.id}>
+                                                {instructor.full_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
 
-                    {/* Capacity */}
-                    <div className="space-y-2">
-                        <Label htmlFor="capacity" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <Users className="h-4 w-4 text-orange-500" />
-                            Capacidade *
-                        </Label>
-                        <Input
-                            id="capacity"
-                            type="number"
-                            min="1"
-                            max="100"
-                            placeholder="Ex: 10"
-                            value={capacity}
-                            onChange={(e) => setCapacity(e.target.value)}
-                        />
-                    </div>
+                        {/* Date, Time, Duration, Cap */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Data *
+                                </Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                'w-full h-11 justify-start text-left border-slate-100 bg-slate-50/50 rounded-xl font-medium',
+                                                !selectedDate && 'text-slate-400'
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                                            {selectedDate ? format(selectedDate, 'dd/MM', { locale: ptBR }) : 'Data'}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={selectedDate}
+                                            onSelect={setSelectedDate}
+                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
 
-                    {/* Date Selection */}
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4 text-orange-500" />
-                            Data *
-                        </Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        'w-full justify-start text-left font-normal',
-                                        !selectedDate && 'text-muted-foreground'
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {selectedDate ? format(selectedDate, 'PPP', { locale: ptBR }) : 'Selecione uma data'}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={selectedDate}
-                                    onSelect={setSelectedDate}
-                                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                    initialFocus
+                            <div className="space-y-2">
+                                <Label htmlFor="time" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Início *
+                                </Label>
+                                <Select value={selectedTime} onValueChange={setSelectedTime}>
+                                    <SelectTrigger id="time" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="h-4 w-4 text-slate-400" />
+                                            <SelectValue placeholder="Hora" />
+                                        </div>
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px]">
+                                        {TIME_SLOTS.map((time) => (
+                                            <SelectItem key={time} value={time}>
+                                                {time}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="duration" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Tempo *
+                                </Label>
+                                <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                                    <SelectTrigger id="duration" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
+                                        <SelectValue placeholder="Dur..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {DURATION_OPTIONS.map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="capacity" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
+                                    Capacidade *
+                                </Label>
+                                <Input
+                                    id="capacity"
+                                    type="number"
+                                    min="1"
+                                    placeholder="Máx"
+                                    value={capacity}
+                                    onChange={(e) => setCapacity(e.target.value)}
+                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all font-medium"
                                 />
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    {/* Time Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="time" className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-orange-500" />
-                            Horário *
-                        </Label>
-                        <Select value={selectedTime} onValueChange={setSelectedTime}>
-                            <SelectTrigger id="time" className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione um horário" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[200px]">
-                                {TIME_SLOTS.map((time) => (
-                                    <SelectItem key={time} value={time}>
-                                        {time}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Duration Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="duration" className="text-sm font-semibold text-slate-700">
-                            Duração *
-                        </Label>
-                        <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                            <SelectTrigger id="duration" className="h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                <SelectValue placeholder="Selecione a duração" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {DURATION_OPTIONS.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <SheetFooter className="p-6 pt-4 border-t gap-3">
+                <SheetFooter className="p-8 bg-slate-50/50 border-t shrink-0 flex flex-row items-center gap-3 sm:justify-end">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
-                        className="gap-2"
+                        className="flex-1 sm:flex-none text-slate-500 hover:bg-slate-100 font-bold h-10 rounded-full uppercase text-xs"
                     >
-                        <X className="h-4 w-4" /> Cancelar
+                        <X className="mr-2 h-4 w-4" />
+                        Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold gap-2"
+                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs px-8"
                     >
-                        <Check className="h-4 w-4" /> {loading ? 'Criando...' : 'Criar Aula'}
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Criando...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="mr-2 h-4 w-4" />
+                                Criar Aula
+                            </>
+                        )}
                     </Button>
                 </SheetFooter>
             </SheetContent>

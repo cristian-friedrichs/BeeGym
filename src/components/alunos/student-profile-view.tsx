@@ -27,7 +27,7 @@ interface StudentProfileViewProps {
         email: string | null;
         phone: string | null;
         avatar_url: string | null;
-        date_of_birth: string | null;
+        birth_date: string | null;
         status: string;
         created_at: string;
         latest_assessment?: {
@@ -181,7 +181,7 @@ export function StudentProfileView({
                     <div className="flex items-center gap-4 text-slate-400 font-bold text-[11px] uppercase tracking-[0.1em] px-3 py-1 bg-slate-50/50 rounded-full border border-slate-100/50 font-sans">
                         <div className="flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5 text-slate-300" />
-                            <span>{student.date_of_birth ? format(new Date(student.date_of_birth), "dd/MM/yyyy") : '-'}</span>
+                            <span>{student.birth_date ? format(new Date(student.birth_date), "dd/MM/yyyy") : '-'}</span>
                         </div>
                         <span className="w-px h-3 bg-slate-200"></span>
                         <div className="flex items-center gap-1.5">

@@ -452,6 +452,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                                 placeholder="Ex: Yoga Matinal, Pilates Avançado"
                                 value={className}
                                 onChange={(e) => setClassName(e.target.value)}
+                                className="h-11"
                             />
                         </div>
 
@@ -573,7 +574,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                                         <Button
                                             variant="outline"
                                             className={cn(
-                                                'w-full justify-start text-left font-normal',
+                                                'w-full h-11 justify-start text-left font-normal',
                                                 !startDate && 'text-muted-foreground'
                                             )}
                                         >
@@ -606,7 +607,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                                             <Button
                                                 variant="outline"
                                                 className={cn(
-                                                    'w-full justify-start text-left font-normal',
+                                                    'w-full h-11 justify-start text-left font-normal',
                                                     !endDate && 'text-muted-foreground'
                                                 )}
                                             >
@@ -717,6 +718,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                                 placeholder="Ex: 10"
                                 value={capacity}
                                 onChange={(e) => setCapacity(e.target.value)}
+                                className="h-11"
                             />
                         </div>
                     </div>
@@ -727,7 +729,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
-                        className="gap-2"
+                        className="gap-2 h-10"
                     >
                         <X className="h-4 w-4" />
                         Cancelar
@@ -735,7 +737,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 h-10"
                     >
                         <Save className="h-4 w-4" />
                         {loading ? 'Criando...' : 'Salvar Aula'}

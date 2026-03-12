@@ -394,13 +394,13 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                 </div>
 
                 <SheetFooter className="p-6 pt-4 border-t gap-3 bg-slate-50/50">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="h-12 rounded-xl border-slate-200 px-6 font-bold text-slate-600">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="h-10 rounded-xl border-slate-200 px-6 font-bold text-slate-600">
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black px-8 shadow-lg shadow-orange-500/20"
+                        className="h-10 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-black px-8 shadow-lg shadow-orange-500/20"
                     >
                         {loading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />

@@ -5,7 +5,7 @@ import { useSubscription } from './useSubscription'
 
 export function useStudentLimit() {
     const { organizationId } = useAuth()
-    const { plan } = useSubscription()
+    const { maxStudents } = useSubscription()
     const [activeCount, setActiveCount] = useState<number>(0)
     const [loading, setLoading] = useState(true)
 
@@ -15,7 +15,10 @@ export function useStudentLimit() {
             return
         }
 
+        let isMounted = true
+
         const fetchActiveStudents = async () => {
+            if (!isMounted) return
             setLoading(true)
             try {
                 const { count, error } = await supabase
@@ -24,28 +27,45 @@ export function useStudentLimit() {
                     .eq('organization_id', organizationId)
                     .eq('status', 'ACTIVE')
 
+                if (error) {
+                    console.error('[useStudentLimit] Erro ao buscar alunos:', error)
+                }
+
+                if (!isMounted) return
+
                 if (!error && count !== null) {
                     setActiveCount(count)
                 }
             } catch (error) {
-                console.error('Failed to fetch active students:', error)
+                if (isMounted) {
+                    console.error('[useStudentLimit] Erro fatal no fetch:', error)
+                }
             } finally {
-                setLoading(false)
+                if (isMounted) {
+                    setLoading(false)
+                }
             }
         }
 
         fetchActiveStudents()
+
+        return () => {
+            isMounted = false
+        }
     }, [organizationId])
 
-    const maxStudents = plan.max_students
     const isUnlimited = maxStudents === null
     const hasReachedLimit = !isUnlimited && activeCount >= (maxStudents as number)
+    const remainingSlots = isUnlimited ? Infinity : Math.max(0, (maxStudents as number) - activeCount)
+    const canAddStudent = isUnlimited || activeCount < (maxStudents as number)
 
     return {
         activeCount,
         maxStudents,
         isUnlimited,
         hasReachedLimit,
+        remainingSlots,
+        canAddStudent,
         loading
     }
 }

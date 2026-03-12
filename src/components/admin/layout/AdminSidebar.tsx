@@ -10,6 +10,7 @@ import {
     LogOut,
     ShieldCheck,
     Ticket,
+    LifeBuoy,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -22,7 +23,8 @@ const navGroups = [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
             { icon: Users, label: 'Clientes', href: '/admin/contratantes' },
             { icon: Package, label: 'Planos', href: '/admin/planos' },
-            { icon: Ticket, label: 'Ofertas', href: '/admin/cupons' },
+            { icon: Ticket, label: 'Ofertas', href: '/admin/ofertas' },
+            { icon: LifeBuoy, label: 'Suporte', href: '/admin/suporte' },
             { icon: FileBarChart, label: 'Relatórios', href: '/admin/relatorios' },
         ],
     },
@@ -33,14 +35,18 @@ export function AdminSidebar() {
     const router = useRouter();
     const supabase = createClient();
     const [mounted, setMounted] = useState(false);
+    const [isSignOutLoading, setIsSignOutLoading] = useState(false);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
+        setIsSignOutLoading(true);
+        setTimeout(() => {
+            supabase.auth.signOut();
+            window.location.href = '/auth/signout';
+        }, 300);
     };
 
     if (!mounted) {
@@ -98,6 +104,18 @@ export function AdminSidebar() {
                     Sair
                 </button>
             </div>
+
+            {isSignOutLoading && (
+                <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                            <div className="w-12 h-12 border-4 border-amber-500/20 rounded-full animate-spin"></div>
+                            <div className="absolute inset-0 w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 animate-pulse uppercase tracking-widest">Saindo...</p>
+                    </div>
+                </div>
+            )}
         </aside>
     );
 }

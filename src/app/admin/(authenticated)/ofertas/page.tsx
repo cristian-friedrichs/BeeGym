@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { CuponsTable } from '@/components/admin/cupons/CuponsTable';
+import { OfertasTable } from '@/components/admin/ofertas/OfertasTable';
 import { SectionHeader } from '@/components/ui/section-header';
 
-export default function AdminCuponsPage() {
+export default function AdminOfertasPage() {
     const [openNew, setOpenNew] = useState(false);
 
     return (
@@ -23,7 +23,7 @@ export default function AdminCuponsPage() {
                     </Button>
                 }
             />
-            <CuponsTable externalOpenNew={openNew} onExternalOpenHandled={() => setOpenNew(false)} />
+            <OfertasTable externalOpenNew={openNew} onExternalOpenHandled={() => setOpenNew(false)} />
         </div>
     );
 }

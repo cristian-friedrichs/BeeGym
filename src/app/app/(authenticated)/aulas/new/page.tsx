@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { iconCategories, classColors, getIcon, RecurringClass, classIcons } from '@/lib/class-definitions';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import React from 'react';
 
 const classSchema = z.object({
@@ -197,26 +197,50 @@ export default function NewClassPage() {
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Selecione um Ícone</DialogTitle>
+                  <DialogContent className="sm:max-w-2xl p-0 overflow-hidden rounded-[1.5rem] border-slate-100 shadow-2xl">
+                    <DialogHeader className="p-6 border-b text-left sm:text-left flex flex-row items-center gap-4 bg-white shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bee-amber/10 shrink-0">
+                        <ChevronDown className="h-6 w-6 text-bee-amber" />
+                      </div>
+                      <div className="space-y-1">
+                        <DialogTitle className="text-xl font-bold text-slate-900 leading-none font-display">
+                          Selecione um Ícone
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-500 font-medium text-sm">
+                          Personalize sua Aula Coletiva
+                        </DialogDescription>
+                      </div>
                     </DialogHeader>
-                    <div className="py-4 space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+
+                    <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar bg-white">
                       {Object.entries(iconCategories).map(([category, icons]) => (
-                        <div key={category}>
-                          <h3 className="font-semibold mb-4 text-lg tracking-tight">{category}</h3>
-                          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4">
+                        <div key={category} className="space-y-4">
+                          <h3 className="font-bold text-slate-700 text-sm uppercase tracking-widest font-sans ml-1">{category}</h3>
+                          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-3">
                             {icons.map(icon => (
                               <DialogClose key={icon.value} asChild>
                                 <button
+                                  type="button"
                                   onClick={() => field.onChange(icon.value)}
                                   className={cn(
-                                    "flex flex-col items-center justify-center gap-2 p-3 border rounded-xl aspect-square hover:bg-accent hover:border-primary transition-colors",
-                                    field.value === icon.value && "bg-accent border-primary ring-2 ring-primary"
+                                    "group flex flex-col items-center justify-center gap-2 p-3 border rounded-xl aspect-square transition-all duration-300",
+                                    field.value === icon.value
+                                      ? "bg-amber-50 border-bee-amber ring-2 ring-bee-amber/20"
+                                      : "bg-white border-slate-100 hover:border-bee-amber/30 hover:bg-slate-50"
                                   )}
                                 >
-                                  {React.createElement(icon.icon, { className: 'h-7 w-7' })}
-                                  <span className="text-xs text-center truncate w-full">{icon.label}</span>
+                                  <div className={cn(
+                                    "p-1.5 rounded-lg transition-colors",
+                                    field.value === icon.value ? "text-bee-amber" : "text-slate-400 group-hover:text-bee-amber"
+                                  )}>
+                                    {React.createElement(icon.icon, { className: 'h-6 w-6' })}
+                                  </div>
+                                  <span className={cn(
+                                    "text-[9px] font-bold text-center truncate w-full transition-colors leading-none",
+                                    field.value === icon.value ? "text-amber-700" : "text-slate-400"
+                                  )}>
+                                    {icon.label}
+                                  </span>
                                 </button>
                               </DialogClose>
                             ))}

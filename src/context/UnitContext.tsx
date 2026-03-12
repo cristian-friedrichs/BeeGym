@@ -50,24 +50,22 @@ export function UnitProvider({ children }: { children: ReactNode }) {
                     console.error('[UnitContext] Error fetching units:', unitsError);
                 }
 
-                // --- FALLBACK AUTO-CURA LOGIC ---
-                // If units list is empty but we have an organization ID, create a virtual fallback unit
-                if (!units || units.length === 0) {
-                    console.warn('[UnitContext] ⚠️ No units found in DB. Activating FALLBACK AUTO-CURA.');
+                // Fetch organization to use as Master Unit
+                const { data: orgData } = await (supabase as any)
+                    .from('organizations')
+                    .select('id, name')
+                    .eq('id', userData.organization_id)
+                    .single();
 
-                    const fallbackUnit: any = {
-                        id: userData.organization_id, // Use Org ID as Unit ID for fallback
-                        name: 'Personal ' + (userData.full_name || 'User'),
-                        business_type: 'personal',
-                        active: true,
-                        organization_id: userData.organization_id,
-                        address_json: null,
-                        created_at: new Date().toISOString()
-                    };
+                const masterUnit = {
+                    id: userData.organization_id,
+                    name: orgData?.name || ('Personal ' + (userData.full_name || 'User')),
+                    active: true,
+                    is_master: true
+                };
 
-                    units = [fallbackUnit];
-                }
-                // --------------------------------
+                // Combine Master Unit with branches
+                units = [masterUnit, ...(units || [])];
 
                 // FORCE AUTO-SELECTION LOGIC
                 let selectedUnitId: string | null = null;

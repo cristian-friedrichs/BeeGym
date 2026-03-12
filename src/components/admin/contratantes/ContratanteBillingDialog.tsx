@@ -6,15 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
-import { Edit2 } from 'lucide-react';
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+    SheetFooter,
+} from '@/components/ui/sheet';
+import { CreditCard, Edit2 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Props {
     contratanteId: string;
@@ -65,67 +65,87 @@ export function ContratanteBillingDialog({ contratanteId, assinatura, onUpdated 
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-bee-amber">
-                    <Edit2 className="w-3.5 h-3.5" />
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-none rounded-[2rem] shadow-2xl overflow-hidden p-0">
-                <DialogHeader className="px-8 pt-8 pb-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/5 rounded-full -mr-16 -mt-16 blur-3xl" />
-                    <div className="flex items-center gap-3 mb-2 relative">
-                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
-                        <DialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight">
-                            Ajuste de Faturamento
-                        </DialogTitle>
-                    </div>
-                    <DialogDescription className="text-sm font-medium text-slate-400 relative">
-                        Ajuste o valor que este cliente pagará. Válido para assinaturas Pix.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="px-8 py-4 space-y-5">
-                    <div className="space-y-2">
-                        <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Ajuste</Label>
-                        <select
-                            className="flex h-12 w-full items-center justify-between rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-4 py-2 text-sm font-bold text-bee-midnight focus:outline-none focus:border-bee-amber focus:bg-white transition-all appearance-none cursor-pointer"
-                            value={overrideType}
-                            onChange={(e) => setOverrideType(e.target.value as any)}
-                            disabled={loading}
-                        >
-                            <option value="none">Nenhum (Preço do plano)</option>
-                            <option value="price">Forçar preço fixo (R$)</option>
-                            <option value="discount_amount">Desconto fixo (R$)</option>
-                            <option value="discount_percentage">Desconto percentual (%)</option>
-                        </select>
-                    </div>
-
-                    {overrideType !== 'none' && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor / Porcentagem</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={overrideValue}
-                                onChange={(e) => setOverrideValue(e.target.value)}
-                                disabled={loading}
-                                className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm"
-                            />
+        <Sheet open={open} onOpenChange={setOpen}>
+            <Button variant="ghost" size="icon" onClick={() => setOpen(true)} className="h-6 w-6 text-slate-400 hover:text-bee-amber">
+                <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+            <SheetContent side="right" className="sm:max-w-md border-l shadow-2xl p-0 flex flex-col h-full">
+                <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white/50 backdrop-blur-sm">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-bee-amber/[0.03] rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/[0.05] rounded-full -mr-16 -mt-16 blur-2xl opacity-50" />
+                    <div className="flex items-center gap-5 relative text-left">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-bee-amber/20 via-bee-amber/10 to-transparent border border-bee-amber/20 shadow-inner group transition-all">
+                            <CreditCard className="h-8 w-8 text-bee-amber drop-shadow-sm" />
                         </div>
-                    )}
-                </div>
-                <DialogFooter className="px-8 py-6 border-t bg-slate-50/50 gap-3">
-                    <Button variant="ghost" onClick={() => setOpen(false)} disabled={loading} className="text-slate-400 font-bold hover:bg-slate-100 rounded-xl">Cancelar</Button>
+                        <div className="space-y-1.5">
+                            <SheetTitle className="text-2xl font-black font-display tracking-tight text-bee-midnight">
+                                Ajuste de Faturamento
+                            </SheetTitle>
+                            <SheetDescription className="text-xs font-semibold text-slate-400 flex items-center gap-2">
+                                <span className="w-1.5 h-1.5 rounded-full bg-bee-amber animate-pulse" />
+                                Ajuste o valor que este cliente pagará. Válido para assinaturas Pix.
+                            </SheetDescription>
+                        </div>
+                    </div>
+                </SheetHeader>
+
+                <ScrollArea className="flex-1">
+                    <div className="p-8 space-y-6">
+                        <div className="space-y-2">
+                            <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Ajuste</Label>
+                            <div className="relative">
+                                <select
+                                    className="flex h-11 w-full items-center justify-between rounded-2xl border-2 border-slate-100 bg-slate-50/50 px-5 text-sm font-bold text-bee-midnight focus:outline-none focus:border-bee-amber focus:bg-white transition-all appearance-none cursor-pointer"
+                                    value={overrideType}
+                                    onChange={(e) => setOverrideType(e.target.value as any)}
+                                    disabled={loading}
+                                >
+                                    <option value="none">Nenhum (Preço do plano)</option>
+                                    <option value="price">Forçar preço fixo (R$)</option>
+                                    <option value="discount_amount">Desconto fixo (R$)</option>
+                                    <option value="discount_percentage">Desconto percentual (%)</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
+                                    <Edit2 className="w-4 h-4" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {overrideType !== 'none' && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor / Porcentagem</Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={overrideValue}
+                                    onChange={(e) => setOverrideValue(e.target.value)}
+                                    disabled={loading}
+                                    className="h-11 px-5 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </ScrollArea>
+
+                <SheetFooter className="p-8 border-t bg-slate-50/50 gap-3 shrink-0">
+                    <Button
+                        variant="ghost"
+                        onClick={() => setOpen(false)}
+                        disabled={loading}
+                        className="flex-1 h-10 rounded-full font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest text-[10px]"
+                    >
+                        Cancelar
+                    </Button>
                     <Button
                         disabled={loading}
                         onClick={handleSave}
-                        className="h-12 px-8 bg-bee-amber text-bee-midnight hover:bg-bee-amber/90 font-black uppercase tracking-widest text-[11px] rounded-2xl shadow-lg shadow-bee-amber/20 transition-all border-none"
+                        className="flex-[1.5] h-10 rounded-full bg-bee-amber text-bee-midnight hover:bg-bee-amber/90 font-black shadow-lg shadow-bee-amber/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px]"
                     >
                         {loading ? 'Salvando...' : 'Aplicar Alteração'}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </SheetFooter>
+            </SheetContent>
+        </Sheet>
     );
 }

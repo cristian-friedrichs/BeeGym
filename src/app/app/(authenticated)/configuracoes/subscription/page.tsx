@@ -10,8 +10,10 @@ import { Crown, Check, CheckCircle2, AlertTriangle, ArrowRight, Loader2, CreditC
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+import { SectionHeader } from '@/components/ui/section-header';
+
 export default function SubscriptionPage() {
-    const { plan, isActive, status, loading: subLoading, metodo, proximoVencimento } = useSubscription();
+    const { plan, isActive, status, loading: subLoading, metodo, proximoVencimento, displayFeatures } = useSubscription();
     const { activeCount, maxStudents, isUnlimited, loading: limitLoading } = useStudentLimit();
     const { toast } = useToast();
 
@@ -53,9 +55,6 @@ export default function SubscriptionPage() {
         return (
             <div className="flex flex-col h-[400px] w-full items-center justify-center gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-bee-amber" />
-                <div className="text-xs text-slate-500 font-mono bg-slate-100 p-2 rounded">
-                    subLoading: {String(subLoading)} | limitLoading: {String(limitLoading)}
-                </div>
             </div>
         );
     }
@@ -67,15 +66,15 @@ export default function SubscriptionPage() {
     const usagePercentage = isUnlimited ? 0 : Math.round((activeCount / (maxStudents as number)) * 100);
 
     return (
-        <div className="space-y-4 max-w-5xl">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#0B0F1A] font-display">Meu Plano</h1>
-                <p className="text-muted-foreground font-sans">Gerencie sua assinatura e os limites do seu negócio.</p>
-            </div>
+        <div className="space-y-8 max-w-5xl">
+            <SectionHeader
+                title="Meu Plano & Assinatura"
+                subtitle="Gerencie sua assinatura, limites e histórico de faturamento"
+            />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Plano Atual */}
-                <div className="md:col-span-2 bg-white rounded-[12px] border border-slate-200 overflow-hidden shadow-sm flex flex-col">
+                <div className="md:col-span-2 bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm flex flex-col">
                     <div className="p-5 border-b border-slate-100 flex justify-between items-start">
                         <div>
                             <div className="flex gap-3 items-center mb-1">
@@ -101,7 +100,7 @@ export default function SubscriptionPage() {
                         <div className="flex-1 space-y-2">
                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">O que está incluído</h3>
                             <ul className="space-y-2">
-                                {plan.featuresList.map((f, i) => (
+                                {displayFeatures.map((f, i) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <CheckCircle2 className="w-[18px] h-[18px] text-emerald-500" />
                                         <span className="text-sm font-sans font-medium text-slate-700">{f}</span>
@@ -116,7 +115,7 @@ export default function SubscriptionPage() {
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Faturamento</h3>
                                 <div className="space-y-2">
                                     {isTestPlan ? (
-                                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                        <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                                             <ShieldCheck className="w-5 h-5 text-bee-amber" />
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-bold text-slate-700 font-sans">Plano Cortesia / Teste</span>
@@ -125,7 +124,7 @@ export default function SubscriptionPage() {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                                                 <CreditCard className="w-5 h-5 text-slate-400" />
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-slate-700 font-sans">
@@ -135,7 +134,7 @@ export default function SubscriptionPage() {
                                                 </div>
                                             </div>
                                             {proximoVencimento && (
-                                                <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                                <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
                                                     <CalendarDays className="w-5 h-5 text-slate-400" />
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-bold text-slate-700 font-sans">Próxima cobrança</span>
@@ -153,10 +152,10 @@ export default function SubscriptionPage() {
                     </div>
 
                     {/* Botão de Upgrade dentro do card */}
-                    <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-[12px]">
+                    <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-[2rem]">
                         <Button
                             variant="outline"
-                            className="font-bold font-sans rounded-lg shadow-sm"
+                            className="font-bold font-sans rounded-full shadow-sm transition-all hover:-translate-y-0.5 active:scale-95"
                             onClick={handleCancel}
                             disabled={isCanceling}
                         >
@@ -164,7 +163,7 @@ export default function SubscriptionPage() {
                             Cancelar Assinatura
                         </Button>
                         <Button
-                            className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold font-sans rounded-lg shadow-sm"
+                            className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold font-sans rounded-full shadow-sm transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-wider text-[11px]"
                             onClick={() => setMode('plans')}
                         >
                             <Crown className="w-4 h-4 mr-2" />
@@ -174,7 +173,7 @@ export default function SubscriptionPage() {
                 </div>
 
                 {/* Limite de Alunos Card */}
-                <div className="bg-white rounded-[12px] border border-slate-200 overflow-hidden shadow-sm flex flex-col p-5 space-y-4">
+                <div className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden shadow-sm flex flex-col p-5 space-y-4">
                     <div>
                         <h3 className="text-sm font-bold text-slate-900 font-display mb-1 flex items-center justify-between">
                             Limite de Alunos Ativos
@@ -219,7 +218,7 @@ export default function SubscriptionPage() {
                         </div>
                     )}
 
-                    <div className="bg-orange-50/50 p-3 mt-auto rounded-xl border border-orange-100/50 flex gap-2 text-sm">
+                    <div className="bg-orange-50/50 p-3 mt-auto rounded-2xl border border-orange-100/50 flex gap-2 text-sm">
                         <AlertTriangle className="w-4 h-4 text-bee-amber flex-shrink-0 mt-0.5" />
                         <p className="text-orange-900 font-sans text-[11px] font-medium leading-relaxed">
                             Alunos inadimplentes ou inativos não são contabilizados.
@@ -310,7 +309,7 @@ function PlanSelectionView({
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Button variant="outline" onClick={onBack} size="sm" className="font-bold shadow-sm">
+                <Button variant="outline" onClick={onBack} size="sm" className="font-bold shadow-sm rounded-full transition-all hover:-translate-y-0.5 active:scale-95">
                     Voltar
                 </Button>
                 <div>
@@ -329,20 +328,20 @@ function PlanSelectionView({
                         <div
                             key={plan.id}
                             className={cn(
-                                "flex flex-col bg-white rounded-xl border overflow-hidden transition-all duration-300",
-                                isCurrent ? "border-bee-amber shadow-md ring-1 ring-bee-amber" : "border-slate-200 shadow-sm hover:border-orange-300"
+                                "flex flex-col bg-white rounded-[2rem] border overflow-hidden transition-all duration-300",
+                                isCurrent ? "border-bee-amber shadow-md ring-1 ring-bee-amber" : "border-slate-200 shadow-sm hover:border-amber-300"
                             )}
                         >
                             {/* Header */}
                             <div className={cn(
                                 "p-4 border-b flex flex-col gap-2",
-                                isCurrent ? "bg-orange-50/30 border-orange-100" : "bg-slate-50/50 border-slate-100"
+                                isCurrent ? "bg-amber-50/30 border-amber-100" : "bg-slate-50/50 border-slate-100"
                             )}>
                                 <div className="flex items-center justify-between">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10">
-                                        <plan.icon className="w-4 h-4 text-primary" />
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-slate-100">
+                                        <plan.icon className="w-4 h-4 text-slate-500" />
                                     </div>
-                                    {isCurrent && <Badge className="bg-bee-amber hover:bg-bee-amber text-[10px] font-bold shadow-none border-none">ATUAL</Badge>}
+                                    {isCurrent && <Badge className="bg-bee-amber hover:bg-bee-amber text-[10px] font-bold shadow-none border-none text-bee-midnight px-3 py-1 rounded-full">ATUAL</Badge>}
                                 </div>
                                 <h3 className="font-bold font-display text-lg text-slate-900">{plan.name}</h3>
                                 <div className="flex items-baseline gap-1">
@@ -372,7 +371,7 @@ function PlanSelectionView({
 
                             {/* Limits */}
                             <div className="px-4 pb-4 border-t border-slate-50 pt-4 bg-slate-50/30">
-                                <div className="flex items-center justify-between px-2 py-1.5 bg-slate-100/70 rounded-md text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100/70 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-600">
                                     <span>Alunos:</span>
                                     <span>{plan.max_students === null ? 'Ilimitado' : `Até ${plan.max_students}`}</span>
                                 </div>
@@ -385,8 +384,8 @@ function PlanSelectionView({
                                     disabled={isCurrent || isUpgrading !== null}
                                     variant={isCurrent ? "outline" : isUpgrade ? "default" : "secondary"}
                                     className={cn(
-                                        "w-full font-bold text-xs h-9",
-                                        isUpgrade && "bg-bee-amber hover:bg-amber-500 text-bee-midnight shadow-sm",
+                                        "w-full font-bold text-xs h-10 rounded-full transition-all hover:-translate-y-0.5 active:scale-95 uppercase tracking-wider",
+                                        isUpgrade && "bg-bee-amber hover:bg-amber-500 text-bee-midnight border-none shadow-sm",
                                         isCurrent && "border-bee-amber text-bee-amber"
                                     )}
                                 >

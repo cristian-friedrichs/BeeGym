@@ -47,7 +47,7 @@ function LoginForm() {
       // Force a hard navigation so middleware cleanly reads the new Supabase cookie on the first hit.
       // This prevents App Router from hanging due to race conditions with router.push() and router.refresh()
       const redirect = searchParams?.get('redirect')
-      window.location.assign(redirect || '/')
+      window.location.assign(redirect || '/app/painel')
     }
   }
 
@@ -172,7 +172,7 @@ function LoginForm() {
             display: 'flex', flexDirection: 'column', height: '100%',
           }}>
             <div>
-              <BeeGymLogo variant="white" size="lg" />
+              <BeeGymLogo variant="dark" size="lg" />
             </div>
 
             {/* Headline — positioned toward bottom */}
@@ -255,7 +255,7 @@ function LoginForm() {
           >
             {/* Mobile logo (Dark version for light theme) */}
             <div className="form-field field-1" style={{ marginBottom: '32px', textAlign: 'center' }} id="login-mobile-logo">
-              <BeeGymLogo variant="full" size="lg" className="mx-auto" />
+              <BeeGymLogo variant="light" size="lg" className="mx-auto" />
             </div>
 
             {/* Header */}

@@ -1,5 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { RoomList } from '@/components/configuracoes/rooms/room-list';
+import { SectionHeader } from '@/components/ui/section-header';
+import { redirect } from 'next/navigation';
+import { getServerPlan } from '@/lib/server-plan';
 
 export default async function RoomsPage() {
     const supabase = await createClient();
@@ -19,7 +22,20 @@ export default async function RoomsPage() {
 
     if (profileError || !profile?.organization_id) {
         console.error('Profile error:', profileError);
-        return <div className="p-8 text-center bg-card rounded-lg border">Organização não encontrada.</div>;
+        return redirect('/app/onboarding');
+    }
+
+    const { plan, isActive } = await getServerPlan(profile.organization_id);
+
+    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
+        (profile as any).role === 'ADMIN' ||
+        (profile as any).role === 'BEEGYM_ADMIN';
+
+    // Rooms are usually part of the basic plan (configuracoes), but we can check a feature if needed.
+    // Assuming 'configuracoes' is enough unless it's advanced.
+    // For now, no specific feature gate for rooms, but checking isActive.
+    if (!isMasterAdmin && !isActive) {
+        redirect('/app/configuracoes');
     }
 
     // 3. Fetch Units first (Active units for this Org)
@@ -72,8 +88,6 @@ export default async function RoomsPage() {
     }));
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <RoomList rooms={roomsWithUnitName} units={units} />
-        </div>
+        <RoomList rooms={roomsWithUnitName} units={units} />
     );
 }

@@ -12,7 +12,7 @@ export default function PendingActivation() {
         <div className="min-h-screen bg-white flex items-center justify-center p-4 font-sans">
             <div className="max-w-md w-full bg-white rounded-[2rem] shadow-2xl p-10 text-center border border-slate-100 flex flex-col items-center">
                 <div className="mb-8">
-                    <BeeGymLogo variant="full" size="lg" />
+                    <BeeGymLogo variant="dark" size="lg" />
                 </div>
 
                 <div className="w-20 h-20 bg-amber-50 rounded-3xl flex items-center justify-center mb-8 border border-amber-100/50 shadow-sm">

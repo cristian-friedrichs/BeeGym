@@ -90,14 +90,14 @@ export function TopbarActions() {
                     {/* 1. CHAT POPOVER */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <button className="relative p-2 rounded-full text-slate-400 hover:text-bee-amber hover:bg-amber-50 transition-colors">
+                            <button className="relative p-2 rounded-full text-slate-400 transition-all hover:-translate-y-0.5 hover:text-bee-amber active:scale-95">
                                 <MessageSquare className="h-5 w-5" />
                                 {unreadChatCount > 0 && (
                                     <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-bee-amber border-2 border-white"></span>
                                 )}
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0 mr-4 mt-2 shadow-xl rounded-[8px] border-slate-100 bg-white" align="end">
+                        <PopoverContent className="w-80 p-0 mr-4 mt-2 shadow-xl rounded-[1.5rem] border-slate-100 bg-white" align="end">
                             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-deep-midnight font-display tracking-tight">Mensagens</h4>
                                 <button onClick={() => router.push('/painel/conversas')} className="text-xs text-bee-amber hover:underline font-bold font-sans">Ver Chat</button>
@@ -150,14 +150,14 @@ export function TopbarActions() {
                     {/* 2. NOTIFICATIONS POPOVER */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <button className="relative p-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+                            <button className="relative p-2 rounded-full text-slate-400 transition-all hover:-translate-y-0.5 hover:text-slate-600 active:scale-95">
                                 <Bell className="h-5 w-5" />
                                 {notifications.length > 0 && (
                                     <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-orange-500 border-2 border-white animate-pulse"></span>
                                 )}
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0 mr-4 mt-2 shadow-xl rounded-[8px] border-slate-100 bg-white" align="end">
+                        <PopoverContent className="w-80 p-0 mr-4 mt-2 shadow-xl rounded-[1.5rem] border-slate-100 bg-white" align="end">
                             <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-deep-midnight font-display tracking-tight">Notificações</h4>
                                 {notifications.length > 0 && (

@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
 import {
     Calendar as CalendarIcon, Clock, MapPin, Users, CheckCircle2, XCircle,
-    Edit, Trash2, Plus, Dumbbell, Save, X, AlertTriangle
+    Edit, Trash2, Plus, Dumbbell, Save, X, AlertTriangle, Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -208,10 +208,10 @@ export function SessionManagerModal({
         try {
             const originalDuration = eventTime && endTime ? calculateDuration(eventTime, endTime) : 60;
             const newEndTime = calculateEndTime(newTime, originalDuration);
-            const formattedDate = format(newDate, 'yyyy-MM-dd');
+            const formattedDate = format(newDate!, 'yyyy-MM-dd');
             const { error } = await (supabase as any).from('calendar_events').update({ date: formattedDate, time: newTime, end_time: newEndTime, status: 'SCHEDULED' } as any).eq('id', eventId);
             if (error) throw error;
-            toast({ title: 'Treino reagendado!', description: `Novo horário: ${format(newDate, 'PPP', { locale: ptBR })} às ${newTime}` });
+            toast({ title: 'Treino reagendado!', description: `Novo horário: ${format(newDate!, 'PPP', { locale: ptBR })} às ${newTime}` });
             setShowRescheduleDialog(false); onSuccess?.(); onOpenChange(false);
         } catch (error) {
             console.error('Error rescheduling session:', error);
@@ -252,36 +252,58 @@ export function SessionManagerModal({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[700px] flex flex-col h-full overflow-y-auto p-0 gap-0">
-                <SheetHeader className="p-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10">
-                            <Users className="h-5 w-5 text-primary" />
+            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-bee-amber/[0.03] rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+
+                    <div className="flex items-center gap-5 relative text-left">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-bee-amber/10 bg-bee-amber/5 text-bee-amber shadow-inner">
+                            <Users className="h-8 w-8" />
                         </div>
-                        <div>
-                            <SheetTitle className="font-display font-bold text-xl text-deep-midnight">Gerenciar Sessão</SheetTitle>
-                            <SheetDescription>Controle de presença e treino</SheetDescription>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
                         <div className="space-y-1">
-                            <p className="font-sans font-medium text-deep-midnight">{eventName}</p>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1"><CalendarIcon className="h-3 w-3" />{eventDate && format(new Date(eventDate), 'PPP', { locale: ptBR })}</span>
-                                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{eventTime} - {endTime}</span>
-                                {location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{location}</span>}
-                            </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handleOpenRescheduleDialog} disabled={loading}>
-                                <Edit className="h-4 w-4 mr-1" /> Reagendar
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={handleOpenCancelDialog} disabled={loading} className="text-destructive hover:bg-destructive/10">
-                                <Trash2 className="h-4 w-4 mr-1" /> Cancelar
-                            </Button>
+                            <SheetTitle className="text-2xl font-bold font-display tracking-tight text-bee-midnight leading-tight">
+                                Gerenciar Sessão
+                            </SheetTitle>
+                            <SheetDescription className="flex items-center gap-2 text-sm font-medium text-slate-500">
+                                <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
+                                    Presença
+                                </Badge>
+                                <span>Controle de presença e treino</span>
+                            </SheetDescription>
                         </div>
                     </div>
                 </SheetHeader>
+
+                <div className="px-8 py-5 border-b bg-slate-50/50 flex items-center justify-between shrink-0">
+                    <div className="space-y-1.5 flex-1 pr-4">
+                        <p className="font-display font-bold text-bee-midnight tracking-tight truncate">{eventName}</p>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                            <span className="flex items-center gap-1.5"><CalendarIcon className="h-3.5 w-3.5 text-bee-amber" />{eventDate && format(new Date(eventDate), 'dd/MM', { locale: ptBR })}</span>
+                            <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-bee-amber" />{eventTime} - {endTime}</span>
+                            {location && <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-bee-amber" />{location}</span>}
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenRescheduleDialog}
+                            disabled={loading}
+                            className="h-10 px-4 rounded-full border-slate-200 text-slate-500 font-bold text-[10px] uppercase tracking-wider hover:bg-slate-100 transition-all shadow-sm"
+                        >
+                            <Edit className="h-3.5 w-3.5 mr-2 text-bee-amber" /> Reagendar
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenCancelDialog}
+                            disabled={loading}
+                            className="h-10 px-4 rounded-full border-red-100 text-red-500 font-bold text-[10px] uppercase tracking-wider hover:bg-red-50 hover:border-red-200 transition-all shadow-sm"
+                        >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Cancelar
+                        </Button>
+                    </div>
+                </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 px-6">
                     <TabsList className="grid w-full grid-cols-2">
@@ -332,13 +354,13 @@ export function SessionManagerModal({
                             {!showCreateExercise ? (
                                 <div className="flex gap-2">
                                     <Select value={selectedExerciseId} onValueChange={setSelectedExerciseId}>
-                                        <SelectTrigger className="flex-1 h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectTrigger className="flex-1 h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                             <SelectValue placeholder="Buscar exercício..." />
                                         </SelectTrigger>
                                         <SelectContent>{exercises.map(ex => (<SelectItem key={ex.id} value={ex.id}>{ex.name}{ex.organization_id === null && <Badge variant="outline" className="ml-2 text-xs">Global</Badge>}</SelectItem>))}</SelectContent>
                                     </Select>
-                                    <Button onClick={handleAddExercise} disabled={!selectedExerciseId} className="min-h-[44px] bg-primary hover:bg-primary/90"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
-                                    <Button variant="outline" onClick={() => setShowCreateExercise(true)} className="min-h-[44px]"><Plus className="h-4 w-4 mr-1" />Novo</Button>
+                                    <Button onClick={handleAddExercise} disabled={!selectedExerciseId} className="h-10 bg-primary hover:bg-primary/90"><Plus className="h-4 w-4 mr-1" />Adicionar</Button>
+                                    <Button variant="outline" onClick={() => setShowCreateExercise(true)} className="h-10"><Plus className="h-4 w-4 mr-1" />Novo</Button>
                                 </div>
                             ) : (
                                 <div className="border rounded-md p-4 space-y-3 bg-muted/30">
@@ -347,10 +369,10 @@ export function SessionManagerModal({
                                         <Button variant="ghost" size="sm" onClick={() => { setShowCreateExercise(false); setNewExerciseName(''); setNewExerciseMuscleGroup(''); }}><X className="h-4 w-4" /></Button>
                                     </div>
                                     <div className="space-y-2">
-                                        <Input placeholder="Nome do exercício (ex: Supino Reto)" value={newExerciseName} onChange={(e) => setNewExerciseName(e.target.value)} className="min-h-[44px]" />
-                                        <Input placeholder="Grupo muscular (ex: Peito, Costas, Pernas)" value={newExerciseMuscleGroup} onChange={(e) => setNewExerciseMuscleGroup(e.target.value)} className="min-h-[44px]" />
+                                        <Input placeholder="Nome do exercício (ex: Supino Reto)" value={newExerciseName} onChange={(e) => setNewExerciseName(e.target.value)} className="h-11" />
+                                        <Input placeholder="Grupo muscular (ex: Peito, Costas, Pernas)" value={newExerciseMuscleGroup} onChange={(e) => setNewExerciseMuscleGroup(e.target.value)} className="h-11" />
                                     </div>
-                                    <Button onClick={handleCreateExercise} className="w-full min-h-[44px] bg-primary hover:bg-primary/90"><Save className="h-4 w-4 mr-2" />Criar e Adicionar</Button>
+                                    <Button onClick={handleCreateExercise} className="w-full h-10 bg-primary hover:bg-primary/90"><Save className="h-4 w-4 mr-2" />Criar e Adicionar</Button>
                                 </div>
                             )}
                         </div>
@@ -368,10 +390,10 @@ export function SessionManagerModal({
                                                 <Button variant="ghost" size="sm" onClick={() => handleRemoveExercise(exercise.id)} className="h-8 w-8 p-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
-                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Séries</Label><Input type="number" value={exercise.sets} onChange={(e) => handleUpdateExercise(exercise.id, 'sets', parseInt(e.target.value) || 0)} className="min-h-[44px]" min="0" /></div>
-                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Repetições</Label><Input type="text" value={exercise.reps} onChange={(e) => handleUpdateExercise(exercise.id, 'reps', e.target.value)} placeholder="10-12 ou Falha" className="min-h-[44px]" /></div>
-                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Carga (kg)</Label><Input type="number" value={exercise.weight_kg} onChange={(e) => handleUpdateExercise(exercise.id, 'weight_kg', parseFloat(e.target.value) || 0)} className="min-h-[44px]" min="0" step="0.5" /></div>
-                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Descanso (s)</Label><Input type="number" value={exercise.rest_seconds} onChange={(e) => handleUpdateExercise(exercise.id, 'rest_seconds', parseInt(e.target.value) || 0)} className="min-h-[44px]" min="0" /></div>
+                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Séries</Label><Input type="number" value={exercise.sets} onChange={(e) => handleUpdateExercise(exercise.id, 'sets', parseInt(e.target.value) || 0)} className="h-11" min="0" /></div>
+                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Repetições</Label><Input type="text" value={exercise.reps} onChange={(e) => handleUpdateExercise(exercise.id, 'reps', e.target.value)} placeholder="10-12 ou Falha" className="h-11" /></div>
+                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Carga (kg)</Label><Input type="number" value={exercise.weight_kg} onChange={(e) => handleUpdateExercise(exercise.id, 'weight_kg', parseFloat(e.target.value) || 0)} className="h-11" min="0" step="0.5" /></div>
+                                                <div className="space-y-1"><Label className="text-xs text-muted-foreground">Descanso (s)</Label><Input type="number" value={exercise.rest_seconds} onChange={(e) => handleUpdateExercise(exercise.id, 'rest_seconds', parseInt(e.target.value) || 0)} className="h-11" min="0" /></div>
                                             </div>
                                             <div className="space-y-1"><Label className="text-xs text-muted-foreground">Observações</Label><Textarea value={exercise.notes} onChange={(e) => handleUpdateExercise(exercise.id, 'notes', e.target.value)} placeholder="Ex: Aumentar carga semana que vem..." className="min-h-[60px] resize-none" /></div>
                                         </div>
@@ -381,22 +403,177 @@ export function SessionManagerModal({
                         </div>
 
                         {workoutExercises.length > 0 && (
-                            <Button onClick={handleSaveWorkoutLog} disabled={loading} variant="outline" className="w-full min-h-[44px] border-primary text-primary hover:bg-primary/10">
+                            <Button onClick={handleSaveWorkoutLog} disabled={loading} variant="outline" className="w-full h-10 border-primary text-primary hover:bg-primary/10">
                                 <Save className="h-4 w-4 mr-2" />{loading ? 'Salvando...' : 'Salvar Diário de Treino'}
                             </Button>
                         )}
                     </TabsContent>
                 </Tabs>
 
-                <SheetFooter className="p-6 pt-4 border-t flex flex-row justify-end gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="gap-2">
-                        <X className="h-4 w-4" /> Fechar
+                <SheetFooter className="p-8 bg-slate-50/50 border-t shrink-0 flex flex-row items-center gap-3 sm:justify-end">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none text-slate-500 hover:bg-slate-100 font-bold h-10 rounded-full uppercase text-xs"
+                    >
+                        <X className="mr-2 h-4 w-4" />
+                        Fechar
                     </Button>
-                    <Button onClick={handleFinalize} disabled={loading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2">
-                        <CheckCircle2 className="h-4 w-4" /> {loading ? 'Finalizando...' : 'Finalizar Treino'}
+                    <Button
+                        onClick={handleFinalize}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none bg-bee-midnight hover:bg-slate-900 text-white font-black h-10 rounded-full shadow-lg shadow-bee-midnight/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs px-8"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Finalizando...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 className="mr-2 h-4 w-4 text-bee-amber" />
+                                Finalizar Treino
+                            </>
+                        )}
                     </Button>
                 </SheetFooter>
             </SheetContent>
-        </Sheet>
+
+            {/* Reschedule Dialog */}
+            <AlertDialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
+                <AlertDialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                    <div className="bg-white p-8 space-y-6">
+                        <div className="flex items-center gap-5 relative text-left">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-bee-amber/10 bg-bee-amber/5 text-bee-amber shadow-inner">
+                                <Clock className="h-8 w-8" />
+                            </div>
+                            <div className="space-y-1">
+                                <AlertDialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight leading-tight">
+                                    Reagendar Treino
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-medium text-slate-500">
+                                    Escolha uma nova data e horário
+                                </AlertDialogDescription>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Nova Data</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full justify-start text-left h-11 rounded-xl border-slate-100 bg-slate-50/50 font-medium",
+                                                !newDate && "text-slate-400"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-3 h-4 w-4 text-bee-amber" />
+                                            {newDate ? format(newDate, 'PPP', { locale: ptBR }) : <span>Selecione a data</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={newDate} onSelect={setNewDate} initialFocus locale={ptBR} />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Novo Horário</Label>
+                                <Input
+                                    type="time"
+                                    value={newTime}
+                                    onChange={(e) => setNewTime(e.target.value)}
+                                    className="h-11 rounded-xl border-slate-100 bg-slate-50/50 focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all font-medium"
+                                />
+                            </div>
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-row gap-3 pt-2">
+                            <AlertDialogCancel asChild>
+                                <Button
+                                    variant="ghost"
+                                    className="flex-1 h-10 rounded-full font-bold text-slate-500 hover:bg-slate-100 uppercase text-xs"
+                                >
+                                    Voltar
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                                <Button
+                                    onClick={handleReschedule}
+                                    disabled={loading}
+                                    className="flex-1 h-10 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Salvando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                                            Confirmar
+                                        </>
+                                    )}
+                                </Button>
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Cancel Dialog */}
+            <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                <AlertDialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                    <div className="bg-white p-8 space-y-6">
+                        <div className="flex items-center gap-5 relative text-left">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-red-100 bg-red-50 text-red-500 shadow-inner">
+                                <AlertTriangle className="h-8 w-8" />
+                            </div>
+                            <div className="space-y-1">
+                                <AlertDialogTitle className="text-xl font-bold font-display tracking-tight text-bee-midnight leading-tight">
+                                    Cancelar Treino?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-medium text-slate-500">
+                                    Esta ação não pode ser desfeita e o horário ficará livre na agenda.
+                                </AlertDialogDescription>
+                            </div>
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-row gap-3 pt-2">
+                            <AlertDialogCancel asChild>
+                                <Button
+                                    variant="ghost"
+                                    className="flex-1 h-10 rounded-full font-bold text-slate-500 hover:bg-slate-100 uppercase text-xs"
+                                >
+                                    Voltar
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                                <Button
+                                    onClick={handleCancelConfirm}
+                                    disabled={loading}
+                                    className="flex-1 h-10 rounded-full bg-red-500 hover:bg-red-600 text-white font-black shadow-lg shadow-red-500/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs"
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Cancelando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Sim, Cancelar
+                                        </>
+                                    )}
+                                </Button>
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+        </Sheet >
     );
 }

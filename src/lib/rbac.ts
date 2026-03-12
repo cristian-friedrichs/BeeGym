@@ -71,6 +71,7 @@ function getDefaultPermissionsForRole(role: string): Permissions {
     switch (role?.toUpperCase()) {
         case 'OWNER':
         case 'ADMIN':
+        case 'BEEGYM_ADMIN':
             return FULL_PERMISSIONS;
 
         case 'MANAGER':

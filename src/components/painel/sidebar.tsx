@@ -29,16 +29,16 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/app/painel' },
-  { icon: Calendar, label: 'Agenda', href: '/app/agenda' },
-  { icon: ClipboardList, label: 'Aulas', href: '/app/aulas', feature: 'aulas_coletivas' },
-  { icon: Dumbbell, label: 'Treinos', href: '/app/treinos' },
-  { icon: Users, label: 'Alunos', href: '/app/alunos' },
-  { icon: MessageSquare, label: 'Conversas', href: '/app/conversas', feature: 'chat' },
-  { icon: CreditCard, label: 'Pagamentos', href: '/app/pagamentos' },
-  { icon: Dumbbell, label: 'Exercícios', href: '/app/exercicios' },
-  { icon: BarChart3, label: 'Relatórios', href: '/app/relatorios' },
-  { icon: Settings, label: 'Configurações', href: '/app/configuracoes' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/app/painel', feature: 'painel' },
+  { icon: Calendar, label: 'Agenda', href: '/app/agenda', feature: 'agenda' },
+  { icon: ClipboardList, label: 'Aulas', href: '/app/aulas', feature: 'aulas' },
+  { icon: Dumbbell, label: 'Treinos', href: '/app/treinos', feature: 'treinos' },
+  { icon: Users, label: 'Alunos', href: '/app/alunos', feature: 'alunos' },
+  { icon: MessageSquare, label: 'Conversas', href: '/app/conversas', feature: 'conversas' },
+  { icon: CreditCard, label: 'Pagamentos', href: '/app/pagamentos', feature: 'pagamentos' },
+  { icon: Dumbbell, label: 'Exercícios', href: '/app/exercicios', feature: 'exercicios' },
+  { icon: BarChart3, label: 'Relatórios', href: '/app/relatorios', feature: 'relatorios' },
+  { icon: Settings, label: 'Configurações', href: '/app/configuracoes', feature: 'configuracoes' },
 ];
 
 export function Sidebar({ className }: { className?: string }) {
@@ -70,7 +70,7 @@ export function Sidebar({ className }: { className?: string }) {
                 <button
                   key={item.href}
                   onClick={() => setLockedFeature(item.label)}
-                  className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-150 text-slate-500 hover:bg-slate-50 relative group"
+                  className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-300 text-slate-500 hover:-translate-y-0.5 relative group"
                 >
                   <div className="flex items-center gap-3">
                     <item.icon className="h-[17px] w-[17px] opacity-70 group-hover:text-[#0B0F1A] transition-colors" />
@@ -86,10 +86,10 @@ export function Sidebar({ className }: { className?: string }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-150',
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-full text-[13px] font-semibold transition-all duration-300',
                   isActive
                     ? 'bg-[#0B0F1A] text-white shadow-sm'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-[#0B0F1A]'
+                    : 'text-slate-500 hover:-translate-y-0.5 hover:text-[#0B0F1A]'
                 )}
               >
                 <item.icon className={cn("h-[17px] w-[17px] transition-colors", isActive ? "text-[#FFBF00]" : "group-hover:text-[#0B0F1A]")} />

@@ -3,10 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const body = await req.json();
-        const { id } = params;
+        const { id } = await params;
         const { manualDiscountAmount, manualDiscountPercentage } = body;
 
         // Fetch subscription

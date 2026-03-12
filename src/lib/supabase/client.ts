@@ -7,14 +7,7 @@ export function createClient() {
 
   return createBrowserClient<Database>(
     supabaseUrl,
-    supabaseAnonKey,
-    {
-      global: {
-        fetch: (...args: any[]) => {
-          return fetch(...args as [any, any]);
-        }
-      }
-    }
+    supabaseAnonKey
   )
 }
 

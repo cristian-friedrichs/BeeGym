@@ -13,7 +13,7 @@ import { ContratanteEditDialog } from './ContratanteEditDialog';
 import { ContratanteBillingDialog } from './ContratanteBillingDialog';
 import { ChangePlanDialog } from './ChangePlanDialog';
 import { ContratanteDiscountDialog } from './ContratanteDiscountDialog';
-import { ArrowRightLeft, DollarSign } from 'lucide-react';
+import { ArrowRightLeft, DollarSign, AlertTriangle } from 'lucide-react';
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString('pt-BR');
 const formatCurrency = (v: number) =>
@@ -124,10 +124,10 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                         <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Assinatura Atual</h3>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button variant="ghost" size="sm" className="text-xs h-9 gap-2 font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl px-4" onClick={() => setDiscountOpen(true)}>
+                                        <Button variant="ghost" size="sm" className="text-xs h-10 gap-2 font-bold text-emerald-600 hover:bg-emerald-50 rounded-xl px-4" onClick={() => setDiscountOpen(true)}>
                                             <DollarSign className="w-3.5 h-3.5" />Desconto Manual
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="text-xs h-9 gap-2 font-bold text-bee-midnight hover:bg-slate-100 rounded-xl px-4" onClick={() => setChangePlanOpen(true)}>
+                                        <Button variant="ghost" size="sm" className="text-xs h-10 gap-2 font-bold text-bee-midnight hover:bg-slate-100 rounded-xl px-4" onClick={() => setChangePlanOpen(true)}>
                                             <ArrowRightLeft className="w-3.5 h-3.5" />Alterar Plano
                                         </Button>
                                         <ContratanteBillingDialog contratanteId={id as string} assinatura={detail.assinatura} onUpdated={load} />
@@ -225,40 +225,97 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                         {detail.assinatura.status === 'ATIVA' && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="sm" className="text-amber-600 border-amber-200 hover:bg-amber-50">Suspender Acesso</Button>
+                                    <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-bold gap-2 transition-all">
+                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                        Suspender Acesso
+                                    </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Suspender acesso?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            O cliente perderá acesso ao BeeGym imediatamente. Esta ação pode ser revertida.
+                                <AlertDialogContent className="rounded-[1.5rem] border-slate-100 shadow-2xl p-0 overflow-hidden max-w-[420px]">
+                                    <div className="p-6 border-b flex items-center gap-4 bg-white relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50" />
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 shrink-0 relative">
+                                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                                        </div>
+                                        <div className="space-y-0.5 text-left relative">
+                                            <AlertDialogTitle className="text-xl font-bold font-display text-slate-900 tracking-tight leading-none">
+                                                Suspender Acesso
+                                            </AlertDialogTitle>
+                                            <p className="text-slate-500 font-medium text-xs font-sans">
+                                                Ação administrativa
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-8">
+                                        <AlertDialogDescription className="text-slate-600 font-sans text-base leading-relaxed mb-8">
+                                            O cliente perderá acesso ao BeeGym imediatamente. Esta ação pode ser revertida a qualquer momento nas configurações do sistema.
                                         </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleAction('suspender')} className="bg-amber-500 hover:bg-amber-600">Suspender</AlertDialogAction>
-                                    </AlertDialogFooter>
+
+                                        <div className="flex gap-3 pt-2">
+                                            <AlertDialogCancel className="flex-1 h-10 rounded-full border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                                                Cancelar
+                                            </AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={() => handleAction('suspender')}
+                                                className="flex-1 h-10 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-md shadow-amber-100 transition-all active:scale-95"
+                                            >
+                                                Sim, Suspender
+                                            </AlertDialogAction>
+                                        </div>
+                                    </div>
                                 </AlertDialogContent>
                             </AlertDialog>
                         )}
                         {detail.assinatura.status === 'SUSPENSA' && (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleAction('restaurar')}>Restaurar Acesso</Button>
+                            <Button
+                                size="sm"
+                                className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 shadow-lg shadow-emerald-500/20 transition-all"
+                                onClick={() => handleAction('restaurar')}
+                            >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Restaurar Acesso
+                            </Button>
                         )}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">Cancelar Assinatura</Button>
+                                <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-bold gap-2 transition-all">
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    Cancelar Assinatura
+                                </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        A assinatura será cancelada na EFI e o acesso removido permanentemente. Esta ação não pode ser desfeita facilmente.
+                            <AlertDialogContent className="rounded-[1.5rem] border-slate-100 shadow-2xl p-0 overflow-hidden max-w-[420px]">
+                                <div className="p-6 border-b flex items-center gap-4 bg-white relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50" />
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 shrink-0 relative">
+                                        <XCircle className="h-6 w-6 text-red-600" />
+                                    </div>
+                                    <div className="space-y-0.5 text-left relative">
+                                        <AlertDialogTitle className="text-xl font-bold font-display text-slate-900 tracking-tight leading-none">
+                                            Cancelar Assinatura
+                                        </AlertDialogTitle>
+                                        <p className="text-slate-500 font-medium text-xs font-sans">
+                                            Ação irreversível
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="p-8">
+                                    <AlertDialogDescription className="text-slate-600 font-sans text-base leading-relaxed mb-8">
+                                        A assinatura será cancelada na EFI e o acesso <span className="font-bold text-red-600">removido permanentemente</span>. Tem certeza que deseja prosseguir?
                                     </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleAction('cancelar')} className="bg-red-600 hover:bg-red-700">Confirmar Cancelamento</AlertDialogAction>
-                                </AlertDialogFooter>
+
+                                    <div className="flex gap-3 pt-2">
+                                        <AlertDialogCancel className="flex-1 h-10 rounded-full border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                                            Voltar
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => handleAction('cancelar')}
+                                            className="flex-1 h-10 rounded-full bg-red-600 hover:bg-red-700 text-white font-bold shadow-md shadow-red-100 transition-all active:scale-95"
+                                        >
+                                            Sim, Cancelar
+                                        </AlertDialogAction>
+                                    </div>
+                                </div>
                             </AlertDialogContent>
                         </AlertDialog>
                     </div>

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
     Plus, Dumbbell, Ruler, CreditCard, FileText,
-    Calendar, Clock, CheckCircle2, XCircle, MoreHorizontal, Trash2, Edit, AlertCircle, TrendingUp
+    Calendar, Clock, CheckCircle2, XCircle, MoreHorizontal, Trash2, Edit, AlertCircle, TrendingUp,
+    AlertTriangle
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -191,51 +193,68 @@ export function StudentWorkoutsView({ workouts, studentId, studentName, onRefres
 
             {/* MODAL DE CONFIRMAÇÃO DE RECORRÊNCIA */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Excluir Treino</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {selectedWorkout?.recurrence_id
-                                ? "Este é um evento recorrente. Como você deseja aplicar a exclusão?"
-                                : "Tem certeza que deseja excluir este treino? Esta ação não pode ser desfeita."}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
+                <AlertDialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+                    <div className="bg-white p-8 space-y-6 text-left">
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 border border-red-100">
+                                <AlertTriangle className="h-7 w-7 text-red-500" />
+                            </div>
+                            <div className="space-y-1">
+                                <AlertDialogTitle className="text-xl font-black font-display text-bee-midnight">
+                                    Excluir Treino?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription className="text-sm font-semibold text-slate-400">
+                                    Esta ação não pode ser desfeita. Como deseja proceder?
+                                </AlertDialogDescription>
+                            </div>
+                        </div>
 
-                    <div className="flex flex-col gap-2 mt-2">
-                        {selectedWorkout?.recurrence_id ? (
-                            <>
-                                <Button variant="secondary" onClick={() => confirmDelete('single')} className="justify-start rounded-[8px]">
-                                    Apenas este evento (Dia {selectedWorkout?.scheduled_at && format(new Date(selectedWorkout.scheduled_at), "dd/MM")})
+                        <div className="flex flex-col gap-3">
+                            {selectedWorkout?.recurrence_id ? (
+                                <>
+                                    <Button
+                                        onClick={() => confirmDelete('single')}
+                                        className="h-12 justify-center bg-red-500 hover:bg-red-600 text-white font-black rounded-xl shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Apenas este dia
+                                    </Button>
+                                    <Button
+                                        onClick={() => confirmDelete('future')}
+                                        className="h-12 justify-center bg-slate-900 hover:bg-black text-white font-black rounded-xl shadow-lg shadow-slate-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        Este e todos os futuros
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    onClick={() => confirmDelete('single')}
+                                    className="h-12 justify-center bg-red-500 hover:bg-red-600 text-white font-black rounded-xl shadow-lg shadow-red-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                >
+                                    Confirmar Exclusão
                                 </Button>
-                                <Button variant="destructive" onClick={() => confirmDelete('future')} className="justify-start rounded-[8px]">
-                                    Este e todos os futuros
+                            )}
+                        </div>
+
+                        <AlertDialogFooter className="flex flex-row gap-3 pt-2">
+                            <AlertDialogCancel asChild>
+                                <Button variant="ghost" className="flex-1 h-12 rounded-xl font-bold text-slate-400 hover:text-slate-600 transition-all">
+                                    Voltar
                                 </Button>
-                            </>
-                        ) : (
-                            <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-[8px]">Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => confirmDelete('single')} className="bg-red-600 hover:bg-red-700 rounded-[8px]">
-                                    Excluir
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        )}
-                    </div>
-                    {selectedWorkout?.recurrence_id && (
-                        <AlertDialogFooter className="mt-4">
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            </AlertDialogCancel>
                         </AlertDialogFooter>
-                    )}
+                    </div>
                 </AlertDialogContent>
             </AlertDialog>
 
             {/* SHEET DE DETALHES */}
-            <WorkoutDetailsSheet
+            < WorkoutDetailsSheet
                 workoutId={selectedDetailsWorkoutId}
                 isOpen={detailsOpen}
                 onClose={() => {
                     setDetailsOpen(false);
                     setSelectedDetailsWorkoutId(null);
-                }}
+                }
+                }
                 onUpdate={onRefresh}
             />
         </>

@@ -133,26 +133,26 @@ export function WorkoutExecutionSheet({ workout, isOpen, onClose, onSuccess }: W
                                 <div className="grid grid-cols-4 gap-3">
                                     <div>
                                         <Label className="text-[11px] text-slate-500 uppercase font-bold">Séries</Label>
-                                        <Input type="number" value={ex.sets} onChange={(e) => handleUpdateExercise(idx, 'sets', parseInt(e.target.value))} className="text-center" />
+                                        <Input type="number" value={ex.sets} onChange={(e) => handleUpdateExercise(idx, 'sets', parseInt(e.target.value))} className="h-11 text-center" />
                                     </div>
                                     <div>
                                         <Label className="text-[11px] text-slate-500 uppercase font-bold">Reps</Label>
-                                        <Input type="number" value={ex.reps} onChange={(e) => handleUpdateExercise(idx, 'reps', parseInt(e.target.value))} className="text-center" />
+                                        <Input type="number" value={ex.reps} onChange={(e) => handleUpdateExercise(idx, 'reps', parseInt(e.target.value))} className="h-11 text-center" />
                                     </div>
                                     <div>
                                         <Label className="text-[11px] text-slate-500 uppercase font-bold">Carga(kg)</Label>
-                                        <Input type="number" value={ex.weight} onChange={(e) => handleUpdateExercise(idx, 'weight', parseFloat(e.target.value))} className="text-center" />
+                                        <Input type="number" value={ex.weight} onChange={(e) => handleUpdateExercise(idx, 'weight', parseFloat(e.target.value))} className="h-11 text-center" />
                                     </div>
                                     <div>
                                         <Label className="text-[11px] text-slate-500 uppercase font-bold">Tempo(m)</Label>
-                                        <Input type="number" value={ex.time} onChange={(e) => handleUpdateExercise(idx, 'time', parseInt(e.target.value))} className="text-center" />
+                                        <Input type="number" value={ex.time} onChange={(e) => handleUpdateExercise(idx, 'time', parseInt(e.target.value))} className="h-11 text-center" />
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ))}
 
-                    <Button variant="outline" onClick={addExerciseRow} className="w-full border-dashed bg-white text-slate-600 hover:text-orange-600 hover:border-orange-200">
+                    <Button variant="outline" onClick={addExerciseRow} className="w-full h-10 border-dashed bg-white text-slate-600 hover:text-orange-600 hover:border-orange-200">
                         <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
                     </Button>
 
@@ -163,7 +163,7 @@ export function WorkoutExecutionSheet({ workout, isOpen, onClose, onSuccess }: W
                 </div>
 
                 <SheetFooter className="pt-6 mt-auto">
-                    <Button onClick={handleFinish} disabled={loading} className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-bold text-lg shadow-md">
+                    <Button onClick={handleFinish} disabled={loading} className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold text-lg shadow-md">
                         {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
                         Salvar e Finalizar
                     </Button>

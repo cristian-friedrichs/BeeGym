@@ -1,6 +1,9 @@
 import { SupabaseAssinaturaRepository as assinaturaRepository } from '../../repositories/SupabaseAssinaturaRepository';
 import { SupabaseContratanteRepository as contratanteRepository } from '../../repositories/SupabaseContratanteRepository';
+import { SupabaseSaasPlanRepository as planRepository } from '../../repositories/SupabaseSaasPlanRepository';
 import { MetodoPagamento } from '@/payments/efi/efi.types';
+import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
+import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
 
 export class HandleRecurringPaymentUseCase {
     /**
@@ -36,7 +39,26 @@ export class HandleRecurringPaymentUseCase {
 
             // 2. Incrementar contador de cobranças (para controle de promoção)
             const { promoExpired } = await assinaturaRepository.incrementarCobranca(assinatura.id);
-            if (promoExpired) {
+
+            if (promoExpired && assinatura.saasPlanId) {
+                console.info(`[Recurring-Payment] Promoção expirou para assinatura ${assinatura.id}. Voltando ao preço original.`);
+
+                try {
+                    const planoOriginal = await planRepository.findById(assinatura.saasPlanId);
+                    if (planoOriginal) {
+                        // Atualizar no gateway
+                        if (assinatura.metodo === 'PIX_AUTOMATICO' && assinatura.acordoEfiId) {
+                            await efiPixAutomatico.alterarValorAcordo(assinatura.acordoEfiId, planoOriginal.price);
+                        } else if (assinatura.metodo === 'CARTAO_RECORRENTE' && assinatura.subscriptionEfiId) {
+                            await efiCardRecorrente.removerDesconto(assinatura.subscriptionEfiId);
+                        }
+
+                        // Atualizar no banco (valor_mensal volta ao normal)
+                        await assinaturaRepository.actualizarPlano(assinatura.id, planoOriginal.id, planoOriginal.price);
+                    }
+                } catch (efiError: any) {
+                    console.error(`[Recurring-Payment] Erro ao reverter promoção na EFI para assinatura ${assinatura.id}:`, efiError.message);
+                }
             }
 
             // Registrar cobrança no histórico PAGO

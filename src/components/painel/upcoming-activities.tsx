@@ -29,6 +29,9 @@ export function UpcomingActivities() {
 
     const fetchActivities = async () => {
         try {
+            // Trigger status transitions for both classes and workouts
+            await supabase.rpc('update_class_statuses' as any);
+
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 

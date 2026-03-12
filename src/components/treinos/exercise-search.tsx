@@ -87,7 +87,10 @@ export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
                     placeholder="Buscar exercício (ex: Supino)..."
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        onChange(null, e.target.value);
+                    }}
                     onFocus={() => { if (results.length > 0) setShowDropdown(true); }}
                     onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                 />

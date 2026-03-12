@@ -42,7 +42,7 @@ export default function ConversasPage() {
 
     // Guard: redireciona se plano não permite chat
     useEffect(() => {
-        if (!subLoading && !hasFeature('chat')) {
+        if (!subLoading && !hasFeature('conversas')) {
             router.replace('/app/painel');
         }
     }, [subLoading, hasFeature, router]);
@@ -397,7 +397,7 @@ export default function ConversasPage() {
                 />
             </div>
 
-            <div className="flex-1 min-h-0 flex bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
+            <div className="flex-1 min-h-0 flex bg-white border border-slate-200 shadow-sm rounded-[2rem] overflow-hidden">
 
                 {/* PAINEL ESQUERDO: SIDEBAR */}
                 <div className="w-1/3 min-w-[300px] max-w-[400px] flex flex-col border-r border-slate-200 bg-slate-50">
@@ -409,14 +409,14 @@ export default function ConversasPage() {
                             <input
                                 type="text"
                                 placeholder="Buscar ou começar uma conversa"
-                                className="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-orange-500 transition-all outline-none"
+                                className="w-full pl-9 pr-4 py-2 bg-slate-100 border-none rounded-full text-sm focus:ring-2 focus:ring-orange-500 transition-all outline-none"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
                         <div className="flex gap-1 text-slate-500 shrink-0">
-                            <button className="p-2 hover:bg-slate-100 rounded-lg transition" title="Arquivadas"><Archive className="w-5 h-5" /></button>
-                            <button className="p-2 hover:bg-slate-100 rounded-lg transition"><MoreVertical className="w-5 h-5" /></button>
+                            <button className="p-2 hover:bg-slate-100 rounded-full transition-all hover:-translate-y-0.5 active:scale-95" title="Arquivadas"><Archive className="w-5 h-5" /></button>
+                            <button className="p-2 hover:bg-slate-100 rounded-full transition-all hover:-translate-y-0.5 active:scale-95"><MoreVertical className="w-5 h-5" /></button>
                         </div>
                     </div>
 
@@ -501,8 +501,8 @@ export default function ConversasPage() {
                                     </div>
                                 </div>
                                 <div className="flex gap-4 text-slate-400">
-                                    <button className="hover:text-slate-600 transition" title="Buscar Mensagem"><Search className="w-5 h-5" /></button>
-                                    <button className="hover:text-slate-600 transition" title="Opções"><MoreVertical className="w-5 h-5" /></button>
+                                    <button className="hover:text-slate-600 transition-all hover:-translate-y-0.5 active:scale-95 p-2 hover:bg-slate-50 rounded-full" title="Buscar Mensagem"><Search className="w-5 h-5" /></button>
+                                    <button className="hover:text-slate-600 transition-all hover:-translate-y-0.5 active:scale-95 p-2 hover:bg-slate-50 rounded-full" title="Opções"><MoreVertical className="w-5 h-5" /></button>
                                 </div>
                             </div>
 
@@ -582,7 +582,7 @@ export default function ConversasPage() {
                                         <input
                                             type="text"
                                             placeholder="Digite uma mensagem..."
-                                            className="flex-1 bg-white border-none py-3 px-4 rounded-xl shadow-sm focus:ring-2 focus:ring-orange-500 outline-none"
+                                            className="flex-1 bg-white border-none py-3 px-6 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500 outline-none font-sans"
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}

@@ -28,7 +28,7 @@ interface StudentProfileMainSectionProps {
         email: string | null;
         phone: string | null;
         sex: string | null;
-        date_of_birth: string | null;
+        birth_date: string | null;
         height: number | null;
         objective: string | null;
         unitName: string | null;
@@ -75,8 +75,8 @@ export function StudentProfileMainSection({
         .slice(0, 2)
         .toUpperCase();
 
-    const age = student.date_of_birth
-        ? differenceInYears(new Date(), new Date(student.date_of_birth))
+    const age = student.birth_date
+        ? differenceInYears(new Date(), new Date(student.birth_date))
         : null;
 
     const getPlanDetails = () => {
@@ -192,7 +192,7 @@ export function StudentProfileMainSection({
 
                 {/* Row 2 - Personal Identity (DOB and Age Swapped) */}
                 <InfoItem icon={User} label="Sexo" value={student.sex || 'Não informado'} />
-                <InfoItem icon={Calendar} label="Data de Nasc." value={formatDate(student.date_of_birth)} />
+                <InfoItem icon={Calendar} label="Data de Nasc." value={formatDate(student.birth_date)} />
                 <InfoItem icon={Calendar} label="Idade" value={age ? `${age} anos` : '-'} />
 
                 {/* Row 3 - Contact & Goal */}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -127,22 +128,44 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                 <SheetContent className="sm:max-w-[600px] flex flex-col h-full overflow-y-auto">
                     {workout ? (
                         <>
-                            <SheetHeader className="mb-4">
-                                <SheetTitle className="flex items-center gap-2">
-                                    <Dumbbell className="h-5 w-5 text-orange-500" />
-                                    {workout.title}
-                                </SheetTitle>
-                                <SheetDescription className="flex items-center gap-2">
-                                    <Badge variant="outline">{workout.type}</Badge>
-                                    <span className="flex items-center gap-1 text-xs">
-                                        <Calendar className="h-3 w-3" />
-                                        {workout.scheduled_at ? format(new Date(workout.scheduled_at), "dd/MM/yyyy") : '-'}
-                                    </span>
-                                    <span className="flex items-center gap-1 text-xs">
-                                        <Clock className="h-3 w-3" />
-                                        {workout.scheduled_at ? format(new Date(workout.scheduled_at), "HH:mm") : '-'}
-                                    </span>
-                                </SheetDescription>
+                            <SheetHeader className="relative p-0 mb-8 mt-[-24px] mx-[-24px] overflow-hidden rounded-t-[2rem]">
+                                <div className="absolute inset-0 bg-gradient-to-r from-bee-midnight via-slate-900 to-bee-midnight" />
+                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay" />
+                                <div className="absolute -top-24 -right-24 w-48 h-48 bg-bee-amber/10 rounded-full blur-3xl animate-pulse" />
+                                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-bee-amber/5 rounded-full blur-3xl" />
+
+                                <div className="relative px-8 pt-10 pb-8 flex flex-col gap-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-bee-amber to-amber-600 p-[1px] shadow-lg shadow-bee-amber/20 group animate-in zoom-in-50 duration-500">
+                                                <div className="flex h-full w-full items-center justify-center rounded-[15px] bg-bee-midnight/90 backdrop-blur-xl transition-colors group-hover:bg-bee-midnight/40">
+                                                    <Dumbbell className="h-7 w-7 text-bee-amber animate-pulse" />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <SheetTitle className="text-3xl font-black text-white tracking-tight leading-none font-display mb-2">
+                                                    {workout.title}
+                                                </SheetTitle>
+                                                <SheetDescription className="flex items-center gap-3">
+                                                    <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
+                                                        {workout.type}
+                                                    </Badge>
+                                                    <div className="h-1 w-1 rounded-full bg-slate-700" />
+                                                    <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] uppercase tracking-wider font-sans">
+                                                        <Calendar className="h-3.5 w-3.5 text-bee-amber" />
+                                                        {workout.scheduled_at ? format(new Date(workout.scheduled_at), "dd/MM/yyyy") : '-'}
+                                                    </span>
+                                                    <div className="h-1 w-1 rounded-full bg-slate-700" />
+                                                    <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] uppercase tracking-wider font-sans">
+                                                        <Clock className="h-3.5 w-3.5 text-bee-amber" />
+                                                        {workout.scheduled_at ? format(new Date(workout.scheduled_at), "HH:mm") : '-'}
+                                                    </span>
+                                                </SheetDescription>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-bee-amber/20 to-transparent" />
                             </SheetHeader>
 
                             {/* CONTEÚDO */}
@@ -178,14 +201,14 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                                         {workout.status !== 'Cancelado' && workout.status !== 'Concluido' && (
                                             <div className="grid grid-cols-2 gap-3">
                                                 <Button
-                                                    className="bg-green-600 hover:bg-green-700 text-white h-12"
+                                                    className="bg-green-600 hover:bg-green-700 text-white h-10"
                                                     onClick={() => setViewMode('execution')}
                                                 >
                                                     <CheckCircle2 className="mr-2 h-5 w-5" /> Concluir Treino
                                                 </Button>
                                                 <Button
                                                     variant="outline"
-                                                    className="text-red-600 border-red-200 hover:bg-red-50 h-12"
+                                                    className="text-red-600 border-red-200 hover:bg-red-50 h-10"
                                                     onClick={() => setConfirmDialog({ open: true, type: 'absent' })}
                                                 >
                                                     <User className="mr-2 h-5 w-5" /> Registrar Falta
@@ -250,7 +273,7 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                                                     <div className="grid grid-cols-3 gap-3">
                                                         <div>
                                                             <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Séries</Label>
-                                                            <Input type="number" className="h-9" value={ex.sets} onChange={(e) => {
+                                                            <Input type="number" className="h-11" value={ex.sets} onChange={(e) => {
                                                                 const newEx = [...exercises];
                                                                 newEx[idx].sets = parseInt(e.target.value);
                                                                 setExercises(newEx);
@@ -258,7 +281,7 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                                                         </div>
                                                         <div>
                                                             <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Reps</Label>
-                                                            <Input type="number" className="h-9" value={ex.reps} onChange={(e) => {
+                                                            <Input type="number" className="h-11" value={ex.reps} onChange={(e) => {
                                                                 const newEx = [...exercises];
                                                                 newEx[idx].reps = parseInt(e.target.value);
                                                                 setExercises(newEx);
@@ -266,7 +289,7 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                                                         </div>
                                                         <div>
                                                             <Label className="text-[11px] uppercase font-bold text-slate-500 mb-1 block">Carga (kg)</Label>
-                                                            <Input type="number" className="h-9" value={ex.weight} onChange={(e) => {
+                                                            <Input type="number" className="h-11" value={ex.weight} onChange={(e) => {
                                                                 const newEx = [...exercises];
                                                                 newEx[idx].weight = parseFloat(e.target.value);
                                                                 setExercises(newEx);
@@ -281,7 +304,7 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                                             <Plus className="mr-2 h-4 w-4" /> Adicionar Exercício
                                         </Button>
 
-                                        <Button className="w-full bg-green-600 hover:bg-green-700 text-white mt-4" onClick={() => handleStatusChange('Concluido')}>
+                                        <Button className="w-full h-10 bg-green-600 hover:bg-green-700 text-white mt-4" onClick={() => handleStatusChange('Concluido')}>
                                             <Save className="mr-2 h-4 w-4" /> Salvar e Finalizar
                                         </Button>
                                     </div>
@@ -303,22 +326,40 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
 
             {/* DIALOGOS DE CONFIRMAÇÃO */}
             <AlertDialog open={confirmDialog.open} onOpenChange={(o) => setConfirmDialog({ ...confirmDialog, open: o })}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Ação</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {confirmDialog.type === 'cancel'
-                                ? "Deseja realmente cancelar este treino? O horário será liberado na agenda."
-                                : "Confirmar que o aluno FALTOU? Isso poderá consumir créditos dependendo do plano."}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogContent className="rounded-[2rem] border-slate-100 shadow-2xl p-0 overflow-hidden max-w-[400px]">
+                    <div className={cn(
+                        "p-8 text-center space-y-4",
+                        confirmDialog.type === 'cancel' ? "bg-red-50/50" : "bg-amber-50/50"
+                    )}>
+                        <div className={cn(
+                            "mx-auto h-16 w-16 rounded-full flex items-center justify-center mb-2 animate-bounce",
+                            confirmDialog.type === 'cancel' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                        )}>
+                            <AlertTriangle className="h-8 w-8" />
+                        </div>
+                        <div className="space-y-2">
+                            <AlertDialogTitle className="text-2xl font-bold font-display text-slate-900">
+                                Confirmar Ação
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-500 font-sans text-base leading-relaxed">
+                                {confirmDialog.type === 'cancel'
+                                    ? "Deseja realmente cancelar este treino? O horário será liberado na agenda."
+                                    : "Confirmar que o aluno FALTOU? Isso poderá consumir créditos dependendo do plano."}
+                            </AlertDialogDescription>
+                        </div>
+                    </div>
+                    <AlertDialogFooter className="p-6 bg-white flex-col sm:flex-row gap-3 sm:gap-0">
+                        <AlertDialogCancel className="w-full sm:w-auto rounded-xl border-slate-200 font-bold h-10">
+                            Não, voltar
+                        </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => handleStatusChange(confirmDialog.type === 'cancel' ? 'Cancelado' : 'Faltou')}
-                            className={confirmDialog.type === 'cancel' ? "bg-red-600" : "bg-orange-600"}
+                            className={cn(
+                                "w-full sm:w-auto rounded-xl font-bold h-10 text-white",
+                                confirmDialog.type === 'cancel' ? "bg-red-600 hover:bg-red-700" : "bg-amber-600 hover:bg-amber-700"
+                            )}
                         >
-                            Confirmar
+                            Sim, confirmar
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

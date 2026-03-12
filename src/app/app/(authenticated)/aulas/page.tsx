@@ -15,7 +15,7 @@ import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { Badge } from '@/components/ui/badge';
-import { CreateRecurringClassModal } from '@/components/painel/modals/create-recurring-class-modal';
+import { ClassModal } from '@/components/painel/modals/class-modal';
 import { EventDetailsModal } from '@/components/painel/modals/event-details-modal';
 import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
@@ -80,7 +80,7 @@ export default function ClassesPage() {
 
   // Guard: redireciona se plano não permite aulas coletivas
   useEffect(() => {
-    if (!subLoading && !hasFeature('aulas_coletivas')) {
+    if (!subLoading && !hasFeature('aulas')) {
       router.replace('/app/painel');
     }
   }, [subLoading, hasFeature, router]);
@@ -345,20 +345,20 @@ export default function ClassesPage() {
             <p className="text-xs text-slate-400">Próximas aulas coletivas do calendário</p>
           </div>
         </div>
-        <Button
-          onClick={() => setCreateModalOpen(true)}
-          className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4"
-        >
-          <Plus className="mr-2 h-4 w-4 text-[#0B0F1A]" /> Nova Aula
-        </Button>
+          <Button
+            onClick={() => setCreateModalOpen(true)}
+            className="h-10 px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-0.98 uppercase tracking-widest text-[11px]"
+          >
+            <Plus className="w-4 h-4 mr-2 stroke-[3px]" /> Nova Aula
+          </Button>
       </div>
 
-      <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-4 justify-between items-center">
+      <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col xl:flex-row gap-4 justify-between items-center">
         <div className="relative w-full xl:w-72">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Buscar por aula ou instrutor..."
-            className="pl-9 bg-slate-50 border-slate-200 rounded-[8px] font-sans h-9"
+            className="pl-9 bg-slate-50 border-slate-200 rounded-full font-sans h-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -375,7 +375,7 @@ export default function ClassesPage() {
                   id="date"
                   variant={"outline"}
                   className={cn(
-                    "w-[200px] h-9 justify-start text-left font-normal text-xs",
+                    "w-[200px] h-9 justify-start text-left font-normal text-xs rounded-full transition-all hover:-translate-y-0.5 active:scale-95",
                     !dateRange && "text-muted-foreground"
                   )}
                 >
@@ -414,7 +414,7 @@ export default function ClassesPage() {
           )}
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[110px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+            <SelectTrigger className="w-[110px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-full focus:ring-1 focus:ring-orange-200 transition-all hover:-translate-y-0.5 active:scale-95">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -426,7 +426,7 @@ export default function ClassesPage() {
           </Select>
 
           <Select value={periodFilter} onValueChange={setPeriodFilter}>
-            <SelectTrigger className="w-[140px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+            <SelectTrigger className="w-[140px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-full focus:ring-1 focus:ring-orange-200 transition-all hover:-translate-y-0.5 active:scale-95">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
             <SelectContent>
@@ -438,7 +438,7 @@ export default function ClassesPage() {
           </Select>
 
           <Select value={instructorFilter} onValueChange={setInstructorFilter}>
-            <SelectTrigger className="w-[150px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+            <SelectTrigger className="w-[150px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-full focus:ring-1 focus:ring-orange-200 transition-all hover:-translate-y-0.5 active:scale-95">
               <SelectValue placeholder="Instrutor" />
             </SelectTrigger>
             <SelectContent>
@@ -451,7 +451,7 @@ export default function ClassesPage() {
           </Select>
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[150px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+            <SelectTrigger className="w-[150px] h-9 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-full focus:ring-1 focus:ring-orange-200 transition-all hover:-translate-y-0.5 active:scale-95">
               <SelectValue placeholder="Modalidade" />
             </SelectTrigger>
             <SelectContent>
@@ -464,7 +464,7 @@ export default function ClassesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">
@@ -570,14 +570,23 @@ export default function ClassesPage() {
                       {getStatusBadge(cls.status)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-bee-amber" disabled onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-2 pr-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEvent(cls);
+                            setDetailsModalOpen(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-slate-400 hover:text-destructive"
+                          className="h-9 w-9 text-slate-400 hover:text-destructive rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-100 shadow-none"
                           onClick={(e) => handleDelete(e, cls.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -600,6 +609,7 @@ export default function ClassesPage() {
             size="sm"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
+            className="rounded-full shadow-sm hover:-translate-y-0.5 transition-all active:scale-95"
           >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Anterior
@@ -612,6 +622,7 @@ export default function ClassesPage() {
             size="sm"
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages || totalPages === 0}
+            className="rounded-full shadow-sm hover:-translate-y-0.5 transition-all active:scale-95"
           >
             Próxima
             <ChevronRight className="h-4 w-4 ml-1" />
@@ -620,12 +631,10 @@ export default function ClassesPage() {
       )}
 
       {/* Create Modal */}
-      <CreateRecurringClassModal
+      <ClassModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSuccess={() => {
-          fetchClasses();
-        }}
+        onSuccess={fetchClasses}
       />
 
       {/* Details/Enrollment Modal */}

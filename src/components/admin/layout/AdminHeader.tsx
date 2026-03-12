@@ -29,6 +29,7 @@ export function AdminHeader() {
     const [userName, setUserName] = useState('Admin');
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [isSignOutLoading, setIsSignOutLoading] = useState(false);
 
     const meta = Object.entries(pageMeta).find(([key]) =>
         pathname.startsWith(key)
@@ -70,8 +71,11 @@ export function AdminHeader() {
         .toUpperCase();
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/login');
+        setIsSignOutLoading(true);
+        setTimeout(() => {
+            supabase.auth.signOut();
+            window.location.href = '/auth/signout';
+        }, 300);
     };
 
     return (
@@ -124,6 +128,17 @@ export function AdminHeader() {
                     <ChevronDown className="w-3 h-3 text-slate-300 hidden sm:block" />
                 </button>
             </div>
+            {isSignOutLoading && (
+                <div className="fixed inset-0 z-[9999] bg-white/80 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-200">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                            <div className="w-12 h-12 border-4 border-amber-500/20 rounded-full animate-spin"></div>
+                            <div className="absolute inset-0 w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                        <p className="text-sm font-bold text-slate-900 animate-pulse uppercase tracking-widest">Saindo...</p>
+                    </div>
+                </div>
+            )}
         </header>
     );
 }

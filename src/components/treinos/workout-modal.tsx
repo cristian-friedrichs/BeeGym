@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
-import { Dumbbell, Users, Loader2, Edit, Calendar as CalendarIcon, User, MapPin, X, Plus, Trash2 } from "lucide-react";
+import { Dumbbell, Users, Loader2, Edit, Calendar as CalendarIcon, User, MapPin, X, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
 import { ExerciseSearch } from "./exercise-search";
@@ -27,9 +27,11 @@ interface WorkoutModalProps {
     defaultStudentId?: string;
     workoutToEdit?: any | null;
     onSuccess: () => void;
+    initialDate?: Date;
+    initialTime?: string;
 }
 
-export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEdit, onSuccess }: WorkoutModalProps) {
+export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEdit, onSuccess, initialDate, initialTime }: WorkoutModalProps) {
     const supabase = createClient();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -52,6 +54,12 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     // States - Localização
     const [locationType, setLocationType] = useState<"internal" | "external">("internal");
     const [locationDetails, setLocationDetails] = useState("");
+    const [roomId, setRoomId] = useState<string>("");
+    const [rooms, setRooms] = useState<{ id: string, name: string }[]>([]);
+
+    // States - Instrutor
+    const [instructorId, setInstructorId] = useState<string>("");
+    const [instructors, setInstructors] = useState<{ id: string, name: string }[]>([]);
 
     // States - Recorrência
     const [recurrenceType, setRecurrenceType] = useState<"none" | "weekly" | "monthly">("none");
@@ -86,6 +94,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 setLocationType(workoutToEdit.location_type || "internal");
                 setLocationDetails(workoutToEdit.location_details || "");
                 setRecurrenceType(workoutToEdit.recurrence_type || "none");
+                setInstructorId(workoutToEdit.instructor_id || "");
+                setRoomId(workoutToEdit.room_id || "");
 
                 if (workoutToEdit.scheduled_at) {
                     const schedDate = new Date(workoutToEdit.scheduled_at);
@@ -97,9 +107,9 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 }
             } else {
                 // MODO CRIAÇÃO
-                const now = new Date();
+                const now = initialDate || new Date();
                 setDate(now);
-                setTime("08:00");
+                setTime(initialTime || "08:00");
                 setTitle("");
                 setType("Hipertrofia");
                 setDuration("60");
@@ -108,17 +118,56 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 setIgnoreOverbooking(false);
                 setLocationType("internal");
                 setLocationDetails("");
+                setInstructorId("");
+                setRoomId("");
                 setRecurrenceType("none");
                 setEndDate(addDays(now, 30));
                 setSelectedStudentId(defaultStudentId || "");
                 setExercises([]);
             }
 
-            const fetchStudents = async () => {
-                const { data } = await (supabase as any).from('students').select('id, full_name').eq('status', 'ACTIVE').order('full_name');
-                if (data) setAvailableStudents(data.map((s: any) => ({ id: s.id, name: s.full_name })));
+            const fetchInitialData = async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: profile, error: profileError } = await (supabase as any)
+                    .from('profiles')
+                    .select('organization_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError || !profile?.organization_id) {
+                    console.error("WorkoutModal: Failed to fetch organization_id", profileError);
+                    return;
+                }
+                const orgId = profile.organization_id;
+
+                // Students
+                const { data: sData } = await (supabase as any)
+                    .from('students')
+                    .select('id, full_name')
+                    .eq('organization_id', orgId)
+                    .eq('status', 'active')
+                    .order('full_name');
+                if (sData) setAvailableStudents(sData.map((s: any) => ({ id: s.id, name: s.full_name })));
+
+                // Instructors
+                const { data: iData } = await (supabase as any)
+                    .from('instructors')
+                    .select('id, name')
+                    .eq('organization_id', orgId)
+                    .order('name');
+                if (iData) setInstructors(iData.map((i: any) => ({ id: i.id, name: i.name })));
+
+                // Rooms
+                const { data: rData } = await (supabase as any)
+                    .from('rooms')
+                    .select('id, name')
+                    .eq('organization_id', orgId)
+                    .order('name');
+                if (rData) setRooms(rData.map((r: any) => ({ id: r.id, name: r.name })));
             };
-            fetchStudents();
+            fetchInitialData();
         }
     }, [open, workoutToEdit, defaultStudentId]);
 
@@ -147,6 +196,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
+                room_id: (roomId && roomId !== 'none') ? roomId : null,
+                instructor_id: (instructorId && instructorId !== 'none') ? instructorId : null,
                 recurrence_type: recurrenceType,
                 recurrence_id: recurrenceId
             });
@@ -181,6 +232,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
+                instructor_id: (instructorId && instructorId !== 'none') ? instructorId : null,
+                room_id: (roomId && roomId !== 'none') ? roomId : null,
                 status: 'Agendado'
             };
 
@@ -224,6 +277,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                     is_makeup: isMakeup,
                     location_type: locationType,
                     location_details: locationDetails,
+                    instructor_id: (instructorId && instructorId !== 'none') ? instructorId : null,
+                    room_id: (roomId && roomId !== 'none') ? roomId : null,
                     recurrence_type: 'none',
                     recurrence_id: null
                 }];
@@ -237,7 +292,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             if (validExercises.length > 0) {
                 const exercisePayloads = validExercises.map(ex => ({
                     workout_id: workout.id,
-                    exercise_id: ex.exercise_id,
+                    exercise_id: ex.exercise_id && !ex.exercise_id.startsWith('static-') ? ex.exercise_id : null,
+                    exercise_name: ex.name,
                     sets: ex.sets,
                     reps: ex.reps,
                     weight: ex.weight || '0',
@@ -296,6 +352,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             is_makeup: payload.is_makeup,
                             location_type: payload.location_type,
                             location_details: payload.location_details,
+                            instructor_id: (instructorId && instructorId !== 'none') ? instructorId : null,
+                            room_id: (roomId && roomId !== 'none') ? roomId : null,
                             recurrence_type: workoutToEdit.recurrence_type,
                             recurrence_id: workoutToEdit.recurrence_id
                         });
@@ -321,52 +379,52 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     return (
         <>
             <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent className="sm:max-w-[550px] w-full h-full flex flex-col overflow-y-auto">
-                    <SheetHeader className="mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 bg-orange-100 flex items-center justify-center rounded-xl text-orange-600">
-                                {workoutToEdit ? <Edit className="h-5 w-5" /> : <Dumbbell className="h-5 w-5" />}
+                <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                    <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
+                                {workoutToEdit ? <Edit className="h-6 w-6 text-bee-amber" /> : <Dumbbell className="h-6 w-6 text-bee-amber" />}
                             </div>
-                            <div>
-                                <SheetTitle className="text-xl font-bold">
+                            <div className="text-left">
+                                <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
                                     {workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
                                 </SheetTitle>
-                                <SheetDescription>
-                                    {workoutToEdit ? 'Altere as informações abaixo.' : 'Preencha os detalhes abaixo para agendar.'}
+                                <SheetDescription className="text-slate-400 font-medium text-xs">
+                                    {workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
                                 </SheetDescription>
                             </div>
                         </div>
                     </SheetHeader>
 
-                    <div className="grid gap-6 flex-1">
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* ABAS INDIVIDUAL / GRUPO */}
                         {!workoutToEdit && (
                             <Tabs value={sessionType} onValueChange={(v) => setSessionType(v as "individual" | "group")} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 p-1">
-                                    <TabsTrigger value="individual" className="h-full data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm font-bold flex gap-2">
-                                        <User className="h-4 w-4" /> Individual
+                                <TabsList className="grid w-full grid-cols-2 h-11 bg-slate-50 p-1 border border-slate-100 rounded-xl">
+                                    <TabsTrigger value="individual" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-black uppercase text-[10px] tracking-widest flex gap-2 rounded-lg">
+                                        <User className="h-3.5 w-3.5" /> Individual
                                     </TabsTrigger>
-                                    <TabsTrigger value="group" className="h-full data-[state=active]:bg-white data-[state=active]:text-orange-600 data-[state=active]:shadow-sm font-bold flex gap-2">
-                                        <Users className="h-4 w-4" /> Em Grupo
+                                    <TabsTrigger value="group" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-black uppercase text-[10px] tracking-widest flex gap-2 rounded-lg">
+                                        <Users className="h-3.5 w-3.5" /> Em Grupo
                                     </TabsTrigger>
                                 </TabsList>
                             </Tabs>
                         )}
 
-                        <div className="space-y-5">
+                        <div className="space-y-6">
                             {/* ALUNO & MODALIDADE */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold">Aluno</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Aluno</Label>
                                     <Command className="overflow-visible bg-transparent">
-                                        <div className={cn("group border border-slate-300 px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 bg-white", !!workoutToEdit && "opacity-50 cursor-not-allowed")}>
-                                            <div className="flex gap-1 flex-wrap items-center h-[26px]">
+                                        <div className="group border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 flex items-center transition-all focus-within:ring-2 focus-within:ring-bee-amber/20 focus-within:border-bee-amber/30">
+                                            <div className="flex gap-1 flex-wrap items-center">
                                                 {selectedStudentId && (
-                                                    <Badge variant="secondary" className="mb-1">
+                                                    <Badge variant="secondary" className="bg-bee-amber/10 text-bee-amber border-none font-bold">
                                                         {availableStudents.find(s => s.id === selectedStudentId)?.name}
                                                         {!workoutToEdit && (
                                                             <button onClick={(e) => { e.preventDefault(); setSelectedStudentId(""); }} className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                                                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                                                                <X className="h-3 w-3 text-bee-amber hover:text-bee-amber/80" />
                                                             </button>
                                                         )}
                                                     </Badge>
@@ -374,7 +432,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                 {!selectedStudentId && (
                                                     <CommandInput
                                                         placeholder="Buscar aluno..."
-                                                        className="ml-2 bg-transparent outline-none placeholder:text-muted-foreground flex-1 h-[26px]"
+                                                        className="bg-transparent outline-none placeholder:text-slate-400 flex-1 h-full border-none focus:ring-0"
                                                         onFocus={() => { if (!workoutToEdit) setOpenCommand(true); }}
                                                         onBlur={() => setTimeout(() => setOpenCommand(false), 200)}
                                                         disabled={!!workoutToEdit}
@@ -382,20 +440,21 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="relative mt-2">
+                                        <div className="relative">
                                             {openCommand && !selectedStudentId && (
-                                                <div className="absolute w-full z-10 top-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
+                                                <div className="absolute w-full z-50 mt-2 rounded-2xl border border-slate-100 bg-white text-popover-foreground shadow-2xl outline-none animate-in fade-in slide-in-from-top-1 overflow-hidden">
                                                     <CommandList className="max-h-[200px] overflow-y-auto">
-                                                        <CommandEmpty>Nenhum aluno encontrado.</CommandEmpty>
+                                                        <CommandEmpty className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhum aluno encontrado.</CommandEmpty>
                                                         <CommandGroup>
                                                             {availableStudents.map(student => (
                                                                 <CommandItem
                                                                     key={student.id}
                                                                     value={student.name}
                                                                     onSelect={() => { setSelectedStudentId(student.id); setOpenCommand(false); }}
-                                                                    className="flex items-center gap-2 cursor-pointer"
+                                                                    className="flex items-center gap-2 cursor-pointer p-3 hover:bg-slate-50 focus:bg-bee-amber/5"
                                                                 >
-                                                                    {student.name}
+                                                                    <User className="h-4 w-4 text-slate-400" />
+                                                                    <span className="font-semibold text-slate-700">{student.name}</span>
                                                                 </CommandItem>
                                                             ))}
                                                         </CommandGroup>
@@ -405,173 +464,198 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                         </div>
                                     </Command>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold">Modalidade</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Modalidade</Label>
                                     <Select value={type} onValueChange={setType}>
-                                        <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
-                                            <SelectItem value="Força">Força</SelectItem>
-                                            <SelectItem value="Cardio">Cardio</SelectItem>
-                                            <SelectItem value="Pilates">Pilates</SelectItem>
+                                        <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                            <SelectItem value="Hipertrofia" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Hipertrofia</SelectItem>
+                                            <SelectItem value="Força" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Força</SelectItem>
+                                            <SelectItem value="Cardio" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Cardio</SelectItem>
+                                            <SelectItem value="Pilates" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Pilates</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
-
-                            {/* CHECKBOXES DE REGRAS */}
-                            <div className="flex items-center gap-6 pt-1 pb-1">
-                                <div className="flex items-center gap-2">
-                                    <Checkbox id="makeup" checked={isMakeup} onCheckedChange={(c) => setIsMakeup(c as boolean)} className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500" />
-                                    <Label htmlFor="makeup" className="text-sm font-medium text-slate-700 cursor-pointer">Aula de Reposição</Label>
-                                </div>
-                                {!workoutToEdit && (
-                                    <div className="flex items-center gap-2">
-                                        <Checkbox id="overbooking" checked={ignoreOverbooking} onCheckedChange={(c) => setIgnoreOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500" />
-                                        <Label htmlFor="overbooking" className="text-sm font-medium text-slate-700 cursor-pointer">Forçar Agendamento</Label>
-                                    </div>
-                                )}
+                            
+                            {/* INSTRUTOR */}
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Instrutor</Label>
+                                <Select value={instructorId} onValueChange={setInstructorId}>
+                                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                        <SelectValue placeholder="Selecione um instrutor..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                        <SelectItem value="none" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium italic opacity-60 text-slate-400">Sem instrutor</SelectItem>
+                                        {instructors.map(instructor => (
+                                            <SelectItem 
+                                                key={instructor.id} 
+                                                value={instructor.id} 
+                                                className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium"
+                                            >
+                                                {instructor.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {/* NOME DO TREINO */}
-                            <div className="space-y-1.5">
-                                <Label className="text-slate-700 font-semibold">Nome do Treino / Aula *</Label>
-                                <Input placeholder="Ex: Treino A - Full Body" value={title} onChange={e => setTitle(e.target.value)} className="h-11 border-slate-300" />
-                            </div>
-
-                            {/* LOCALIZAÇÃO */}
-                            <div className="space-y-1.5 p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                                <div className="flex items-center justify-between mb-2">
-                                    <Label className="text-slate-700 font-semibold flex items-center gap-2"><MapPin className="h-4 w-4" /> Localização</Label>
-                                    <div className="flex bg-slate-200 p-0.5 rounded-lg">
-                                        <button onClick={() => setLocationType('internal')} className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", locationType === 'internal' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500')}>Interno</button>
-                                        <button onClick={() => setLocationType('external')} className={cn("px-3 py-1 text-xs font-bold rounded-md transition-all", locationType === 'external' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500')}>Externo</button>
-                                    </div>
-                                </div>
-                                {locationType === 'internal' ? (
-                                    <Input placeholder="Ex: Sala de Musculação, Estúdio A" value={locationDetails} onChange={e => setLocationDetails(e.target.value)} className="bg-white border-slate-200" />
-                                ) : (
-                                    <Input placeholder="Ex: Parque do Ibirapuera, Av. Principal 123" value={locationDetails} onChange={e => setLocationDetails(e.target.value)} className="bg-white border-slate-200" />
-                                )}
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome do Treino / Aula *</Label>
+                                <Input
+                                    placeholder="Ex: Treino A - Full Body"
+                                    value={title}
+                                    onChange={e => setTitle(e.target.value)}
+                                    className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                />
                             </div>
 
                             {/* DATA E HORA */}
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold">Data *</Label>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data *</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant={"outline"}
-                                                className={cn(
-                                                    "w-full h-11 justify-start text-left font-normal border-slate-300 shadow-sm",
-                                                    !date && "text-muted-foreground"
-                                                )}
+                                                className="w-full h-11 justify-start text-left font-semibold border-slate-100 bg-slate-50/50 rounded-2xl px-5 hover:bg-slate-100/50 transition-all"
                                             >
-                                                <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
+                                                <CalendarIcon className="mr-2 h-4 w-4 text-bee-amber" />
                                                 {date ? format(date, "P", { locale: ptBR }) : <span>Selecione...</span>}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
+                                        <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl border-slate-100 overflow-hidden" align="start">
                                             <Calendar
                                                 mode="single"
                                                 selected={date}
                                                 onSelect={setDate}
                                                 initialFocus
                                                 locale={ptBR}
+                                                className="p-3"
                                             />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold">Horário *</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Horário *</Label>
                                     <Select value={time} onValueChange={setTime}>
-                                        <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="max-h-60">
-                                            {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                        <SelectContent className="max-h-60 rounded-2xl border-slate-100 shadow-xl">
+                                            {timeSlots.map(t => <SelectItem key={t} value={t} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">{t}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className="text-slate-700 font-semibold">Duração (min) *</Label>
-                                    <Input type="number" value={duration} onChange={e => setDuration(e.target.value)} className="h-11 border-slate-300 shadow-sm" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duração (min) *</Label>
+                                    <Input
+                                        type="number"
+                                        value={duration}
+                                        onChange={e => setDuration(e.target.value)}
+                                        className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Repetição</Label>
+                                    {!workoutToEdit ? (
+                                        <Select value={recurrenceType} onValueChange={(v: any) => setRecurrenceType(v)}>
+                                            <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                                <SelectItem value="none" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Não se repete</SelectItem>
+                                                <SelectItem value="weekly" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Semanalmente</SelectItem>
+                                                <SelectItem value="monthly" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Mensalmente</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Input disabled value={recurrenceType === 'weekly' ? 'Semanalmente' : recurrenceType === 'monthly' ? 'Mensalmente' : 'Não se repete'} className="h-11 rounded-2xl border-slate-100 bg-slate-100/50 font-semibold" />
+                                    )}
                                 </div>
                             </div>
 
-                            {/* RECORRÊNCIA (Estilo Google Calendar) */}
-                            {!workoutToEdit && (
-                                <div className="grid grid-cols-2 gap-4 pt-2">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-slate-700 font-semibold">Repetição</Label>
-                                        <Select value={recurrenceType} onValueChange={(v: any) => setRecurrenceType(v)}>
-                                            <SelectTrigger className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                                <SelectValue />
+                            {/* CHECKBOXES DE REGRAS */}
+                            <div className="flex items-center gap-6 p-1 ml-1">
+                                <div className="flex items-center gap-2 group cursor-pointer">
+                                    <Checkbox id="makeup" checked={isMakeup} onCheckedChange={(c) => setIsMakeup(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-5 w-5" />
+                                    <Label htmlFor="makeup" className="text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer group-hover:text-bee-midnight transition-colors">Aula de Reposição</Label>
+                                </div>
+                                {!workoutToEdit && (
+                                    <div className="flex items-center gap-2 group cursor-pointer">
+                                        <Checkbox id="overbooking" checked={ignoreOverbooking} onCheckedChange={(c) => setIgnoreOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-5 w-5" />
+                                        <Label htmlFor="overbooking" className="text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer group-hover:text-bee-midnight transition-colors">Forçar Agendamento</Label>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* LOCALIZAÇÃO */}
+                            <div className="space-y-4 p-5 bg-slate-50/50 border border-slate-100 rounded-3xl group">
+                                <div className="flex items-center justify-between mb-1">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                        <MapPin className="h-3.5 w-3.5 text-bee-amber" /> Localização
+                                    </Label>
+                                    <div className="flex bg-white p-0.5 rounded-xl border border-slate-100 shadow-sm">
+                                        <button onClick={() => setLocationType('internal')} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-[10px] transition-all">Interno</button>
+                                        <button onClick={() => setLocationType('external')} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-[10px] transition-all">Externo</button>
+                                    </div>
+                                </div>
+                                <Input
+                                    placeholder={locationType === 'internal' ? "Ex: Sala de Musculação, Estúdio A" : "Ex: Parque, Av. Principal 123"}
+                                    value={locationDetails}
+                                    onChange={e => setLocationDetails(e.target.value)}
+                                    className="h-11 bg-white border-slate-100 rounded-2xl font-semibold px-4 focus:ring-4 focus:ring-bee-amber/5"
+                                />
+                                {locationType === 'internal' && (
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Sala / Recinto</Label>
+                                        <Select value={roomId} onValueChange={setRoomId}>
+                                            <SelectTrigger className="h-11 bg-white border-slate-100 rounded-2xl font-semibold px-4 focus:ring-4 focus:ring-bee-amber/5">
+                                                <SelectValue placeholder="Selecione o local..." />
                                             </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">Não se repete</SelectItem>
-                                                <SelectItem value="weekly">Semanalmente (Toda semana)</SelectItem>
-                                                <SelectItem value="monthly">Mensalmente (Todo mês no dia)</SelectItem>
+                                            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                                <SelectItem value="none" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium italic opacity-60 text-slate-400">Sem local definido</SelectItem>
+                                                {rooms.map(room => (
+                                                    <SelectItem 
+                                                        key={room.id} 
+                                                        value={room.id} 
+                                                        className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium"
+                                                    >
+                                                        {room.name}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
-
-                                    {recurrenceType !== 'none' && (
-                                        <div className="space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-                                            <Label className="text-slate-700 font-semibold">Data Término</Label>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn(
-                                                            "w-full h-11 justify-start text-left font-normal border-slate-300 shadow-sm",
-                                                            !endDate && "text-muted-foreground"
-                                                        )}
-                                                    >
-                                                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-500" />
-                                                        {endDate ? format(endDate, "P", { locale: ptBR }) : <span>Selecione...</span>}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={endDate}
-                                                        onSelect={setEndDate}
-                                                        initialFocus
-                                                        locale={ptBR}
-                                                        disabled={(date) => isBefore(date, new Date())}
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                )}
+                            </div>
 
                         {/* SEÇÃO DE EXERCÍCIOS */}
-                        <div className="space-y-4 border-t pt-4">
+                        <div className="space-y-4 border-t border-slate-50 pt-6">
                             <div className="flex items-center justify-between">
-                                <Label className="text-slate-700 font-bold flex items-center gap-2">
-                                    <Dumbbell className="h-4 w-4 text-orange-500" /> Exercícios do Treino
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-1">
+                                    <Dumbbell className="h-3.5 w-3.5 text-bee-amber" /> Exercícios do Treino
                                 </Label>
                                 <Button
                                     type="button"
-                                    variant="outline"
+                                    variant="ghost"
                                     size="sm"
                                     onClick={() => setExercises([...exercises, { name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                    className="text-xs h-8 border-orange-200 text-orange-600 hover:bg-amber-50"
+                                    className="text-[10px] font-black uppercase h-8 px-3 text-bee-amber hover:bg-bee-amber/10 rounded-full transition-all"
                                 >
                                     <Plus className="h-3 w-3 mr-1" /> Adicionar
                                 </Button>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {exercises.map((exercise, index) => (
-                                    <div key={index} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl relative group animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div key={index} className="p-5 bg-white border border-slate-100 rounded-3xl relative group shadow-sm hover:shadow-md transition-all animate-in fade-in slide-in-from-top-2">
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -581,13 +665,13 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                 newEx.splice(index, 1);
                                                 setExercises(newEx);
                                             }}
-                                            className="absolute top-3 right-3 h-8 w-8 text-slate-400 hover:text-destructive hover:bg-red-50"
+                                            className="absolute top-4 right-4 h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl"
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
 
-                                        <div className="mb-4 pr-10">
-                                            <label className="block text-xs font-bold text-slate-500 mb-1">Nome do Exercício</label>
+                                        <div className="mb-5 pr-12">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-2 block">Exercício</Label>
                                             <ExerciseSearch
                                                 value={exercise.name}
                                                 onChange={(id, name) => {
@@ -599,12 +683,12 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-3 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">Séries</label>
+                                        <div className="grid grid-cols-3 gap-3">
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Séries</Label>
                                                 <Input
                                                     type="number"
-                                                    className="h-10 border-slate-200 focus:ring-orange-500"
+                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
                                                     value={exercise.sets}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -613,11 +697,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                     }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">Reps</label>
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Reps</Label>
                                                 <Input
                                                     type="text"
-                                                    className="h-10 border-slate-200 focus:ring-orange-500"
+                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
                                                     value={exercise.reps}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -626,11 +710,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                     }}
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">Carga (kg)</label>
+                                            <div className="space-y-2">
+                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso (kg)</Label>
                                                 <Input
                                                     type="text"
-                                                    className="h-10 border-slate-200 focus:ring-orange-500"
+                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
                                                     value={exercise.weight}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -643,15 +727,17 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     </div>
                                 ))}
                                 {exercises.length === 0 && (
-                                    <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
-                                        <Dumbbell className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                                        <p className="text-sm text-slate-400">Nenhum exercício adicionado a este treino.</p>
+                                    <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
+                                        <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300">
+                                            <Dumbbell className="h-6 w-6" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-slate-400 mb-4">Nenhum exercício na ficha</p>
                                         <Button
                                             type="button"
-                                            variant="ghost"
+                                            variant="outline"
                                             size="sm"
                                             onClick={() => setExercises([{ name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                            className="mt-2 text-orange-600 hover:text-orange-700 hover:bg-amber-50 font-bold"
+                                            className="text-[10px] font-black uppercase h-9 px-6 border-slate-200 text-slate-500 hover:bg-white rounded-full transition-all"
                                         >
                                             + Montar Ficha agora
                                         </Button>
@@ -659,12 +745,35 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                 )}
                             </div>
                         </div>
+                </div>
                     </div>
 
-                    <SheetFooter className="pt-4 border-t mt-auto flex gap-2 sm:justify-end">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} className="h-11 font-semibold text-slate-600 flex-1 sm:flex-none">Cancelar</Button>
-                        <Button onClick={handleSave} disabled={loading} className="h-11 bg-orange-500 hover:bg-orange-600 text-white font-bold px-8 shadow-sm transition-all hover:shadow-md flex-1 sm:flex-none">
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Salvar"}
+                    <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => onOpenChange(false)}
+                            disabled={loading}
+                            className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                        >
+                            <X className="w-4 h-4 mr-2" /> Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleSave}
+                            disabled={loading}
+                            className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processando...
+                                </>
+                            ) : (
+                                <>
+                                    <Check className="mr-2 h-4 w-4 stroke-[3px]" />
+                                    {workoutToEdit ? 'Salvar Alterações' : 'Agendar Treino'}
+                                </>
+                            )}
                         </Button>
                     </SheetFooter>
                 </SheetContent>
@@ -672,24 +781,48 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
             {/* DIALOG DA REGRA MASTER */}
             <AlertDialog open={editScopeDialog} onOpenChange={setEditScopeDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Editar Evento Recorrente</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Você alterou as informações de um treino recorrente. Deseja aplicar essa alteração (Data/Hora/Local) apenas a este dia ou reagendar todos os treinos futuros desta série baseados nesta nova data?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="flex flex-col gap-2 mt-2">
-                        <Button variant="secondary" onClick={() => executeEdit('single', pendingEditPayload)} disabled={loading} className="justify-start h-12">
-                            Apenas este evento
-                        </Button>
-                        <Button variant="default" onClick={() => executeEdit('future', pendingEditPayload)} disabled={loading} className="justify-start h-12 bg-orange-500 hover:bg-orange-600 text-white">
-                            Este evento e todos os futuros
-                        </Button>
+                <AlertDialogContent className="rounded-[32px] border-slate-100 shadow-2xl p-0 overflow-hidden max-w-[420px] bg-white">
+                    <div className="p-8 border-b border-slate-50 flex items-center gap-4 bg-white">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bee-amber/10 border border-bee-amber/20 shrink-0">
+                            <AlertTriangle className="h-6 w-6 text-bee-amber" />
+                        </div>
+                        <div className="text-left">
+                            <AlertDialogTitle className="text-xl font-bold text-bee-midnight tracking-tight leading-none uppercase">
+                                Editar Recorrência
+                            </AlertDialogTitle>
+                            <AlertDialogDescription className="text-slate-400 font-medium text-xs mt-1">
+                                Escolha como aplicar as alterações
+                            </AlertDialogDescription>
+                        </div>
                     </div>
-                    <AlertDialogFooter className="mt-4">
-                        <AlertDialogCancel onClick={() => setPendingEditPayload(null)}>Cancelar Edição</AlertDialogCancel>
-                    </AlertDialogFooter>
+
+                    <div className="p-8 space-y-6">
+                        <p className="text-slate-600 font-medium text-sm leading-relaxed">
+                            Este é um evento que se repete. Como você deseja aplicar as alterações feitas no treino?
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <Button
+                                onClick={() => executeEdit('single', pendingEditPayload)}
+                                className="h-10 justify-center bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-bee-amber/10 uppercase tracking-widest text-[10px]"
+                            >
+                                Apenas este evento
+                            </Button>
+                            <Button
+                                onClick={() => executeEdit('future', pendingEditPayload)}
+                                className="h-10 justify-center bg-bee-midnight hover:bg-slate-900 text-white font-black rounded-full transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-bee-midnight/10 uppercase tracking-widest text-[10px]"
+                            >
+                                Este e todos os futuros
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setEditScopeDialog(false)}
+                                className="h-10 rounded-full font-black text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest text-[10px]"
+                            >
+                                Cancelar
+                            </Button>
+                        </div>
+                    </div>
                 </AlertDialogContent>
             </AlertDialog>
         </>

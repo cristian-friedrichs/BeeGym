@@ -5,31 +5,27 @@ import { CheckCircle2 } from 'lucide-react';
 
 export function Hero() {
     return (
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+        <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
             {/* Background abstract shapes - No cliches! */}
             <div className="absolute top-0 inset-x-0 h-full w-full bg-white -z-10" />
             <div className="absolute top-[-10%] sm:top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-bee-amber/5 blur-[120px] -z-10" />
             <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-bee-orange/5 blur-[120px] -z-10" />
 
-            <div className="container mx-auto px-6 md:px-12">
-                <div className="flex flex-col items-center text-center max-w-4xl mx-auto animate-fade-in-up">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 mb-8 shine-effect">
+            <div className="container mx-auto px-6 md:px-12 w-full mt-4 md:mt-8">
+                <div className="flex flex-col items-center text-center max-w-5xl mx-auto animate-fade-in-up">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 mb-10 md:mb-12 shine-effect">
                         <span className="flex h-2 w-2 rounded-full bg-emerald-brand animate-pulse"></span>
-                        A plataforma N° 1 para negócios fitness
+                        A plataforma N° 1 para negócios fitness. <span className="text-bee-midnight font-bold ml-1">a partir de R$ 9,90</span>
                     </div>
 
-                    <h1 className="text-5xl md:text-7xl font-display font-bold tracking-tight text-bee-midnight leading-[1.1] mb-6">
-                        A plataforma de gestão para <br className="hidden md:block" />
-                        <span className="relative whitespace-nowrap">
-                            <span className="relative z-10">Personal Trainers</span>
-                            <span className="absolute -bottom-2 left-0 right-0 h-3 bg-bee-amber/30 -z-10 rounded-full"></span>
-                        </span>
-                        {' '}e Academias.
+                    <h1 className="text-4xl md:text-6xl font-display font-bold tracking-tight text-bee-midnight leading-[1.1] mb-8">
+                        A plataforma de gestão para <br />
+                        <span className="text-bee-amber italic font-medium inline-block md:whitespace-nowrap">Personal Trainers, Studios e Academias.</span>
                     </h1>
 
-                    <p className="text-lg md:text-xl text-slate-700 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
+                    <p className="text-lg md:text-xl text-slate-700 max-w-3xl mx-auto mb-16 md:mb-20 leading-relaxed font-medium">
                         Gerencie alunos, treinos, agenda e pagamentos em um único sistema.<br className="hidden md:block" />
-                        Mais organização. Mais profissionalismo. Mais controle do seu negócio fitness.
+                        Mais organização, profissionalismo e controle do seu negócio fitness.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-10">

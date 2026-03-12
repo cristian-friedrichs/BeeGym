@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ArrowUpRight, CreditCard, AlertCircle, Loader2, Plus, Search, Info } from 'lucide-react';
+import { ArrowUpRight, CreditCard, AlertCircle, Loader2, Plus, Search, Info, TrendingUp, DollarSign, Users, CalendarCheck, MoreHorizontal, Settings2 } from 'lucide-react';
 import { PaymentSheet } from '@/components/pagamentos/payment-sheet';
 import { NewPaymentModal } from '@/components/pagamentos/new-payment-modal';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -14,12 +14,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { KpiCard } from '@/components/ui/kpi-card';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function PagamentosPage() {
   const supabase = createClient();
   const { toast } = useToast();
 
   const [payments, setPayments] = useState<any[]>([]);
+  const { organizationId } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -35,16 +38,20 @@ export default function PagamentosPage() {
     ticketMedio: 0
   });
 
-  useEffect(() => { fetchPayments(); }, []);
+  useEffect(() => {
+    if (organizationId) {
+      fetchPayments();
+    }
+  }, [organizationId]);
 
   const fetchPayments = async () => {
+    if (!organizationId) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
+      setLoading(true);
       const { data, error } = await supabase
         .from('vw_payments')
         .select('*')
+        .eq('organization_id', organizationId)
         .order('due_date', { ascending: false });
 
       if (error) throw error;
@@ -111,7 +118,7 @@ export default function PagamentosPage() {
           subtitle="Gerencie as finanças do seu negócio."
           action={
             <Button
-              className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4"
+              className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-9 px-4 transition-all hover:-translate-y-0.5 active:scale-95"
               onClick={() => setIsNewPaymentModalOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2 text-[#0B0F1A]" /> Novo Pagamento
@@ -121,100 +128,64 @@ export default function PagamentosPage() {
       </div>
 
       {/* KPI CARDS */}
-      <TooltipProvider>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Receita Mensal */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 cursor-help hover:border-emerald-200 transition-colors">
-                <div className="h-16 w-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 shadow-sm text-center">
-                  <ArrowUpRight className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-medium text-slate-500 mb-0.5 tracking-tight uppercase font-sans">Receita Mensal</h3>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight font-display">{formatCurrency(kpis.receitaMes)}</h2>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="p-3 bg-white border border-slate-200 shadow-xl">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-1">Detalhes do Mês</p>
-              <p className="text-sm font-bold text-emerald-600">{kpis.countReceita} pagamentos recebidos</p>
-            </TooltipContent>
-          </Tooltip>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KpiCard
+          title="Receita Mensal"
+          value={formatCurrency(kpis.receitaMes)}
+          icon={<DollarSign className="h-6 w-6" />}
+          color="yellow"
+          tooltip={`${kpis.countReceita} pagamentos recebidos`}
+        />
 
-          {/* A Receber */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 cursor-help hover:border-orange-200 transition-colors">
-                <div className="h-16 w-16 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shrink-0 shadow-sm">
-                  <CreditCard className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-medium text-slate-500 mb-0.5 tracking-tight uppercase font-sans">A Receber</h3>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight font-display">{formatCurrency(kpis.pendenteTotal)}</h2>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="p-3 bg-white border border-slate-200 shadow-xl">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total Pendente</p>
-              <p className="text-sm font-bold text-orange-600">{kpis.countPendente} faturas aguardando pagamento</p>
-            </TooltipContent>
-          </Tooltip>
+        <KpiCard
+          title="A Receber"
+          value={formatCurrency(kpis.pendenteTotal)}
+          icon={<CreditCard className="h-6 w-6" />}
+          color="yellow"
+          tooltip={`${kpis.countPendente} faturas aguardando pagamento`}
+        />
 
-          {/* Atrasado */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 cursor-help hover:border-red-200 transition-colors">
-                <div className="h-16 w-16 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0 shadow-sm">
-                  <AlertCircle className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-medium text-slate-500 mb-0.5 tracking-tight uppercase font-sans">Atrasado</h3>
-                  <h2 className="text-3xl font-bold text-red-600 tracking-tight font-display">{formatCurrency(kpis.atrasadoTotal)}</h2>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="p-3 bg-white border border-slate-200 shadow-xl">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-1">Total em Atraso</p>
-              <p className="text-sm font-bold text-red-600">{kpis.countAtrasado} faturas vencidas</p>
-            </TooltipContent>
-          </Tooltip>
+        <KpiCard
+          title="Atrasado"
+          value={formatCurrency(kpis.atrasadoTotal)}
+          icon={<AlertCircle className="h-6 w-6" />}
+          color="red"
+          tooltip={`${kpis.countAtrasado} faturas vencidas`}
+        />
 
-          {/* Ticket Médio */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-5 cursor-help hover:border-blue-200 transition-colors">
-                <div className="h-16 w-16 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 shadow-sm">
-                  <ArrowUpRight className="h-7 w-7" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-sm font-medium text-slate-500 mb-0.5 tracking-tight uppercase font-sans">Ticket Médio</h3>
-                  <h2 className="text-3xl font-bold text-slate-900 tracking-tight font-display">{formatCurrency(kpis.ticketMedio)}</h2>
-                </div>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="p-3 bg-white border border-slate-200 shadow-xl">
-              <p className="text-xs font-bold text-slate-400 uppercase mb-1">Cálculo Médio</p>
-              <p className="text-sm font-bold text-blue-600">Baseado em {kpis.countReceita} pagamentos este mês</p>
-            </TooltipContent>
-          </Tooltip>
+        <KpiCard
+          title="Ticket Médio"
+          value={formatCurrency(kpis.ticketMedio)}
+          icon={<TrendingUp className="h-6 w-6" />}
+          color="yellow"
+          tooltip={`Baseado em ${kpis.countReceita} pagamentos este mês`}
+        />
+      </div>
+
+      {/* FILTER BAR */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Buscar aluno ou descrição..."
+            className="pl-9 bg-slate-50 border-slate-200 rounded-full font-sans transition-all focus:bg-white focus:ring-1 focus:ring-bee-amber"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      </TooltipProvider>
+        <div className="flex items-center gap-2 text-slate-400">
+           <Info className="w-4 h-4" />
+           <span className="text-[10px] font-black uppercase tracking-widest">Filtros avançados em breve</span>
+        </div>
+      </div>
 
       {/* TABELA DE TRANSAÇÕES */}
-      <div className="bg-white border border-slate-100 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm overflow-hidden">
         {/* Cabeçalho da tabela */}
-        <div className="p-4 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <h3 className="font-bold text-[#0B0F1A] font-display">Histórico de Transações</h3>
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              type="text"
-              placeholder="Buscar aluno..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 bg-slate-50 border-slate-200 rounded-lg font-sans h-9"
-            />
+        <div className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3">
+             <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
+             <h3 className="text-base font-bold text-[#0B0F1A] font-display">Histórico de Transações</h3>
           </div>
         </div>
 
@@ -224,6 +195,7 @@ export default function PagamentosPage() {
               <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Aluno / Descrição</TableHead>
               <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Vencimento</TableHead>
               <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Valor</TableHead>
+              <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Forma</TableHead>
               <TableHead className="font-bold text-[11px] uppercase tracking-wider text-slate-500">Status</TableHead>
               <TableHead className="text-right font-bold text-[11px] uppercase tracking-wider text-slate-500">Ações</TableHead>
             </TableRow>
@@ -259,11 +231,20 @@ export default function PagamentosPage() {
                   <TableCell className="text-sm font-bold text-slate-800 font-sans">
                     {formatCurrency(payment.amount)}
                   </TableCell>
+                  <TableCell>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                      {payment.payment_method || 'Pix'}
+                    </span>
+                  </TableCell>
                   <TableCell>{getStatusBadge(payment.dynamic_status)}</TableCell>
                   <TableCell className="text-right">
-                    <span className="text-sm font-bold text-bee-amber opacity-0 group-hover:opacity-100 transition-opacity">
-                      Gerenciar
-                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                    >
+                      <Settings2 className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

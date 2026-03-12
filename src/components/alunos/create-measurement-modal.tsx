@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Ruler, Loader2, Save, X } from 'lucide-react';
+import { Ruler, Loader2, Save, X, CalendarDays, Scale, Activity, ArrowRight, Info, Check } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 interface CreateMeasurementModalProps {
     open: boolean;
@@ -42,11 +44,9 @@ export function CreateMeasurementModal({ open, onOpenChange, studentId, onSucces
             let bmiVal = null;
             if (weightVal && heightVal && heightVal > 0) {
                 bmiVal = weightVal / (heightVal * heightVal);
-                // Limit to 2 decimal places if needed (DB might handle it but it's cleaner)
                 bmiVal = Math.round(bmiVal * 100) / 100;
             }
 
-            // Fetch current user and organization_id
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Usuário não autenticado");
 
@@ -63,7 +63,7 @@ export function CreateMeasurementModal({ open, onOpenChange, studentId, onSucces
                 .insert({
                     student_id: studentId,
                     organization_id: (profile as any).organization_id,
-                    recorded_at: date, // Using the date string YYYY-MM-DD
+                    recorded_at: date,
                     weight: weightVal,
                     height: heightVal,
                     body_fat: bodyFatVal,
@@ -86,51 +86,156 @@ export function CreateMeasurementModal({ open, onOpenChange, studentId, onSucces
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-[600px] flex flex-col h-full overflow-y-auto">
-                <SheetHeader className="space-y-3 pb-6 border-b">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
-                            <Ruler className="h-5 w-5 text-orange-600" />
+            <SheetContent className="p-0 border-none bg-white sm:max-w-[600px] flex flex-col h-full overflow-hidden">
+                <SheetHeader className="relative p-8 bg-gradient-to-br from-bee-midnight via-bee-midnight to-slate-900 border-none shrink-0 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/10 blur-3xl rounded-full -mr-16 -mt-16" />
+
+                    <div className="relative flex items-center gap-5">
+                        <div className="h-16 w-16 rounded-[22px] bg-bee-amber/10 flex items-center justify-center ring-1 ring-bee-amber/20">
+                            <Scale className="h-8 w-8 text-bee-amber" />
                         </div>
                         <div>
-                            <SheetTitle className="text-xl">Nova Avaliação Física</SheetTitle>
-                            <SheetDescription>Registre as medidas atuais do aluno.</SheetDescription>
+                            <div className="flex items-center gap-3 mb-1">
+                                <SheetTitle className="text-2xl font-black text-white tracking-tight">Avaliação Física</SheetTitle>
+                                <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tighter h-5 px-2">Antropometria</Badge>
+                            </div>
+                            <SheetDescription className="text-slate-400 font-medium text-sm">
+                                Registre as medidas e índices corporais
+                            </SheetDescription>
                         </div>
                     </div>
                 </SheetHeader>
 
-                <div className="flex-1 py-6 space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-slate-700">Data da Avaliação</Label>
-                            <Input id="eff-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10 scrollbar-hide">
+                    {/* Data e Peso */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                <Activity className="h-4 w-4 text-bee-amber" />
+                            </div>
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Medidas Principais</h3>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-slate-700">Peso (kg) *</Label>
-                            <Input id="weight" type="number" step="0.1" placeholder="ex: 75.5" value={weight} onChange={(e) => setWeight(e.target.value)} />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-2.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Data da Coleta</Label>
+                                <div className="group/input relative transition-all">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
+                                        <CalendarDays className="h-full w-full" />
+                                    </div>
+                                    <Input
+                                        type="date"
+                                        value={date}
+                                        onChange={(e) => setDate(e.target.value)}
+                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Peso Atual (kg)</Label>
+                                <div className="group/input relative transition-all">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
+                                        <Scale className="h-full w-full" />
+                                    </div>
+                                    <Input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="00.0"
+                                        value={weight}
+                                        onChange={(e) => setWeight(e.target.value)}
+                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-slate-700">Altura (m)</Label>
-                            <Input id="height" type="number" step="0.01" placeholder="ex: 1.75" value={height} onChange={(e) => setHeight(e.target.value)} />
+                    <Separator className="bg-slate-50" />
+
+                    {/* Altura e Gordura */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                <Ruler className="h-4 w-4 text-bee-amber" />
+                            </div>
+                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Composição Corporal</h3>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-slate-700">% Gordura</Label>
-                            <Input id="bodyFat" type="number" step="0.1" placeholder="ex: 18.5" value={bodyFat} onChange={(e) => setBodyFat(e.target.value)} />
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div className="space-y-2.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Altura (m)</Label>
+                                <div className="group/input relative transition-all">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
+                                        <Ruler className="h-full w-full" />
+                                    </div>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        value={height}
+                                        onChange={(e) => setHeight(e.target.value)}
+                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2.5">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">% de Gordura (BF)</Label>
+                                <div className="group/input relative transition-all">
+                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
+                                        <Activity className="h-full w-full" />
+                                    </div>
+                                    <Input
+                                        type="number"
+                                        step="0.1"
+                                        placeholder="0.0"
+                                        value={bodyFat}
+                                        onChange={(e) => setBodyFat(e.target.value)}
+                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Info Tip */}
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="flex gap-3">
+                                <Info className="h-5 w-5 text-bee-amber shrink-0 mt-0.5" />
+                                <p className="text-xs text-slate-500 leading-relaxed">
+                                    O <strong>IMC (Índice de Massa Corporal)</strong> será calculado automaticamente com base no peso e altura fornecidos.
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <SheetFooter className="mt-auto border-t pt-4 flex gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 gap-2">
-                        <X className="h-4 w-4" />
-                        Cancelar
+                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        disabled={loading}
+                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-100 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                    >
+                        <X className="mr-2 h-4 w-4" />
+                        Descartar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold gap-2">
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Salvar
+                    <Button
+                        disabled={loading}
+                        onClick={handleSubmit}
+                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-[10px] tracking-widest px-10"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Processando...
+                            </>
+                        ) : (
+                            <>
+                                <Check className="mr-2 h-4 w-4" />
+                                Registrar Avaliação
+                            </>
+                        )}
                     </Button>
                 </SheetFooter>
             </SheetContent>

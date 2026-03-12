@@ -197,7 +197,7 @@ function RegisterForm() {
                         display: 'flex', flexDirection: 'column', height: '100%',
                     }}>
                         <div>
-                            <BeeGymLogo variant="white" size="lg" />
+                            <BeeGymLogo variant="dark" size="lg" />
                         </div>
 
                         <div style={{ marginTop: 'auto', paddingBottom: '64px' }}>
@@ -254,7 +254,7 @@ function RegisterForm() {
                     >
                         {/* Mobile logo */}
                         <div className="form-field field-1" style={{ marginBottom: '24px', textAlign: 'center' }} id="auth-mobile-logo">
-                            <BeeGymLogo variant="full" size="lg" className="mx-auto" />
+                            <BeeGymLogo variant="light" size="lg" className="mx-auto" />
                         </div>
 
                         {/* Header */}

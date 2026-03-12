@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2 } from 'lucide-react';
 import { Database } from '@/types/supabase';
+import { getFeaturesForTier } from '@/lib/marketing/plan-utils';
 
 type SaasPlan = Database['public']['Tables']['saas_plans']['Row'];
 
@@ -38,14 +39,18 @@ export function Pricing({ plans }: PricingProps) {
                         const hasPromo = plan.promo_price !== null;
                         const finalPrice = hasPromo ? plan.promo_price : plan.price;
 
-                        // Extrair features fallback abstratas
-                        const features = [
-                            "Gestão de Alunos Ilimitada",
-                            "Agendamento Automático",
-                            "Controle Financeiro PIX",
-                            "Dashboard Analítico",
-                            "Suporte ao Cliente"
-                        ];
+                        // Extrair features dinâmicas com base no tier do banco
+                        // Extrair features dinâmicas com base no que foi salvo no banco
+                        const dbFeatures = getFeaturesForTier(plan.tier, (plan as any).allowed_features as string[]);
+
+                        // Priorizar os Highlights de Marketing salvos no banco, se existirem
+                        const highlights = (plan as any).marketing_highlights && (plan as any).marketing_highlights.length > 0
+                            ? (plan as any).marketing_highlights
+                            : dbFeatures.map((f: any) => f.name);
+
+                        // Fallback de Subtítulo
+                        const subtitle = (plan as any).marketing_subtitle || plan.description || "O plano perfeito para começar a sua gestão fitness profissional.";
+
 
                         return (
                             <div
@@ -66,21 +71,21 @@ export function Pricing({ plans }: PricingProps) {
 
                                 <div className="mb-8">
                                     <h3 className={`text-2xl font-bold mb-2 ${isHighlighted ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
-                                    <p className={`text-sm font-medium h-10 ${isHighlighted ? 'text-slate-300' : 'text-slate-500'}`}>
-                                        {plan.description || "O plano perfeito para começar a sua gestão fitness profissional."}
+                                    <p className={`text-sm font-medium h-10 leading-tight ${isHighlighted ? 'text-slate-300' : 'text-slate-500'}`}>
+                                        {subtitle}
                                     </p>
                                 </div>
 
                                 <div className="mb-8 flex-1">
-                                    <div className="flex items-end gap-2 mb-2">
-                                        <span className="text-4xl md:text-5xl font-display font-bold">R$ {finalPrice?.toFixed(2)}</span>
+                                    <div className="flex items-end gap-1 mb-2">
+                                        <span className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{finalPrice?.toFixed(2)}</span>
                                         <span className={`text-sm font-medium mb-1 ${isHighlighted ? 'text-slate-400' : 'text-slate-500'}`}>/mês</span>
                                     </div>
 
                                     {hasPromo && (
                                         <div className="inline-block mt-1">
                                             <span className={`text-sm line-through ${isHighlighted ? 'text-slate-400' : 'text-slate-400'}`}>
-                                                R$ {Number(plan.price).toFixed(2)}
+                                                {Number(plan.price).toFixed(2)}
                                             </span>
                                             <span className={`text-xs ml-2 font-bold px-2 py-0.5 rounded-md ${isHighlighted ? 'bg-white/10 text-white' : 'bg-coral-red/10 text-coral-red'}`}>
                                                 Oferta Válida
@@ -90,11 +95,28 @@ export function Pricing({ plans }: PricingProps) {
                                 </div>
 
                                 <ul className="space-y-4 mb-10 flex-1">
-                                    {features.map((feature, fIdx) => (
-                                        <li key={fIdx} className="flex items-center gap-3">
+                                    {/* Mostrar limite de alunos primeiro, se existir */}
+                                    {(plan as any).max_students ? (
+                                        <li className="flex items-center gap-3">
+                                            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-brand" />
+                                            <span className={`text-sm font-bold ${isHighlighted ? 'text-white' : 'text-bee-midnight'}`}>
+                                                Até {(plan as any).max_students} alunos ativos
+                                            </span>
+                                        </li>
+                                    ) : (plan as any).max_students === null ? (
+                                        <li className="flex items-center gap-3">
+                                            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-brand" />
+                                            <span className={`text-sm font-bold ${isHighlighted ? 'text-white' : 'text-bee-midnight'}`}>
+                                                Alunos Ilimitados
+                                            </span>
+                                        </li>
+                                    ) : null}
+
+                                    {highlights.map((highlight: string, hIdx: number) => (
+                                        <li key={hIdx} className="flex items-center gap-3">
                                             <CheckCircle2 className={`w-5 h-5 shrink-0 ${isHighlighted ? 'text-emerald-brand' : 'text-emerald-brand'}`} />
                                             <span className={`text-sm font-medium ${isHighlighted ? 'text-slate-300' : 'text-slate-600'}`}>
-                                                {feature}
+                                                {highlight}
                                             </span>
                                         </li>
                                     ))}
@@ -102,10 +124,10 @@ export function Pricing({ plans }: PricingProps) {
 
                                 <Link href="/register" className="mt-auto">
                                     <Button
-                                        className={`w-full h-12 rounded-xl font-bold text-base transition-all
+                                        className={`w-full h-12 rounded-xl font-bold text-base transition-all hover:-translate-y-0.5 hover:shadow-lg
                       ${isHighlighted
-                                                ? 'bg-bee-amber hover:bg-bee-orange text-bee-midnight hover:shadow-lg'
-                                                : 'bg-slate-100 hover:bg-slate-200 text-bee-midnight'
+                                                ? 'bg-bee-amber text-bee-midnight'
+                                                : 'bg-slate-100 text-bee-midnight'
                                             }`}
                                     >
                                         Começar Agora

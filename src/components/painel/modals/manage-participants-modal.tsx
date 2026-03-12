@@ -228,41 +228,38 @@ export function ManageParticipantsModal({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className="sm:max-w-[540px] flex flex-col h-full overflow-y-auto p-0 gap-0">
-                <SheetHeader className="p-6 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                            <Users className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <SheetTitle className="text-xl font-bold">Gerenciar Participantes</SheetTitle>
-                            <SheetDescription>Adicionar ou remover alunos</SheetDescription>
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                        <div className="space-y-1">
-                            <p className="font-sans font-medium text-deep-midnight">{eventName}</p>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <CalendarIcon className="h-3 w-3" />
-                                    {eventDate && format(new Date(eventDate), 'PPP', { locale: ptBR })}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {eventTime}
-                                </span>
+                <SheetHeader className="relative p-0 mb-8 mt-[-24px] mx-[-24px] overflow-hidden rounded-t-[2rem]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-bee-midnight via-slate-900 to-bee-midnight" />
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay" />
+                    <div className="absolute -top-24 -right-24 w-48 h-48 bg-bee-amber/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-bee-amber/5 rounded-full blur-3xl" />
+
+                    <div className="relative px-8 pt-10 pb-8 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-bee-amber to-amber-600 p-[1px] shadow-lg shadow-bee-amber/20 group animate-in zoom-in-50 duration-500">
+                                    <div className="flex h-full w-full items-center justify-center rounded-[15px] bg-bee-midnight/90 backdrop-blur-xl transition-colors group-hover:bg-bee-midnight/40">
+                                        <Users className="h-7 w-7 text-bee-amber animate-pulse" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <SheetTitle className="text-3xl font-black text-white tracking-tight leading-none font-display mb-2">
+                                        Participantes
+                                    </SheetTitle>
+                                    <SheetDescription className="flex items-center gap-3">
+                                        <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
+                                            {participants.length}/{capacityLimit} Vagas
+                                        </Badge>
+                                        <div className="h-1 w-1 rounded-full bg-slate-700" />
+                                        <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[11px] uppercase tracking-wider font-sans">
+                                            Gerenciar inscrições
+                                        </span>
+                                    </SheetDescription>
+                                </div>
                             </div>
                         </div>
-                        <Badge
-                            className={cn(
-                                'font-semibold text-sm px-3 py-1',
-                                isFull
-                                    ? 'bg-destructive text-destructive-foreground'
-                                    : 'bg-primary text-primary-foreground'
-                            )}
-                        >
-                            {participants.length}/{capacityLimit} Vagas
-                        </Badge>
                     </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-bee-amber/20 to-transparent" />
                 </SheetHeader>
 
                 <div className="flex-1 p-6 pt-0 space-y-6 overflow-y-auto">
@@ -315,7 +312,7 @@ export function ManageParticipantsModal({
                                 onValueChange={setSelectedStudent}
                                 disabled={isFull || loading}
                             >
-                                <SelectTrigger className="flex-1 h-10 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
+                                <SelectTrigger className="flex-1 h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-lg focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
                                     <SelectValue placeholder="Selecione um aluno" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -335,7 +332,7 @@ export function ManageParticipantsModal({
                             <Button
                                 onClick={handleAdd}
                                 disabled={!selectedStudent || isFull || loading}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-11"
                             >
                                 {loading ? 'Adicionando...' : 'Adicionar'}
                             </Button>
@@ -348,11 +345,12 @@ export function ManageParticipantsModal({
                     </div>
                 </div>
 
-                <div className="p-6 pt-4 border-t flex justify-end">
+                <div className="p-8 bg-slate-50/50 backdrop-blur-sm border-t flex justify-end">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
+                        className="h-10 px-8 rounded-xl font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
                     >
                         Fechar
                     </Button>

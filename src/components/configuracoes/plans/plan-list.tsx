@@ -20,15 +20,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { MoreVertical, Edit, Power, PowerOff, Plus, Clock, CreditCard } from 'lucide-react';
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+    SheetDescription,
+    SheetFooter,
+} from '@/components/ui/sheet';
+import { MoreVertical, Edit, Power, PowerOff, Plus, Clock, CreditCard, X, Loader2, Save } from 'lucide-react';
 import { PlanForm, PlanFormValues } from './plan-form';
 import { createPlanAction, updatePlanAction, togglePlanStatusAction } from '@/actions/plans';
 import { useToast } from '@/hooks/use-toast';
+import { SectionHeader } from '@/components/ui/section-header';
 
 interface Plan {
     id: string;
@@ -37,15 +40,10 @@ interface Plan {
     description: string | null;
     price: number;
     plan_type: 'membership' | 'pack';
-
-    // Membership fields
     duration_months: number | null;
-    recurrence: 'monthly' | 'quarterly' | 'yearly' | null;
+    recurrence: 'monthly' | 'quarterly' | 'yearly' | 'one_time' | null;
     days_per_week: number | null;
-
-    // Pack fields
     credits: number | null;
-
     active: boolean;
     created_at: string;
 }
@@ -69,44 +67,47 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
         }).format(price);
     };
 
-    const recurrenceMap = {
+    const recurrenceMap: Record<string, string> = {
         monthly: 'Mensal',
         quarterly: 'Trimestral',
         yearly: 'Anual',
+        one_time: 'Único',
     };
 
     const renderAccessRule = (plan: Plan) => {
         if (plan.plan_type === 'pack') {
             return (
                 <div>
-                    <Badge variant="default" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    <Badge variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20 px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
                         {plan.credits} Crédito{plan.credits !== 1 ? 's' : ''}
                     </Badge>
                     <p className="text-xs mt-1 text-muted-foreground">
-                        Validade: {plan.duration_months} {plan.duration_months === 1 ? 'mês' : 'meses'}
+                        Validade: {plan.duration_months ? `${plan.duration_months} ${plan.duration_months === 1 ? 'mês' : 'meses'}` : 'Ilimitada'}
                     </p>
                 </div>
             );
         }
 
-        // Membership
         return (
             <div>
                 {plan.days_per_week ? (
-                    <Badge variant="secondary" className="bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+                    <Badge variant="secondary" className="bg-bee-amber/10 text-bee-amber border-bee-amber/20 px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
                         {plan.days_per_week}x por Semana
                     </Badge>
                 ) : (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                    <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-200 px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
                         Acesso Ilimitado
                     </Badge>
                 )}
-                <p className="text-xs mt-1 text-muted-foreground">
+                <p className="text-xs mt-1 text-muted-foreground flex items-center gap-1.5">
                     Cobrança {recurrenceMap[plan.recurrence || 'monthly']}
+                    <span className="text-slate-300">•</span>
+                    Duração: {plan.duration_months ? `${plan.duration_months} ${plan.duration_months === 1 ? 'mês' : 'meses'}` : 'Ilimitada'}
                 </p>
             </div>
         );
     };
+
 
     const handleAddPlan = async (values: PlanFormValues) => {
         setIsLoading(true);
@@ -182,135 +183,222 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
     };
 
     return (
-        <Card className="rounded-[16px] shadow-sm border-slate-100 overflow-hidden bg-white">
-            <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 text-orange-500">
-                        <CreditCard className="h-5 w-5" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Planos de Venda</CardTitle>
-                    </div>
-                </div>
-                <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="bg-orange-500 hover:bg-orange-600 text-white font-bold h-9 px-4 rounded-xl shadow-lg shadow-orange-100 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-wider"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Novo Plano
-                </Button>
-            </CardHeader>
+        <div className="space-y-6">
+            <SectionHeader
+                title="Planos de Venda"
+                subtitle="Gerencie os planos e pacotes de serviços oferecidos"
+                action={
+                    <Button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="bg-bee-amber hover:bg-amber-500 text-deep-midnight font-bold h-9 px-4 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-wider"
+                    >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Novo Plano
+                    </Button>
+                }
+            />
 
-            <CardContent className="p-0">
-                <div className="overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/50">
-                                <TableHead className="font-semibold">Nome</TableHead>
-                                <TableHead className="font-semibold">Preço</TableHead>
-                                <TableHead className="w-[200px]">Regra de Acesso</TableHead>
-                                <TableHead className="font-semibold">Status</TableHead>
-                                <TableHead className="text-right font-semibold">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {initialPlans.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                        Nenhum plano cadastrado.
-                                    </TableCell>
+            <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">
+
+                <CardContent className="p-0">
+                    <div className="overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="font-semibold">Nome</TableHead>
+                                    <TableHead className="font-semibold">Preço</TableHead>
+                                    <TableHead className="w-[200px]">Regra de Acesso</TableHead>
+                                    <TableHead className="font-semibold">Status</TableHead>
+                                    <TableHead className="text-right font-semibold">Ações</TableHead>
                                 </TableRow>
-                            ) : (
-                                initialPlans.map((plan) => (
-                                    <TableRow key={plan.id} className="hover:bg-muted/30 transition-colors">
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-foreground">{plan.name}</span>
-                                                {plan.description && (
-                                                    <span className="text-xs text-muted-foreground line-clamp-1">
-                                                        {plan.description}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{formatPrice(plan.price)}</TableCell>
-                                        <TableCell>
-                                            {renderAccessRule(plan)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {plan.active ? (
-                                                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 shadow-none">
-                                                    Ativo
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="text-muted-foreground shadow-none">
-                                                    Arquivado
-                                                </Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => setEditingPlan(plan)} className="gap-2 cursor-pointer">
-                                                        <Edit className="h-4 w-4" /> Editar
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleToggleStatus(plan.id, plan.active)}
-                                                        className="gap-2 cursor-pointer"
-                                                    >
-                                                        {plan.active ? (
-                                                            <>
-                                                                <PowerOff className="h-4 w-4 text-orange-500" />
-                                                                Desativar
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <Power className="h-4 w-4 text-green-500" />
-                                                                Ativar
-                                                            </>
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                            </TableHeader>
+                            <TableBody>
+                                {initialPlans.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                            Nenhum plano cadastrado.
                                         </TableCell>
                                     </TableRow>
-                                ))
+                                ) : (
+                                    initialPlans.map((plan) => (
+                                        <TableRow key={plan.id} className="hover:bg-muted/30 transition-colors">
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-foreground">{plan.name}</span>
+                                                    {plan.description && (
+                                                        <span className="text-xs text-muted-foreground line-clamp-1">
+                                                            {plan.description}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-medium">{formatPrice(plan.price)}</TableCell>
+                                            <TableCell>
+                                                {renderAccessRule(plan)}
+                                            </TableCell>
+                                            <TableCell>
+                                                {plan.active ? (
+                                                    <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-200 shadow-none px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
+                                                        Ativo
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="secondary" className="text-muted-foreground shadow-none">
+                                                        Arquivado
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1 px-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                                                        onClick={() => setEditingPlan(plan)}
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={`h-9 w-9 rounded-xl transition-all border border-transparent shadow-none ${plan.active ? 'text-bee-amber hover:bg-amber-50 hover:border-amber-100' : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100'}`}
+                                                        onClick={() => handleToggleStatus(plan.id, plan.active)}
+                                                        title={plan.active ? 'Desativar Plano' : 'Ativar Plano'}
+                                                    >
+                                                        {plan.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+
+                {/* Add Sidebar */}
+                <Sheet open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                    <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                        <SheetHeader className="relative h-32 flex flex-col justify-end px-8 pb-6 overflow-hidden shrink-0 border-none">
+                            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-deep-midnight to-slate-900" />
+                            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 translate-x-4 -translate-y-4">
+                                <CreditCard className="h-32 w-32 text-white" />
+                            </div>
+                            <div className="relative space-y-1">
+                                <div className="flex items-center gap-2 text-bee-amber mb-1">
+                                    <div className="h-1 w-8 rounded-full bg-bee-amber/30" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Configuração</span>
+                                </div>
+                                <SheetTitle className="text-2xl font-black text-white leading-none tracking-tight">
+                                    Novo Plano
+                                </SheetTitle>
+                                <SheetDescription className="text-slate-400 font-medium text-sm">
+                                    Configure as regras de acesso e cobrança
+                                </SheetDescription>
+                            </div>
+                        </SheetHeader>
+                        <div className="flex-1 overflow-y-auto p-8 pt-6">
+                            <PlanForm
+                                formId="add-plan-form"
+                                onSubmit={handleAddPlan}
+                                isLoading={isLoading}
+                                showButtons={false}
+                            />
+                        </div>
+                        <SheetFooter className="p-6 border-t bg-slate-50/80 backdrop-blur-md shrink-0 flex flex-row items-center gap-3 sm:justify-end sticky bottom-0 z-10">
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsAddModalOpen(false)}
+                                className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 font-black h-12 px-8 rounded-2xl uppercase text-[10px] tracking-widest transition-all active:scale-95"
+                            >
+                                <X className="mr-2 h-4 w-4" />
+                                Descartar
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="add-plan-form"
+                                disabled={isLoading}
+                                className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-12 px-8 rounded-2xl shadow-lg shadow-bee-amber/20 hover:-translate-y-0.5 active:scale-95 transition-all uppercase text-[10px] tracking-widest border-none"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Criando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Criar Plano
+                                    </>
+                                )}
+                            </Button>
+                        </SheetFooter>
+                    </SheetContent>
+                </Sheet>
+
+                {/* Edit Sidebar */}
+                <Sheet open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
+                    <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+                        <SheetHeader className="relative h-32 flex flex-col justify-end px-8 pb-6 overflow-hidden shrink-0 border-none">
+                            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-deep-midnight to-slate-900" />
+                            <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12 translate-x-4 -translate-y-4">
+                                <Edit className="h-32 w-32 text-white" />
+                            </div>
+                            <div className="relative space-y-1">
+                                <div className="flex items-center gap-2 text-bee-amber mb-1">
+                                    <div className="h-1 w-8 rounded-full bg-bee-amber/30" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Configuração</span>
+                                </div>
+                                <SheetTitle className="text-2xl font-black text-white leading-none tracking-tight">
+                                    {editingPlan?.name || 'Editar Plano'}
+                                </SheetTitle>
+                                <SheetDescription className="text-slate-400 font-medium text-sm">
+                                    Atualize as informações de venda
+                                </SheetDescription>
+                            </div>
+                        </SheetHeader>
+                        <div className="flex-1 overflow-y-auto p-8 pt-6">
+                            {editingPlan && (
+                                <PlanForm
+                                    formId="edit-plan-form"
+                                    initialData={editingPlan}
+                                    onSubmit={handleEditPlan}
+                                    isLoading={isLoading}
+                                    showButtons={false}
+                                />
                             )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-
-            {/* Add Modal */}
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Criar Novo Plano</DialogTitle>
-                    </DialogHeader>
-                    <PlanForm onSubmit={handleAddPlan} isLoading={isLoading} />
-                </DialogContent>
-            </Dialog>
-
-            {/* Edit Modal */}
-            <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
-                <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Editar Plano: {editingPlan?.name}</DialogTitle>
-                    </DialogHeader>
-                    {editingPlan && (
-                        <PlanForm
-                            initialData={editingPlan}
-                            onSubmit={handleEditPlan}
-                            isLoading={isLoading}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
-        </Card>
+                        </div>
+                        <SheetFooter className="p-6 border-t bg-slate-50/80 backdrop-blur-md shrink-0 flex flex-row items-center gap-3 sm:justify-end sticky bottom-0 z-10">
+                            <Button
+                                variant="outline"
+                                onClick={() => setEditingPlan(null)}
+                                className="flex-1 sm:flex-none border-slate-200 text-slate-600 hover:bg-white hover:text-slate-900 font-black h-12 px-8 rounded-2xl uppercase text-[10px] tracking-widest transition-all active:scale-95"
+                            >
+                                <X className="mr-2 h-4 w-4" />
+                                Descartar
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="edit-plan-form"
+                                disabled={isLoading}
+                                className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-12 px-8 rounded-2xl shadow-lg shadow-bee-amber/20 hover:-translate-y-0.5 active:scale-95 transition-all uppercase text-[10px] tracking-widest border-none"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        Salvar Alterações
+                                    </>
+                                )}
+                            </Button>
+                        </SheetFooter>
+                    </SheetContent>
+                </Sheet>
+            </Card>
+        </div>
     );
 }

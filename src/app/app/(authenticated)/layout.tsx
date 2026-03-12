@@ -9,20 +9,88 @@ import { createClient } from '@/lib/supabase/client';
 import { UnitProvider } from "@/context/UnitContext";
 import { StatusAutomator } from "@/components/global/status-automator";
 import { Loader2 } from 'lucide-react';
+import { useSubscription } from "@/hooks/useSubscription";
+import { PlanFeature } from "@/config/plans";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, profile, loading: authLoading } = useAuth();
+  const { hasFeature, loading: subLoading } = useSubscription();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     const checkAccess = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Wait for auth initialization
+      if (authLoading) {
+        console.log('[AccessCheck] Auth loading, waiting...');
+        return;
+      }
 
       if (!user) {
-        // O Middleware já deve ter redirecionado, mas por garantia:
+        console.log('[AccessCheck] No user found, setting unauthorized.');
         setIsAuthorized(false);
+        if (!pathname.startsWith('/login')) {
+          router.push('/login');
+        }
+        return;
+      }
+
+      // 👑 ADMIN BYPASS: Administradores e o e-mail master SEMPRE têm acesso a tudo
+      const masterEmail = 'cristian_friedrichs@live.com';
+      const userEmail = user?.email?.toLowerCase();
+      // Verificamos tanto o profile.role quanto o user.email para garantir o bypass mais rápido possível
+      const isAdminByRole = profile?.role === 'ADMIN' || (profile?.role as string) === 'BEEGYM_ADMIN';
+      const isMasterAdmin = userEmail === masterEmail || isAdminByRole;
+
+      if (isMasterAdmin) {
+        console.log(`[AccessCheck] Admin recognized: ${userEmail} | Role: ${profile?.role}. Bypassing all checks.`);
+        setIsAuthorized(true);
+        return;
+      }
+
+      // Se não é admin master e o profile ainda está carregando, não tomamos decisão abrupta
+      if (!profile && !isMasterAdmin) {
+        console.log('[AccessCheck] Profile not ready and not master admin, waiting...');
+        return;
+      }
+
+      // 2. Proteção de rota dinâmica baseada em feature
+      // Mapeia o path para a feature correspondente
+      const routeFeatureMap: Record<string, PlanFeature> = {
+        '/app/painel': 'painel',
+        '/app/agenda': 'agenda',
+        '/app/aulas': 'aulas',
+        '/app/treinos': 'treinos',
+        '/app/alunos': 'alunos',
+        '/app/conversas': 'conversas',
+        '/app/pagamentos': 'pagamentos',
+        '/app/exercicios': 'exercicios',
+        '/app/relatorios': 'relatorios',
+        '/app/configuracoes': 'configuracoes',
+      };
+
+      const currentRoute = Object.keys(routeFeatureMap).find(route => pathname.startsWith(route));
+
+      if (currentRoute && !subLoading) {
+        const requiredFeature = routeFeatureMap[currentRoute];
+        const hasAccess = hasFeature(requiredFeature);
+
+        console.log(`[AccessCheck] Route: ${pathname} | Feature: ${requiredFeature} | HasAccess: ${hasAccess}`);
+
+        if (!hasAccess) {
+          console.warn(`[AccessDenied] User lacks feature: ${requiredFeature}. Redirecting to painel.`);
+          if (currentRoute !== '/app/painel') {
+            router.push('/app/painel');
+            return;
+          }
+        }
+      }
+
+      // If we are waiting for subLoading, don't set authorized yet to avoid flicker
+      if (currentRoute && subLoading) {
+        console.log(`[AccessCheck] Waiting for subscription features for: ${currentRoute}`);
         return;
       }
 
@@ -30,9 +98,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     };
 
     checkAccess();
-  }, [router]);
+  }, [user, profile, authLoading, subLoading, pathname, router, hasFeature]);
 
-  if (isAuthorized === null) {
+  if (isAuthorized === null || authLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark">
         <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />

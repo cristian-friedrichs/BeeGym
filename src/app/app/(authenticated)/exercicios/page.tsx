@@ -102,7 +102,7 @@ export default function ExerciciosPage() {
                 subtitle="Gerencie seus exercícios e use a base global."
                 action={
                     <Button
-                        className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-lg font-display uppercase tracking-wider text-[11px] h-9 px-4"
+                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none"
                         onClick={() => { setExerciseToEdit(null); setIsModalOpen(true); }}
                     >
                         <Plus className="w-4 h-4 mr-2 text-[#0B0F1A]" /> Adicionar Exercício
@@ -110,7 +110,7 @@ export default function ExerciciosPage() {
                 }
             />
 
-            <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                 {/* Busca + Abas */}
                 <div className="p-4 border-b border-slate-100">
                     <div className="relative mb-4">
@@ -120,7 +120,7 @@ export default function ExerciciosPage() {
                             placeholder="Buscar por nome..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-9 bg-slate-50 border-slate-200 rounded-lg font-sans"
+                            className="pl-9 bg-slate-50 border-slate-200 rounded-full font-sans focus:bg-white transition-all"
                         />
                     </div>
 
@@ -152,9 +152,9 @@ export default function ExerciciosPage() {
                     ) : (
                         <div className="space-y-3">
                             {filteredExercises.map(ex => (
-                                <div key={ex.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-lg hover:shadow-md hover:border-orange-100 transition-all group">
+                                <div key={ex.id} className="flex items-center justify-between p-4 border border-slate-100 rounded-[2rem] hover:shadow-md hover:border-orange-100 transition-all group bg-white">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-orange-50 text-bee-amber rounded-lg flex items-center justify-center shrink-0">
+                                        <div className="w-12 h-12 bg-orange-50 text-bee-amber rounded-2xl flex items-center justify-center shrink-0">
                                             <Dumbbell className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -164,19 +164,19 @@ export default function ExerciciosPage() {
                                     </div>
 
                                     <div className="flex items-center gap-6">
-                                        <div className="hidden md:flex flex-col items-end gap-1 text-xs font-bold uppercase tracking-wider">
+                                        <div className="hidden md:flex flex-col items-end gap-1 text-[10px] font-bold uppercase tracking-wider">
                                             <div className="flex gap-2">
-                                                <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md">{ex.category}</span>
-                                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">{ex.difficulty}</span>
+                                                <span className="bg-orange-50 text-orange-600 px-3 py-1 rounded-full border border-orange-100">{ex.category}</span>
+                                                <span className="bg-slate-50 text-slate-600 px-3 py-1 rounded-full border border-slate-100">{ex.difficulty}</span>
                                             </div>
                                         </div>
                                         {/* Ações (Apenas em Meus Exercícios) */}
                                         {activeTab === 'meus' && (
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex gap-1 transition-opacity px-2">
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-slate-400 hover:text-bee-amber hover:bg-amber-50"
+                                                    className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
                                                     onClick={() => { setExerciseToEdit(ex); setIsModalOpen(true); }}
                                                 >
                                                     <Pencil className="w-4 h-4" />
@@ -184,7 +184,7 @@ export default function ExerciciosPage() {
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 text-slate-400 hover:text-destructive hover:bg-red-50"
+                                                    className="h-9 w-9 text-slate-400 hover:text-destructive rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-100 shadow-none"
                                                     onClick={() => handleDelete(ex.id)}
                                                 >
                                                     <Trash2 className="w-4 h-4" />

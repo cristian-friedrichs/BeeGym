@@ -29,7 +29,7 @@ export type StudentProfileData = {
         height: number | null;
         weight: number | null;
     } | null;
-    date_of_birth: string | null;
+    birth_date: string | null;
 };
 
 export type EvolutionMetric = 'weight' | 'bmi' | 'body_fat' | 'muscle_mass';
@@ -118,7 +118,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
             height: (assessmentData as any).height,
             weight: (assessmentData as any).weight,
         } : null,
-        date_of_birth: null, // Placeholder as column might not exist yet
+        birth_date: dataAny.birth_date,
     };
 }
 

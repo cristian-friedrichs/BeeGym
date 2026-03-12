@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
-import { addDays, addWeeks, addMonths, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, addMinutes } from 'date-fns';
 
 export interface FixedScheduleSlot {
     dayOfWeek: string; // 'monday', 'tuesday', etc.
@@ -42,16 +42,24 @@ export async function generateFixedScheduleEvents(
 
             // Generate events until end date
             while (currentDate <= endDate) {
+                const dateStr = format(currentDate, 'yyyy-MM-dd');
+                const startDateTime = new Date(`${dateStr}T${schedule.time}:00`);
+                const endDateTime = addMinutes(startDateTime, duration);
+
                 events.push({
                     student_id: studentId,
                     organization_id: organizationId,
                     unit_id: unitId,
-                    date: format(currentDate, 'yyyy-MM-dd'),
+                    date: dateStr,
                     start_time: schedule.time,
+                    start_datetime: startDateTime.toISOString(),
+                    end_datetime: endDateTime.toISOString(),
                     duration: duration,
                     day_of_week: schedule.dayOfWeek,
                     status: 'SCHEDULED',
                     event_type: 'RECURRING',
+                    title: 'Aula Agendada',
+                    type: 'CLASS'
                 });
 
                 // Move to next week
