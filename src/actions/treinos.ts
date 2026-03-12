@@ -5,6 +5,7 @@ import { workoutSchema } from '@/lib/schemas/workoutSchema';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/rbac';
 import { z } from 'zod';
+import { randomUUID } from 'node:crypto';
 import { 
     addMonths, 
     addDays, 
@@ -108,7 +109,7 @@ export async function saveRecurringWorkouts(data: {
     }
 
     // 2. Gerar novos treinos para os próximos 3 meses
-    const recurrenceId = crypto.randomUUID();
+    const recurrenceId = randomUUID();
     const workoutsToInsert: any[] = [];
     const calendarEventsToInsert: any[] = [];
     const startDate = new Date();

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
     Plus, Search, Calendar, Clock, Loader2, Dumbbell, Filter, 
-    MapPin, Home, ArrowLeft, ArrowRight, X, Edit, MoreHorizontal, Trash2, CalendarCheck 
+    MapPin, ArrowLeft, ArrowRight, X, Edit, Trash2, CalendarCheck
 } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
 import { format } from "date-fns";

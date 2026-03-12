@@ -37,10 +37,13 @@ interface Plan {
     price: number;
     description: string | null;
     plan_type: 'membership' | 'pack';
+    type?: string; // Aliases for legacy/frontend logic
     duration_months: number | null;
     recurrence: 'monthly' | 'quarterly' | 'yearly' | 'one_time' | null;
+    frequency?: string; // Aliases for legacy/frontend logic
     days_per_week: number | null;
     credits: number | null;
+    checkin_limit?: number | null; // Aliases for legacy/frontend logic
     active: boolean;
 }
 
