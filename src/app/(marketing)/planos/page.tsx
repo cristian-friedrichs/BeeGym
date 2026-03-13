@@ -4,7 +4,12 @@ import { CheckCircle2, Minus } from 'lucide-react';
 import { MARKETING_FEATURES, MODULE_TO_MARKETING } from '@/lib/marketing/plan-utils';
 import { PlanFeature } from '@/config/plans';
 
-export default async function PlanosPage() {
+export default async function PlanosPage(props: { 
+    searchParams: Promise<{ update?: string | string[] | undefined }> 
+}) {
+    const searchParams = await props.searchParams;
+    const update = searchParams?.update;
+
     const supabase = await createClient();
     const { data: plans } = await supabase
         .from('saas_plans')
