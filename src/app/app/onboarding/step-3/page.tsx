@@ -165,8 +165,8 @@ export default function OnboardingStep3() {
     }
 
     return (
-        <div className="flex min-h-screen bg-white p-4 md:p-8">
-            <div className="max-w-6xl mx-auto w-full my-auto space-y-10">
+        <div className="flex min-h-[100dvh] bg-white p-4 md:p-8">
+            <div className="max-w-6xl mx-auto w-full my-auto space-y-10 pb-24">
                 <OnboardingProgress currentStep={3} />
 
                 <div>

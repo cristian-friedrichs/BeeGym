@@ -244,8 +244,8 @@ export default function PagamentoPage() {
     };
 
     return (
-        <div className="flex min-h-screen bg-white p-4 md:p-8">
-            <div className="max-w-6xl mx-auto w-full my-auto space-y-6">
+        <div className="flex min-h-[100dvh] bg-white p-4 md:p-8">
+            <div className="max-w-6xl mx-auto w-full my-auto space-y-6 pb-24">
                 <OnboardingProgress currentStep={4} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">

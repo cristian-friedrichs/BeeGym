@@ -202,8 +202,8 @@ export default function OnboardingStep2() {
     }
 
     return (
-        <div className="flex h-screen bg-white p-2 md:p-4 overflow-hidden">
-            <div className="max-w-6xl mx-auto w-full my-auto space-y-4 h-full flex flex-col justify-center">
+        <div className="flex min-h-[100dvh] bg-white p-2 md:p-4">
+            <div className="max-w-6xl mx-auto w-full my-auto space-y-4 flex flex-col justify-center pb-32">
                 <OnboardingProgress currentStep={2} />
 
                 <Card className="border-slate-100 shadow-2xl shadow-slate-200/40 bg-white overflow-hidden rounded-[2.5rem] border-t-4 border-t-bee-amber">
