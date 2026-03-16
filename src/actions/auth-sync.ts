@@ -40,7 +40,7 @@ export async function syncAuthMetadata() {
     // ✅ SEGURANÇA: Só retorna sucesso (que causa o redirect p/ painel)
     // se o onboarding foi concluído E se a assinatura está ativa/trial/teste.
     const hasAccess = org?.onboarding_completed &&
-        (org?.subscription_status === 'active' || org?.subscription_status === 'trial' || org?.subscription_status === 'teste');
+        (org?.subscription_status === 'active' || org?.subscription_status === 'pago' || org?.subscription_status === 'ativo');
 
     if (!hasAccess) {
         return {

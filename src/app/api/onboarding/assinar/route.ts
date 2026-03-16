@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
             await supabaseAdmin
                 .from('saas_subscriptions')
                 .update({
-                    status: 'TRIAL',
+                    status: 'PENDENTE',
                     metodo,
                     saas_plan_id: plano.id,
                     valor_mensal: plano.price,
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin
             .from('organizations')
             .update({
-                subscription_status: isPix ? 'aguardando_pagamento' : 'trial',
+                subscription_status: isPix ? 'aguardando_pagamento' : (acessoLiberado ? 'active' : 'pendente'),
                 onboarding_completed: !isPix && acessoLiberado, // Cartão aprovado -> Finaliza. Pix -> Aguarda botão.
                 updated_at: new Date().toISOString(),
             })

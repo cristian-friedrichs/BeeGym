@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, profile, loading: authLoading } = useAuth();
-  const activeStatuses = ['active', 'trial', 'teste', 'pago', 'status_ativo', 'status_teste', 'ativo'];
+  const activeStatuses = ['active', 'pago', 'status_ativo', 'ativo'];
   const { status, hasFeature, loading: subLoading } = useSubscription();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 

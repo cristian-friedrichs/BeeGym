@@ -13,14 +13,9 @@ export class HandlePixAutomaticoConsentUseCase {
             return;
         }
 
-        // Se já está ativo/trial, ignora (idempotência)
-        if (assinatura.status === 'TRIAL' || assinatura.status === 'ATIVO') {
-            if (status === 'ATIVO') return;
-        }
-
         if (status === 'ATIVO') {
-            // 1. Mudar para TRIAL (primeiros 7 dias ou acesso inicial)
-            await assinaturaRepository.updateStatus(assinatura.id, 'TRIAL');
+            // 1. Mudar para ATIVO (acesso liberado após consentimento)
+            await assinaturaRepository.updateStatus(assinatura.id, 'ATIVO');
 
             // 2. Liberar acesso real no Supabase
             await contratanteRepository.liberarAcesso(assinatura.contratanteId);

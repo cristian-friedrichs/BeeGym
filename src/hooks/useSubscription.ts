@@ -5,7 +5,7 @@ import { PlanFeature, BEEGYM_PLANS, BeeGymPlan, getPlanById } from '@/config/pla
 import { MODULE_TO_MARKETING } from '@/lib/marketing/plan-utils'
 
 const ACTIVE_STATUSES = [
-    'ativo', 'trial', 'teste', 'pago', 'active', 'status_ativo', 'status_teste',
+    'ativo', 'pago', 'active', 'status_ativo',
 ].map(s => s.toLowerCase())
 
 export function useSubscription() {

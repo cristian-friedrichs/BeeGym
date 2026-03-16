@@ -3,8 +3,8 @@ import { getPlanById, BeeGymPlan } from '@/config/plans'
 import type { PlanFeature } from '@/config/plans'
 
 const ACTIVE_STATUSES = [
-    'active', 'trialing', 'trial', 'teste', 'ativo',
-    'ATIVO', 'TRIAL', 'TESTE',
+    'active', 'ativo', 'pago',
+    'ATIVO', 'PAGO'
 ]
 
 /**
@@ -21,12 +21,13 @@ export async function getServerPlan(organizationId: string): Promise<{
     // 1. Buscar status da organização
     const { data: org } = await supabase
         .from('organizations')
-        .select('subscription_status')
+        .select('subscription_status, onboarding_completed')
         .eq('id', organizationId)
         .single()
 
-    const status = org?.subscription_status || null
-    const isActive = ACTIVE_STATUSES.includes(status || '') || !status
+    const hasAccess = org?.onboarding_completed &&
+        (org?.subscription_status === 'active' || org?.subscription_status === 'pago' || org?.subscription_status === 'ativo');
+    const isActive = hasAccess
 
     // 2. Buscar plano via saas_subscriptions (independe do pagamento)
     const { data: sub } = await supabase
