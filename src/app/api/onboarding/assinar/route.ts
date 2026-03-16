@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         await supabaseAdmin
             .from('organizations')
             .update({
-                subscription_status: 'trial',
+                subscription_status: isPix ? 'aguardando_pagamento' : 'trial',
                 onboarding_completed: !isPix && acessoLiberado, // Cartão aprovado -> Finaliza. Pix -> Aguarda botão.
                 updated_at: new Date().toISOString(),
             })

@@ -20,23 +20,29 @@ export default function PendingActivation() {
                 </div>
 
                 <h1 className="text-3xl font-display font-black text-bee-midnight mb-3 tracking-tight">
-                    Conta em Análise
+                    Pagamento em Processamento
                 </h1>
 
                 <p className="text-slate-500 mb-10 leading-relaxed font-medium">
-                    Olá <span className="text-bee-midnight font-bold">{profile?.full_name || 'Personal'}</span>, sua conta está aguardando ativação ou você ainda precisa completar o onboarding.
+                    Olá <span className="text-bee-midnight font-bold">{profile?.full_name || 'Personal'}</span>, recebemos seu pedido! Estamos aguardando a confirmação do pagamento para liberar seu acesso total.
                 </p>
 
                 <div className="w-full space-y-6">
+                    <Button
+                        className="w-full h-12 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold rounded-2xl shadow-sm transition-all"
+                        onClick={() => window.location.reload()}
+                    >
+                        Já paguei, atualizar página
+                    </Button>
                     <div className="p-6 bg-slate-50/50 rounded-2xl text-sm text-slate-500 text-left border border-slate-100/80">
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3">
                                 <span className="w-1.5 h-1.5 rounded-full bg-bee-amber mt-1.5 flex-shrink-0" />
-                                <span>Verifique se você completou todas as etapas do cadastro.</span>
+                                <span>Pagamentos via PIX podem levar alguns minutos para serem confirmados.</span>
                             </li>
                             <li className="flex items-start gap-3">
                                 <span className="w-1.5 h-1.5 rounded-full bg-bee-amber mt-1.5 flex-shrink-0" />
-                                <span>Entre em contato com o suporte se o acesso não for liberado em breve.</span>
+                                <span>Se desejar alterar a forma de pagamento, <a href="/app/onboarding/pagamento" className="text-bee-amber font-bold underline">clique aqui</a>.</span>
                             </li>
                         </ul>
                     </div>

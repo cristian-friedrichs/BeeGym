@@ -140,6 +140,12 @@ export async function middleware(request: NextRequest) {
 
         const isAccountActive = org?.onboarding_completed && hasActiveSubscription
         const isOnboardingPath = url.pathname.startsWith('/app/onboarding') || url.pathname.startsWith('/api/onboarding')
+        
+        // 🚨 Hard Paywall: Se tem onboarding mas não está ativo, joga para pending-activation
+        if (org?.onboarding_completed && !hasActiveSubscription && isAppRoute && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
+            url.pathname = '/app/pending-activation'
+            return NextResponse.redirect(url)
+        }
 
         // 🟢 SaaS em página de Login (e já está logado)
         if (isAppAuthPage) {

@@ -83,6 +83,10 @@ export function useSubscription() {
 
                     setMetodo(sub.metodo)
                     setProximoVencimento(sub.proximo_vencimento)
+                    
+                    if (sub.saas_plans?.max_students !== undefined) {
+                        setDbMaxStudents(sub.saas_plans.max_students)
+                    }
 
                     if (sub.saas_plans?.allowed_features) {
                         setDbAllowedFeatures(sub.saas_plans.allowed_features)
@@ -112,11 +116,11 @@ export function useSubscription() {
         const masterEmail = 'cristian_friedrichs@live.com'
         const userEmail = (user?.email || profile?.email || '')?.toLowerCase();
         const role = (profile?.role as string || '').toUpperCase();
+        
+        // 🚨 CRITICAL: Only the developer email is a TRUE Master Admin
+        // Regular owners/admins are subject to plan limits
         return userEmail === masterEmail ||
-            role === 'ADMIN' ||
-            role === 'BEEGYM_ADMIN' ||
-            role === 'OWNER' ||
-            role === 'PROPRIETARY'
+            role === 'BEEGYM_ADMIN'
     }, [profile, user])
 
     const isActive = useMemo(() => {
