@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
             .from('saas_subscriptions')
             .select('id, status')
             .eq('organization_id', org.id)
-            .in('status', ['ATIVO', 'TRIAL']) // Removido 'PENDENTE' para permitir re-tentativas
+            .in('status', ['ATIVO', 'PAGO']) // Removido 'TRIAL' pois agora é considerado inativo e o usuário deve pagar
             .limit(1)
             .maybeSingle();
 
