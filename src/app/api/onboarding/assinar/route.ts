@@ -114,12 +114,16 @@ export async function POST(req: NextRequest) {
                 .eq('id', pendingSub.id);
         }
 
-        // ✅ Após pagamento confirmado: atualizar status da organização
+        // ✅ Após pagamento solicitado: atualizar status da organização
+        // Mantemos onboarding_completed: false para PIX para não disparar o redirect do middleware prematuramente
+        const isPix = metodo === 'PIX_AUTOMATICO';
+        const acessoLiberado = resultado.acessoLiberado === true;
+
         await supabaseAdmin
             .from('organizations')
             .update({
                 subscription_status: 'trial',
-                onboarding_completed: true,
+                onboarding_completed: !isPix && acessoLiberado, // Cartão aprovado -> Finaliza. Pix -> Aguarda botão.
                 updated_at: new Date().toISOString(),
             })
             .eq('id', org.id);

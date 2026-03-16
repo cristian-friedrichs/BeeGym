@@ -2,16 +2,18 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCode from 'qrcode';
 import { createClient } from '@/lib/supabase/client';
 import { ResumoPlano, PlanoInfo } from '@/components/onboarding/pagamento/ResumoPlano';
 import { MetodoPagamento, Metodo } from '@/components/onboarding/pagamento/MetodoPagamento';
 import { InstrucoesPix } from '@/components/onboarding/pagamento/InstrucoesPix';
 import { FormCartao, FormCartaoRef } from '@/components/onboarding/pagamento/FormCartao';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Loader2, CheckCircle } from 'lucide-react';
+import { Lock, Loader2, CheckCircle, CheckCircle2, QrCode as QrCodeIcon, Copy, Check, ArrowRight, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
+import { finalizeOnboardingAction } from '@/actions/onboarding-complete';
 
 // O plano é carregado dinamicamente do BD no useEffect
 
@@ -24,7 +26,14 @@ export default function PagamentoPage() {
     const [orgData, setOrgData] = useState<{ name: string; cpf_cnpj: string } | null>(null);
     const [plano, setPlano] = useState<PlanoInfo | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFinalizing, setIsFinalizing] = useState(false);
     const { data: onboardingData, resetData, isHydrated } = useOnboarding();
+
+    // Estado para PIX (Exibição Inline)
+    const [showPix, setShowPix] = useState(false);
+    const [pixCopiaECola, setPixCopiaECola] = useState<string | null>(null);
+    const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+    const [copiado, setCopiado] = useState(false);
 
     // Estado para PIX (Billing independente)
     const [pixBilling, setPixBilling] = useState({ devedorNome: '', devedorCpf: '' });
@@ -170,6 +179,26 @@ export default function PagamentoPage() {
                 throw new Error(data?.error || 'Erro ao processar assinatura.');
             }
 
+            if (metodo === 'PIX_AUTOMATICO') {
+                if (data.pixCopiaECola) {
+                    setPixCopiaECola(data.pixCopiaECola);
+                    setShowPix(true);
+                    
+                    // Gerar imagem do QR Code
+                    try {
+                        const url = await QRCode.toDataURL(data.pixCopiaECola, {
+                            width: 300,
+                            margin: 2,
+                            color: { dark: '#0B0F1A', light: '#ffffff' }
+                        });
+                        setQrCodeUrl(url);
+                    } catch (err) {
+                        console.error('Erro ao gerar QR Code:', err);
+                    }
+                    return;
+                }
+            }
+
             const params = new URLSearchParams({
                 metodo,
                 plano: plano.name,
@@ -182,7 +211,7 @@ export default function PagamentoPage() {
             if (data.acessoLiberado) params.append('acessoLiberado', '1');
             if (data.statusEfi) params.append('statusEfi', data.statusEfi);
 
-            // SUCESSO: Redirecionar para confirmação sem resetar ainda para evitar redirecionamentos em cadeia
+            // SUCESSO CARTÃO: Redirecionar para confirmação
             router.push(`/app/onboarding/pagamento/confirmacao?${params.toString()}`);
 
         } catch (err: any) {
@@ -193,6 +222,34 @@ export default function PagamentoPage() {
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleCopyPix = () => {
+        if (!pixCopiaECola) return;
+        navigator.clipboard.writeText(pixCopiaECola);
+        setCopiado(true);
+        toast({ title: 'Código Copiado!', description: 'Agora cole no app do seu banco para autorizar.' });
+        setTimeout(() => setCopiado(false), 2000);
+    };
+
+    const handleFinalizeOnboarding = async () => {
+        setIsFinalizing(true);
+        try {
+            const result = await finalizeOnboardingAction();
+            if (result?.error) throw new Error(result.error);
+            
+            toast({ title: 'Conta ativada com sucesso!', description: 'Bem-vindo ao BeeGym!' });
+            resetData();
+            router.push('/app/painel');
+        } catch (err: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao ativar conta',
+                description: err.message || 'Tente novamente.'
+            });
+        } finally {
+            setIsFinalizing(false);
         }
     };
 
@@ -253,110 +310,184 @@ export default function PagamentoPage() {
                     <div className="space-y-4 pt-2">
                         <div className="space-y-2">
                             <ResumoPlano plano={plano} isPromo={['STUDIO', 'PRO', 'ENTERPRISE'].includes(plano.tier)} />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => router.push('/app/onboarding/step-3')}
-                                className="text-slate-400 hover:text-bee-midnight font-bold h-auto p-1 -ml-1 text-[10px] uppercase tracking-widest"
-                            >
-                                ← Escolher outro plano
-                            </Button>
-                        </div>
-
-                        {/* Card de Cupom */}
-                        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mt-4">
-                            <h4 className="text-sm font-bold text-[#0B0F1A] mb-3">Possui um cupom de desconto?</h4>
-                            {!appliedCoupon ? (
-                                <div className="space-y-2">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Digite seu código"
-                                            className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-bee-amber"
-                                            value={couponCode}
-                                            onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                                        />
-                                        <Button
-                                            onClick={handleApplyCoupon}
-                                            disabled={!couponCode || couponLoading}
-                                            className="bg-slate-100 text-slate-600 hover:bg-slate-200"
-                                        >
-                                            {couponLoading ? 'Aplicando...' : 'Aplicar'}
-                                        </Button>
-                                    </div>
-                                    {couponError && <p className="text-xs text-red-500">{couponError}</p>}
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg border border-green-200">
-                                    <div className="flex items-center gap-2">
-                                        <CheckCircle className="w-4 h-4 text-green-600" />
-                                        <div>
-                                            <p className="text-xs font-bold text-green-800 uppercase tracking-wider">{appliedCoupon.code}</p>
-                                            <p className="text-[11px] text-green-600 mt-0.5">
-                                                {appliedCoupon.discount_type === 'PERCENTAGE' && `${appliedCoupon.discount_value}% de desconto aplicado`}
-                                                {appliedCoupon.discount_type === 'FIXED_AMOUNT' && `Desconto de R$ ${appliedCoupon.discount_value}`}
-                                                {appliedCoupon.discount_type === 'FREE_MONTHS' && `${appliedCoupon.discount_value} mês(es) grátis aplicado`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button onClick={handleRemoveCoupon} className="text-xs text-red-500 font-medium hover:underline">
-                                        Remover
-                                    </button>
-                                </div>
+                            {!showPix && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => router.push('/app/onboarding/step-3')}
+                                    className="text-slate-400 hover:text-bee-midnight font-bold h-auto p-1 -ml-1 text-[10px] uppercase tracking-widest"
+                                >
+                                    ← Escolher outro plano
+                                </Button>
                             )}
                         </div>
-                    </div>
 
-                    {/* Coluna Direita: Seleção e Formulário */}
-                    <div className="flex flex-col space-y-6">
-                        {/* Método */}
-                        <div className="space-y-3">
-                            <p className="text-sm font-bold text-[#0B0F1A]">Como você quer pagar?</p>
-                            <MetodoPagamento value={metodo} onChange={m => setMetodo(m)} />
-                        </div>
-
-                        {/* Formulário Branco (Base apenas para dados) */}
-                        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 p-8 flex flex-col space-y-6 flex-1">
-
-                            {/* Conteúdo variável por método */}
-                            <div className="flex-1">
-                                {metodo === 'PIX_AUTOMATICO' ? (
-                                    <InstrucoesPix
-                                        initialName={orgData?.name}
-                                        initialDoc={orgData?.cpf_cnpj}
-                                        onChange={setPixBilling}
-                                    />
+                        {!showPix && (
+                            /* Card de Cupom */
+                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mt-4">
+                                <h4 className="text-sm font-bold text-[#0B0F1A] mb-3">Possui um cupom de desconto?</h4>
+                                {!appliedCoupon ? (
+                                    <div className="space-y-2">
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Digite seu código"
+                                                className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-bee-amber"
+                                                value={couponCode}
+                                                onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                                            />
+                                            <Button
+                                                onClick={handleApplyCoupon}
+                                                disabled={!couponCode || couponLoading}
+                                                className="bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                            >
+                                                {couponLoading ? 'Aplicando...' : 'Aplicar'}
+                                            </Button>
+                                        </div>
+                                        {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                                    </div>
                                 ) : (
-                                    <FormCartao
-                                        email={userEmail}
-                                        initialName={orgData?.name}
-                                        initialDoc={orgData?.cpf_cnpj}
-                                        onRef={setCartaoRef}
-                                    />
+                                    <div className="flex items-center justify-between bg-green-50 p-3 rounded-lg border border-green-200">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                            <div>
+                                                <p className="text-xs font-bold text-green-800 uppercase tracking-wider">{appliedCoupon.code}</p>
+                                                <p className="text-[11px] text-green-600 mt-0.5">
+                                                    {appliedCoupon.discount_type === 'PERCENTAGE' && `${appliedCoupon.discount_value}% de desconto aplicado`}
+                                                    {appliedCoupon.discount_type === 'FIXED_AMOUNT' && `Desconto de R$ ${appliedCoupon.discount_value}`}
+                                                    {appliedCoupon.discount_type === 'FREE_MONTHS' && `${appliedCoupon.discount_value} mês(es) grátis aplicado`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button onClick={handleRemoveCoupon} className="text-xs text-red-500 font-medium hover:underline">
+                                            Remover
+                                        </button>
+                                    </div>
                                 )}
                             </div>
+                        )}
+                    </div>
 
-                            {/* Botão Assinar */}
-                            <div className="pt-4 mt-auto">
-                                <Button
-                                    onClick={handleAssinar}
-                                    disabled={isLoading}
-                                    className="w-full h-14 text-sm font-black bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-2xl shadow-xl shadow-bee-amber/20 transition-all font-display uppercase tracking-wider"
-                                >
-                                    {isLoading ? (
-                                        <><Loader2 className="w-5 h-5 animate-spin mr-2 text-bee-midnight" />Processando...</>
+                    {/* Coluna Direita: Seleção e Formulário OU QR CODE */}
+                    {!showPix ? (
+                        <div className="flex flex-col space-y-6">
+                            {/* Método */}
+                            <div className="space-y-3">
+                                <p className="text-sm font-bold text-[#0B0F1A]">Como você quer pagar?</p>
+                                <MetodoPagamento value={metodo} onChange={m => setMetodo(m)} />
+                            </div>
+
+                            {/* Formulário Branco (Base apenas para dados) */}
+                            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 p-8 flex flex-col space-y-6 flex-1">
+
+                                {/* Conteúdo variável por método */}
+                                <div className="flex-1">
+                                    {metodo === 'PIX_AUTOMATICO' ? (
+                                        <InstrucoesPix
+                                            initialName={orgData?.name}
+                                            initialDoc={orgData?.cpf_cnpj}
+                                            onChange={setPixBilling}
+                                        />
                                     ) : (
-                                        `Assinar por ${precoFormatado}/mês`
+                                        <FormCartao
+                                            email={userEmail}
+                                            initialName={orgData?.name}
+                                            initialDoc={orgData?.cpf_cnpj}
+                                            onRef={setCartaoRef}
+                                        />
                                     )}
-                                </Button>
+                                </div>
 
-                                <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mt-4">
-                                    <Lock className="w-3 h-3" />
-                                    <span>Pagamento seguro via EFI · Cancele quando quiser</span>
+                                {/* Botão Assinar */}
+                                <div className="pt-4 mt-auto">
+                                    <Button
+                                        onClick={handleAssinar}
+                                        disabled={isLoading}
+                                        className="w-full h-14 text-sm font-black bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-2xl shadow-xl shadow-bee-amber/20 transition-all font-display uppercase tracking-wider"
+                                    >
+                                        {isLoading ? (
+                                            <><Loader2 className="w-5 h-5 animate-spin mr-2 text-bee-midnight" />Processando...</>
+                                        ) : (
+                                            `Assinar por ${precoFormatado}/mês`
+                                        )}
+                                    </Button>
+
+                                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400 mt-4">
+                                        <Lock className="w-3 h-3" />
+                                        <span>Pagamento seguro via EFI · Cancele quando quiser</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* VIEW DO QR CODE PIX */
+                        <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="bg-white rounded-[2.5rem] border-2 border-bee-amber shadow-2xl shadow-bee-amber/5 p-8 flex flex-col items-center text-center space-y-6">
+                                <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center">
+                                    <QrCodeIcon className="w-8 h-8 text-bee-amber" />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <h2 className="text-xl font-black font-display text-bee-midnight">Quase lá! Autorize no seu banco</h2>
+                                    <p className="text-sm text-slate-500 max-w-xs mx-auto">
+                                        Escaneie o QR Code abaixo ou copie o código para realizar o pagamento do primeiro mês.
+                                    </p>
+                                </div>
+
+                                {/* QR Code Container */}
+                                <div className="p-4 bg-white border-2 border-slate-50 rounded-3xl shadow-inner">
+                                    {qrCodeUrl ? (
+                                        <img src={qrCodeUrl} alt="QR Code Pix" className="w-56 h-56 mx-auto" />
+                                    ) : (
+                                        <div className="w-56 h-56 flex items-center justify-center bg-slate-50 rounded-2xl">
+                                            <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Copia e Cola */}
+                                <div className="w-full space-y-3">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleCopyPix}
+                                        className="w-full h-12 border-2 border-slate-100 hover:border-bee-amber/30 text-bee-midnight font-bold rounded-xl flex items-center justify-center gap-2 transition-all"
+                                    >
+                                        {copiado ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                                        {copiado ? 'Código Copiado!' : 'Copiar Código Copia e Cola'}
+                                    </Button>
+                                    
+                                    <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 uppercase font-black tracking-widest">
+                                        <Shield className="w-3 h-3" />
+                                        <span>Transação Segura via Banco Central</span>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 w-full border-t border-slate-50 mt-2">
+                                    <Button
+                                        onClick={handleFinalizeOnboarding}
+                                        disabled={isFinalizing}
+                                        className="w-full h-14 bg-bee-midnight hover:bg-black text-white rounded-2xl font-black shadow-lg transition-all group font-display uppercase tracking-wider text-sm"
+                                    >
+                                        {isFinalizing ? (
+                                            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                        ) : (
+                                            <>Já realizei o pagamento <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></>
+                                        )}
+                                    </Button>
+                                    <p className="text-[10px] text-slate-400 mt-3 font-medium">
+                                        Ao clicar, você será levado ao painel e seu acesso será liberado.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setShowPix(false)}
+                                className="text-xs text-slate-400 font-bold hover:text-bee-midnight transition-colors uppercase tracking-widest text-center"
+                            >
+                                ← Voltar para formas de pagamento
+                            </button>
+                        </div>
+                    )}
                 </div>
 
             </div>
