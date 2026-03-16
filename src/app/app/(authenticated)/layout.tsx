@@ -17,8 +17,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, profile, loading: authLoading } = useAuth();
-  const { hasFeature, loading: subLoading } = useSubscription();
+  const activeStatuses = ['active', 'trial', 'teste', 'pago', 'status_ativo', 'status_teste', 'ativo'];
+  const { status, hasFeature, loading: subLoading } = useSubscription();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
+  // Hard Blocking logic for payment
+  const isPendingPayment = status && !activeStatuses.includes(status.toLowerCase());
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -41,7 +45,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       const masterEmail = 'cristian_friedrichs@live.com';
       const userEmail = user?.email?.toLowerCase();
       // Verificamos tanto o profile.role quanto o user.email para garantir o bypass mais rápido possível
-      const isAdminByRole = profile?.role === 'ADMIN' || (profile?.role as string) === 'BEEGYM_ADMIN';
+      const isAdminByRole = (profile?.role as string) === 'BEEGYM_ADMIN';
       const isMasterAdmin = userEmail === masterEmail || isAdminByRole;
 
       if (isMasterAdmin) {
@@ -54,6 +58,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       if (!profile && !isMasterAdmin) {
         console.log('[AccessCheck] Profile not ready and not master admin, waiting...');
         return;
+      }
+
+      // Se o status é pendente e não é master admin, bloqueia tudo
+      if (isPendingPayment && !isMasterAdmin && !subLoading) {
+         console.log('[AccessCheck] Hard paywall triggered: user must pay.');
+         setIsAuthorized(false);
+         router.push('/app/pending-activation');
+         return;
       }
 
       // 2. Proteção de rota dinâmica baseada em feature

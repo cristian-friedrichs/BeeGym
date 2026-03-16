@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
     // 👑 SEGREGAÇÃO DE SISTEMAS: ADMIN VS SAAS
     const isMasterEmail = session.user.email?.toLowerCase() === 'cristian_friedrichs@live.com'
     const userRole = (profile?.role || '').toUpperCase().trim();
-    const isAdminUser = userRole === 'BEEGYM_ADMIN' || userRole === 'ADMIN' || isMasterEmail;
+    const isAdminUser = userRole === 'BEEGYM_ADMIN' || isMasterEmail;
 
     // LÓGICA PARA ADMINS
     if (isAdminUser) {
