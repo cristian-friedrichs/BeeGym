@@ -237,12 +237,26 @@ export default function OnboardingStep3() {
                                     </p>
 
                                     <div className="mt-auto pt-5 border-t border-slate-100/80">
-                                        <div className="flex items-baseline gap-1">
-                                            <span className="text-xl font-black text-bee-midnight font-display">
-                                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
-                                            </span>
-                                            <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">/mês</span>
-                                        </div>
+                                        {plan.promo_price && plan.promo_price > 0 ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-400 line-through font-bold">
+                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
+                                                </span>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-xl font-black text-bee-midnight font-display">
+                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.promo_price)}
+                                                    </span>
+                                                    <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">/mês</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-xl font-black text-bee-midnight font-display">
+                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
+                                                </span>
+                                                <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">/mês</span>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {isSelected && (
