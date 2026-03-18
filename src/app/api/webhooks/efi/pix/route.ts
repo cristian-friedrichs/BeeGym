@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
         const payload = JSON.parse(textBody);
 
         if (payload.pix) {
-            webhookService.handle(payload, 'PIX').catch((err) => {
-                console.error('[EFI Webhook PIX] Erro de background:', err);
-            });
+            try {
+                await webhookService.handle(payload, 'PIX');
+            } catch (err) {
+                console.error('[EFI Webhook PIX] Erro de processamento:', err);
+            }
             return NextResponse.json({ received: true }, { status: 200 });
         }
 
