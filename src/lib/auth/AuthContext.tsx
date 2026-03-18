@@ -12,7 +12,7 @@ interface UserProfile {
     role: 'ADMIN' | 'INSTRUCTOR' | 'MANAGER' | 'STUDENT'
     organization_id: string
     avatar_url: string | null
-    status: 'ACTIVE' | 'PENDING'
+    status: 'active' | 'pending'
 }
 
 interface AuthContextType {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             // 🔒 VALIDAÇÃO: Conta deve estar ACTIVE
-            if (data.status !== 'ACTIVE') {
+            if (data.status !== 'active') {
                 console.warn('⚠️ Conta não está ativa - o middleware deve gerenciar o acesso')
                 return null
             }

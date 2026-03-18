@@ -49,11 +49,20 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         }
     )
 
-    // 1. Create Organization
+    // 0. Check for existing organization to prevent duplicity
+    const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single()
+
+    const orgId = existingProfile?.organization_id || randomUUID()
+
+    // 1. Upsert Organization
     const { data: orgData, error: orgError } = await supabaseAdmin
         .from('organizations')
-        .insert({
-            id: randomUUID(),
+        .upsert({
+            id: orgId,
             name: data.organizationName,
             business_type: data.businessType,
             email: data.email,
@@ -71,7 +80,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             address_state: data.addressState || null,
             address_zip: data.hasPhysicalLocation ? data.addressZip : null,
             has_physical_location: data.hasPhysicalLocation,
-            subscription_status: 'aguardando_pagamento',
+            subscription_status: 'pending',
             onboarding_completed: false,
             updated_at: new Date().toISOString(),
         })
@@ -79,8 +88,8 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         .single()
 
     if (orgError) {
-        console.error('Error creating organization:', orgError)
-        return { error: `Erro ao criar organização: ${orgError.message}` }
+        console.error('Error upserting organization:', orgError)
+        return { error: `Erro ao salvar organização: ${orgError.message}` }
     }
 
     // 2. Update User Profile (Upsert to ensure creation if missing from trigger)
@@ -92,7 +101,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
             avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             organization_id: orgData.id,
-            status: 'ACTIVE',
+            status: 'active',
             role: 'OWNER',
             is_instructor: true,
         })
@@ -102,10 +111,10 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         return { error: `Erro do atualizar perfil do usuário: ${userError.message}` }
     }
 
-    // 2.1 Create Instructor record for the owner
+    // 2.1 Upsert Instructor record for the owner
     const { error: instructorError } = await supabaseAdmin
         .from('instructors')
-        .insert({
+        .upsert({
             id: user.id,
             organization_id: orgData.id,
             name: user.user_metadata?.full_name || user.user_metadata?.name || 'Administrador',
@@ -114,7 +123,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         })
 
     if (instructorError) {
-        console.error('Error creating instructor record for owner:', instructorError)
+        console.error('Error upserting instructor record for owner:', instructorError)
         // Non-blocking, but logged
     }
 
@@ -124,7 +133,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         {
             app_metadata: {
                 organization_id: orgData.id,
-                status: 'ACTIVE'
+                status: 'active'
             }
         }
     )
@@ -133,7 +142,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         console.error('Error updating user metadata:', metadataError)
     }
 
-    // 4. Create saas_subscriptions with AGUARDANDO_PAGAMENTO
+    // 4. Upsert saas_subscriptions with pending status
     // Reads price/promo from saas_plans to ensure EFI charges use admin-configured values
     if (data.planId) {
         // Fetch plan pricing from saas_plans (source of truth)
@@ -145,21 +154,22 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
 
         const { error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
-            .insert({
+            .upsert({
                 organization_id: orgData.id,
                 saas_plan_id: data.planId,
                 plan_paid_id: data.planId,
                 plan_tier: planData?.tier || null,
-                status: 'AGUARDANDO_PAGAMENTO',
-                metodo: 'PENDENTE',
+                status: 'pending',
+                metodo: 'pending',
                 valor_mensal: planData?.price ?? 0,
                 promo_price: planData?.promo_price ?? null,
                 promo_months_remaining: planData?.promo_months ?? 0,
                 dia_vencimento: new Date().getDate(),
-            })
+                updated_at: new Date().toISOString(),
+            }, { onConflict: 'organization_id' })
 
         if (subError) {
-            console.error('Error creating subscription record:', subError)
+            console.error('Error upserting subscription record:', subError)
             // Non-blocking: org and profile already created
         }
     }

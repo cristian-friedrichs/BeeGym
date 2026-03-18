@@ -46,7 +46,7 @@ export async function finalizeOnboardingAction() {
         .from('organizations')
         .update({
             onboarding_completed: true,
-            subscription_status: 'aguardando_pagamento',
+            subscription_status: 'pending',
             updated_at: new Date().toISOString()
         })
         .eq('id', profile.organization_id)

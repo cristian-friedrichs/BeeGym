@@ -39,81 +39,91 @@ function LoginForm() {
     setError(null)
 
     try {
+      console.log('[Login] Tentando autenticação...')
       const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
       if (signInError) {
+        console.warn('[Login] Erro no signIn:', signInError)
         setError('E-mail ou senha incorretos. Tente novamente.')
         setLoading(false)
         return
       }
 
       if (!data.user) {
+        console.warn('[Login] Sem dados de usuário após login')
         setError('Erro ao obter dados do usuário.')
         setLoading(false)
         return
       }
 
-      // ── INTELLIGENT ROUTING PÓS-PAYWALL ──────────────────
+      console.log('[Login] Autenticado com sucesso. Buscando perfil...')
       
-      // 1. Buscar Perfil do Usuário
-      const { data: profile, error: profileError } = await supabase
+      const { data: profile, error: profileError } = await (supabase as any)
         .from('profiles')
         .select('organization_id, status, role')
         .eq('id', data.user.id)
         .single()
 
       if (profileError) {
-        console.error('Login routing error (profile):', profileError)
+        console.error('[Login] Erro ao buscar perfil:', profileError)
         setError('Erro ao carregar seu perfil. Tente novamente.')
         setLoading(false)
         return
       }
 
-      // 2. Buscar Dados da Organização
+      console.log('[Login] Perfil encontrado. Org ID:', profile?.organization_id)
+
       let org: any = null
       if (profile?.organization_id) {
+        console.log('[Login] Buscando dados da organização...')
         const { data: orgData, error: orgError } = await supabase
           .from('organizations')
           .select('subscription_status, onboarding_completed')
           .eq('id', profile.organization_id)
-          .single()
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
         
         if (orgError) {
-          console.error('Login routing error (org):', orgError)
+          console.error('[Login] Erro ao buscar organização:', orgError)
           setError('Erro ao carregar dados da organização.')
           setLoading(false)
           return
         }
         org = orgData
+        console.log('[Login] Dados da organização obtidos:', org)
       }
 
-      // 3. Determinar Destino
       let destination = '/app/painel'
       const redirect = searchParams?.get('redirect')
       const status = (org?.subscription_status || '').toLowerCase().trim()
 
       if (!profile?.organization_id || !org?.onboarding_completed) {
-        // Sem organização ou onboarding incompleto
+        console.log('[Login] Onboarding incompleto ou sem organização. Roteando para onboarding.')
         destination = '/app/onboarding'
-      } else if (['pending', 'pendente', 'aguardando_pagamento'].includes(status)) {
-        // Pagamento pendente após onboarding
+      } else if (status === 'pending') {
+        console.log('[Login] Pagamento pendente. Roteando para paywall.')
         destination = '/app/pending-activation'
-      } else if (['active', 'trial', 'ativo', 'pago', 'teste'].includes(status)) {
-        // Ativo, Trial, Pago ou Teste -> Vai para o Painel (ou redirect planejado)
+      } else if (['active', 'trial'].includes(status)) {
+        console.log('[Login] Assinatura ativa ou trial. Roteando para destino principal.')
         destination = redirect || '/app/painel'
       } else {
-        // Default para Painel se status não for explicitamente tratado (e não for pending/onboarding)
-        destination = redirect || '/app/painel'
+        console.warn('[Login] Status desconhecido ou bloqueado:', status)
+        destination = '/app/pending-activation'
       }
 
-      // Force a hard navigation so middleware cleanly reads the new Supabase cookie on the first hit.
-      // This prevents App Router from hanging due to race conditions with router.push() and router.refresh()
-      window.location.assign(destination)
+      console.log('[Login] Redirecionando em instantes para:', destination)
+      
+      setTimeout(() => {
+        window.location.assign(destination)
+      }, 100)
 
     } catch (err: any) {
-      console.error('Unexpected login error:', err)
+      console.error('[Login] Erro inesperado:', err)
       setError('Ocorreu um erro inesperado ao realizar o login. Tente novamente.')
       setLoading(false)
+    } finally {
+      // setLoading(false) already handled in returns/catches if needed
     }
   }
 

@@ -30,18 +30,23 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
         }
 
         // Se a assinatura já está ativa ou paga, idempotência
-        if (sub.status === 'ATIVO' || sub.status === 'PAGO') {
+        if (sub.status === 'trial' || sub.status === 'active') {
             console.log(`[ConfirmInvoiceUseCase] Fatura ${txidOrChargeId} já consta como ${sub.status}. Ignorando atualização.`);
             return;
         }
 
         // Considera o pagamento como sucesso
         if (status === 'CONCLUIDA' || status === 'paid' || status === 'approved' || status === 'settled') {
+            const trialEnd = new Date();
+            trialEnd.setDate(trialEnd.getDate() + 7);
             
             // 1. Atualizar saas_subscriptions
             const { error: updateSubError } = await supabaseAdmin
                 .from('saas_subscriptions')
-                .update({ status: 'ATIVO', updated_at: new Date().toISOString() })
+                .update({ 
+                    status: 'trial', 
+                    updated_at: new Date().toISOString() 
+                })
                 .eq('id', sub.id);
 
             if (updateSubError) {
@@ -53,7 +58,11 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
             if (sub.organization_id) {
                 const { error: updateOrgError } = await supabaseAdmin
                     .from('organizations')
-                    .update({ subscription_status: 'ativo', updated_at: new Date().toISOString() })
+                    .update({ 
+                        subscription_status: 'trial', 
+                        trial_end: trialEnd.toISOString(),
+                        updated_at: new Date().toISOString() 
+                    })
                     .eq('id', sub.organization_id);
 
                 if (updateOrgError) {
@@ -64,11 +73,11 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
                 // 3. Atualizar profiles atrelados (garante que todos logados fiquem ativos)
                 await supabaseAdmin
                     .from('profiles')
-                    .update({ status: 'ACTIVE' })
+                    .update({ status: 'active' })
                     .eq('organization_id', sub.organization_id);
             }
 
-            console.log(`[ConfirmInvoiceUseCase] ✅ Assinatura ${sub.id} ativada com sucesso via ${method}!`);
+            console.log(`[ConfirmInvoiceUseCase] ✅ Assinatura ${sub.id} ativada como TRIAL com sucesso via ${method}!`);
         } else {
             console.log(`[ConfirmInvoiceUseCase] Status ${status} não requer ativação para a assinatura ${sub.id}.`);
         }

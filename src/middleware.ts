@@ -139,7 +139,7 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        const activeStatuses = ['active', 'pago', 'status_ativo', 'ativo', 'trial', 'teste'];
+        const activeStatuses = ['active', 'trial'];
         const currentStatus = (org?.subscription_status || '').toLowerCase().trim();
         const hasActiveSubscription = activeStatuses.includes(currentStatus);
 
