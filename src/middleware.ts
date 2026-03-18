@@ -12,6 +12,11 @@ export async function middleware(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            global: {
+                fetch: (url: Parameters<typeof fetch>[0], options: Parameters<typeof fetch>[1]) => {
+                    return fetch(url, { ...options, cache: 'no-store' });
+                }
+            },
             cookies: {
                 getAll() {
                     return request.cookies.getAll()
