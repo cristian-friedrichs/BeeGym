@@ -120,6 +120,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark p-6 text-center">
+         <Loader2 className="w-8 h-8 animate-spin text-bee-amber mb-4" />
+         <h2 className="text-xl font-bold font-display text-bee-midnight">Acesso Bloqueado</h2>
+         <p className="text-slate-500 font-sans mt-2">Você precisa regularizar sua assinatura para acessar o painel. Redirecionando...</p>
+      </div>
+    );
+  }
+
   return (
     <UnitProvider>
       <StatusAutomator />

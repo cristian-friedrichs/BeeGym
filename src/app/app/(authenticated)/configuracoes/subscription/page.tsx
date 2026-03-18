@@ -128,7 +128,7 @@ export default function SubscriptionPage() {
                                                 <CreditCard className="w-5 h-5 text-slate-400" />
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-slate-700 font-sans">
-                                                        {metodo === 'PIX_AUTOMATICO' ? 'PIX Automático' : 
+                                                        {metodo === 'PIX' || metodo === 'PIX_AUTOMATICO' ? 'PIX' : 
                                                          metodo === 'CARTAO_RECORRENTE' ? 'Cartão de Crédito' : 
                                                          metodo === 'BOLETO' ? 'Boleto Bancário' : 'Cartão de Crédito'}
                                                     </span>
