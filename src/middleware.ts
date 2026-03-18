@@ -139,7 +139,7 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        const activeStatuses = ['active', 'pago', 'status_ativo', 'ativo'];
+        const activeStatuses = ['active', 'pago', 'status_ativo', 'ativo', 'trial', 'teste'];
         const currentStatus = (org?.subscription_status || '').toLowerCase().trim();
         const hasActiveSubscription = activeStatuses.includes(currentStatus);
 
@@ -179,7 +179,7 @@ export async function middleware(request: NextRequest) {
         // ADMINS NUNCA são bloqueados aqui
         if (!isAdminUser && !isAccountActive && isAppRoute && !isOnboardingPath && !url.pathname.startsWith('/app/pending-activation')) {
             if (org?.subscription_status && !activeStatuses.includes(currentStatus)) {
-                url.pathname = '/app/onboarding/pagamento'
+                url.pathname = '/app/pending-activation'
             } else if (profile?.organization_id && !org?.onboarding_completed) {
                 url.pathname = '/app/onboarding/step-3'
             } else {

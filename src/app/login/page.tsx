@@ -38,16 +38,82 @@ function LoginForm() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setError('E-mail ou senha incorretos. Tente novamente.')
-      setLoading(false)
-    } else {
+      if (signInError) {
+        setError('E-mail ou senha incorretos. Tente novamente.')
+        setLoading(false)
+        return
+      }
+
+      if (!data.user) {
+        setError('Erro ao obter dados do usuário.')
+        setLoading(false)
+        return
+      }
+
+      // ── INTELLIGENT ROUTING PÓS-PAYWALL ──────────────────
+      
+      // 1. Buscar Perfil do Usuário
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('organization_id, status, role')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Login routing error (profile):', profileError)
+        setError('Erro ao carregar seu perfil. Tente novamente.')
+        setLoading(false)
+        return
+      }
+
+      // 2. Buscar Dados da Organização
+      let org: any = null
+      if (profile?.organization_id) {
+        const { data: orgData, error: orgError } = await supabase
+          .from('organizations')
+          .select('subscription_status, onboarding_completed')
+          .eq('id', profile.organization_id)
+          .single()
+        
+        if (orgError) {
+          console.error('Login routing error (org):', orgError)
+          setError('Erro ao carregar dados da organização.')
+          setLoading(false)
+          return
+        }
+        org = orgData
+      }
+
+      // 3. Determinar Destino
+      let destination = '/app/painel'
+      const redirect = searchParams?.get('redirect')
+      const status = (org?.subscription_status || '').toLowerCase().trim()
+
+      if (!profile?.organization_id || !org?.onboarding_completed) {
+        // Sem organização ou onboarding incompleto
+        destination = '/app/onboarding'
+      } else if (['pending', 'pendente', 'aguardando_pagamento'].includes(status)) {
+        // Pagamento pendente após onboarding
+        destination = '/app/pending-activation'
+      } else if (['active', 'trial', 'ativo', 'pago', 'teste'].includes(status)) {
+        // Ativo, Trial, Pago ou Teste -> Vai para o Painel (ou redirect planejado)
+        destination = redirect || '/app/painel'
+      } else {
+        // Default para Painel se status não for explicitamente tratado (e não for pending/onboarding)
+        destination = redirect || '/app/painel'
+      }
+
       // Force a hard navigation so middleware cleanly reads the new Supabase cookie on the first hit.
       // This prevents App Router from hanging due to race conditions with router.push() and router.refresh()
-      const redirect = searchParams?.get('redirect')
-      window.location.assign(redirect || '/app/painel')
+      window.location.assign(destination)
+
+    } catch (err: any) {
+      console.error('Unexpected login error:', err)
+      setError('Ocorreu um erro inesperado ao realizar o login. Tente novamente.')
+      setLoading(false)
     }
   }
 
