@@ -161,7 +161,18 @@ export async function middleware(request: NextRequest) {
                 }
                 return NextResponse.redirect(new URL('/app/painel', request.url))
             }
-            // Se inativo, vai seguir as regras abaixo
+            // Onboarding completo mas pagamento pendente → vai para pending-activation para verificar
+            if (org?.onboarding_completed && !hasActiveSubscription) {
+                return NextResponse.redirect(new URL('/app/pending-activation', request.url))
+            }
+            // Onboarding incompleto → vai iniciar o onboarding
+            if (profile?.organization_id && !org?.onboarding_completed) {
+                return NextResponse.redirect(new URL('/app/onboarding/step-3', request.url))
+            }
+            // Sem organização → passo 1 do onboarding
+            if (!profile?.organization_id) {
+                return NextResponse.redirect(new URL('/app/onboarding', request.url))
+            }
         }
 
         // 🔴 Conta inativa tentando acessar rotas do App protegidas
