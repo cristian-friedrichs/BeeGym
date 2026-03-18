@@ -33,19 +33,22 @@ export class EfiPixAutomaticoService {
         // Para resolver o onboarding agora, geraremos um Pix Imediato normal (v2/cob) com o valor da 1ª mensalidade.
         // O Webhook do sistema já processa PIX Imediato corretamente e ativa a assinatura.
         
-        let txid = `BGYM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`.substring(0, 35);
+        // BCB exige TXID entre 26 e 35 caracteres para Pix Imediato
+        let txid = `BGYM${Date.now()}${Math.random().toString(36).substring(2, 15).toUpperCase()}`.padEnd(26, 'X').substring(0, 35);
+
+        const docLimpo = dados.devedor.cpf.replace(/\D/g, '');
+        const devedorConfig = docLimpo.length === 14 
+            ? { cnpj: docLimpo, nome: dados.devedor.nome.substring(0, 200) }
+            : { cpf: docLimpo, nome: dados.devedor.nome.substring(0, 200) };
 
         const cobPayload = {
             calendario: { expiracao: 3600 },
-            devedor: {
-                cpf: dados.devedor.cpf.replace(/\D/g, ''),
-                nome: dados.devedor.nome
-            },
+            devedor: devedorConfig,
             valor: {
                 original: Number(valorCobranca).toFixed(2)
             },
             chave: dados.chave,
-            solicitacaoPagador: dados.descricao || 'Assinatura BeeGym',
+            solicitacaoPagador: (dados.descricao || 'Assinatura BeeGym').substring(0, 140),
             infoAdicionais: [
                 { nome: 'Assinatura', valor: 'Mensal' }
             ]
