@@ -174,10 +174,10 @@ export class EfiPixAutomaticoService {
 
         // 2. Merchant Account Information (26)
         // SubID 00: GUI da instituição (br.gov.bcb.pix)
-        // SubID 25: URL do payload gerada pela EFI
+        // SubID 25: URL do payload gerada pela EFI (NOTA: Pelo padrão BCB, o schema HTTPS NÃO deve estar presente no payload)
         const gui = formatTlv('00', 'br.gov.bcb.pix');
-        const urlAsHttps = locationUrl.startsWith('http') ? locationUrl : `https://${locationUrl}`;
-        const urlPayload = formatTlv('25', urlAsHttps);
+        const urlSemHttps = locationUrl.replace(/^https?:\/\//i, '');
+        const urlPayload = formatTlv('25', urlSemHttps);
         const merchantAccountInfo = formatTlv('26', `${gui}${urlPayload}`);
 
         // 3. Merchant Category Code (52) - Fixo '0000' para não definido
