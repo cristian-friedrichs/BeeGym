@@ -27,7 +27,18 @@ export async function verifyPixStatusAction() {
 
         if (!profile?.organization_id) return { error: 'Sem organização' }
 
-        // 2. Get pending subscription
+        // 2. Check if already active/trial (Self-heal/Polling recovery)
+        const { data: org } = await supabaseAdmin
+            .from('organizations')
+            .select('subscription_status')
+            .eq('id', profile.organization_id)
+            .single()
+
+        if (org && ['active', 'trial'].includes(org.subscription_status)) {
+            return { success: true, status: org.subscription_status }
+        }
+
+        // 3. Get pending subscription
         const { data: sub } = await supabaseAdmin
             .from('saas_subscriptions')
             .select('id, payment_token, status')

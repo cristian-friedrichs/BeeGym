@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { finalizeOnboardingAction } from '@/actions/onboarding-complete';
+import { verifyPixStatusAction } from '@/actions/verify-pix';
 
 // O plano é carregado dinamicamente do BD no useEffect
 
@@ -117,6 +118,41 @@ export default function PagamentoPage() {
         };
         fetchPlan();
     }, [isHydrated, onboardingData.planId, router]);
+
+    // POLLING ATIVO PARA PIX
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (showPix) {
+            console.log('[Pagamento] Iniciando polling para PIX...');
+            interval = setInterval(async () => {
+                try {
+                    const result = await verifyPixStatusAction();
+                    
+                    // Se o status for CONCLUIDA ou se o retorno indicar que já está ativo/trial
+                    if (result.success && (result.status === 'CONCLUIDA' || result.status === 'active' || result.status === 'trial')) {
+                        console.log('[Pagamento] PIX detectado como pago! Redirecionando...');
+                        clearInterval(interval);
+                        
+                        toast({ title: 'Pagamento Confirmado!', description: 'Sua assinatura foi ativada com sucesso.' });
+                        
+                        // Executa o finalize para limpar contexto e garantir acesso
+                        const finalizeResult = await finalizeOnboardingAction();
+                        if (!finalizeResult?.error) {
+                            resetData();
+                            router.push('/app/painel');
+                        }
+                    }
+                } catch (error: any) {
+                    console.error('[Pagamento] Erro no polling:', error);
+                }
+            }, 5000); // 5 segundos
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [showPix, router, toast, resetData]);
 
     const handleAssinar = async () => {
         if (!plano) return;
