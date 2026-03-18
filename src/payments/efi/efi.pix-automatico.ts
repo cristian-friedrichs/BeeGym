@@ -28,59 +28,15 @@ export class EfiPixAutomaticoService {
         const baseUrl = this.getBaseUrl();
         const valorCobranca = dados.valorPromo || dados.valor.fixo;
 
-        // --- PASSO 1: Criar Location para a Recorrência ---
-        const locResponse = await efiClient.post(`${baseUrl}/v2/locrec`, {});
-        const locId = locResponse.data.id;
-        const locationUrl = locResponse.data.location;
-        // --- PASSO 2: Criar a Recorrência vinculada ao Location ---
-        const diaVenc = dados.recorrencia?.diaVencimento || 10;
-        const dataInicial = (() => {
-            const today = new Date();
-            let vMonth = today.getMonth();
-            let vYear = today.getFullYear();
-            if (today.getDate() >= diaVenc) {
-                vMonth++;
-                if (vMonth > 11) { vMonth = 0; vYear++; }
-            }
-            const nextDate = new Date(vYear, vMonth, diaVenc);
-            const localIso = new Date(nextDate.getTime() - nextDate.getTimezoneOffset() * 60000).toISOString();
-            return localIso.split('T')[0];
-        })();
+        // O Pix Automático (locrec / rec puro) só será oficialmente suportado por todos os bancos em meados de 2025 (Jornada 2).
+        // Por causa disso, os aplicativos dos bancos recusam QR Codes "locrec" (Copia e Cola puros de consentimento).
+        // Para resolver o onboarding agora, geraremos um Pix Imediato normal (v2/cob) com o valor da 1ª mensalidade.
+        // O Webhook do sistema já processa PIX Imediato corretamente e ativa a assinatura.
+        
+        let txid = `BGYM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`.substring(0, 35);
 
-        const recPayload = {
-            loc: locId,
-            vinculo: {
-                contrato: `BGYM${Date.now().toString().slice(-8)}`,
-                devedor: {
-                    cpf: dados.devedor.cpf.replace(/\D/g, ''),
-                    nome: dados.devedor.nome
-                },
-                objeto: 'AssinaturaBeeGym'
-            },
-            calendario: {
-                dataInicial,
-                periodicidade: 'MENSAL'
-            },
-            valor: {
-                valorRec: Number(dados.valor.fixo).toFixed(2)
-            },
-            politicaRetentativa: 'NAO_PERMITE'
-        };
-
-        const recResponse = await efiClient.post(`${baseUrl}/v2/rec`, recPayload);
-
-        const logSuccess = `\n--- [${new Date().toISOString()}] EFI V2 REC SUCCESS ---\nStatus: ${recResponse.status}\nBody: ${JSON.stringify(recResponse.data, null, 2)}\n`;
-        try { fs.appendFileSync('debug_onboarding.log', logSuccess); } catch (e) { }
-
-        const idRec = recResponse.data.idRec || recResponse.data.loc?.idRec;
-        // --- PASSO 3: Criar Cobrança com Vencimento (cobr) vinculada ao loc ---
-        const txid = `BGYM${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`.substring(0, 35);
-
-        const cobrPayload = {
-            calendario: {
-                dataDeVencimento: dataInicial,
-                validadeAposVencimento: 30
-            },
+        const cobPayload = {
+            calendario: { expiracao: 3600 },
             devedor: {
                 cpf: dados.devedor.cpf.replace(/\D/g, ''),
                 nome: dados.devedor.nome
@@ -90,141 +46,41 @@ export class EfiPixAutomaticoService {
             },
             chave: dados.chave,
             solicitacaoPagador: dados.descricao || 'Assinatura BeeGym',
-            loc: { id: locId }
+            infoAdicionais: [
+                { nome: 'Assinatura', valor: 'Mensal' }
+            ]
         };
-
-        let brCode: string | null = null;
 
         try {
-            const cobrResponse = await efiClient.put(`${baseUrl}/v2/cobr/${txid}`, cobrPayload);
-            brCode = cobrResponse.data.pixCopiaECola || cobrResponse.data.brcode || null;
+            const cobResponse = await efiClient.put(`${baseUrl}/v2/cob/${txid}`, cobPayload);
+            const brCode = cobResponse.data.pixCopiaECola;
 
-            const logCobr = `[EFI Pix Auto] Cobrança OK: txid=${cobrResponse.data.txid}, brCode=${brCode ? 'OK' : 'NULL'}\n`;
-            try { fs.appendFileSync('debug_onboarding.log', logCobr); } catch (e) { }
+            if (!brCode) {
+                throw new Error("Resposta da EFI não contém pixCopiaECola.");
+            }
+
+            const logSuccess = `\n--- [${new Date().toISOString()}] EFI V2 COB (Fallback Pix Automático) SUCCESS ---\nTxid: ${txid}\n`;
+            try { fs.appendFileSync('debug_onboarding.log', logSuccess); } catch (e) { }
+
+            return {
+                acordoId: txid,
+                status: 'CRIADO',
+                urlConsentimento: '',
+                pixCopiaECola: brCode,
+                expiracao: new Date(Date.now() + 3600 * 1000).toISOString()
+            };
+
         } catch (err: any) {
-            console.error('[EFI Pix Auto] Erro ao criar cobrança (cobr):', err.response?.data || err.message);
-            const logErr = `[EFI Pix Auto] Erro cobr: ${JSON.stringify(err.response?.data || err.message)}\n`;
+            console.error('[EFI Pix] Erro crítico ao criar cobrança imediata PIX:', err.response?.data || err.message);
+            const logErr = `[EFI Pix] ERRO CRÍTICO COB: ${JSON.stringify(err.response?.data || err.message)}\n`;
             try { fs.appendFileSync('debug_onboarding.log', logErr); } catch (e) { }
+            throw err;
         }
-
-        // --- PASSO 4: Buscar QR Code real ---
-        if (!brCode && locId) {
-            // Tentar via /v2/locrec/:id/qrcode (endpoint correto para Jornada 2)
-            try {
-                const qrResponse = await efiClient.get(`${baseUrl}/v2/locrec/${locId}/qrcode`);
-                brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
-            } catch (err: any) {
-                console.warn('[EFI Pix Auto] Erro locrec/qrcode:', err.response?.data?.message || err.message);
-            }
-        }
-
-        if (!brCode && locId) {
-            // Fallback 1: /v2/loc/:id/qrcode
-            try {
-                const qrResponse = await efiClient.get(`${baseUrl}/v2/loc/${locId}/qrcode`);
-                brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
-            } catch (err: any) {
-                console.warn('[EFI Pix Auto] Fallback loc falhou:', err.response?.data?.message || err.message);
-            }
-        }
-
-        // Fallback DEFINITIVO: Gerar BRCode localmente a partir da locationUrl
-        // A EFI está falhando com "Access token has insufficient scope" na hora de buscar o QR Code da recorrência 
-        // em algumas contas novas, mesmo com as permissões marcadas.
-        if (!brCode && locationUrl) {
-            console.log('[EFI Pix Auto] Gerando BRCode localmente a partir da URL...', locationUrl);
-            brCode = this.gerarBRCodeLocal(locationUrl, dados.devedor.nome);
-        }
-
-        // Se mesmo localmente falhar, aí sim lançamos o erro
-        if (!brCode) {
-            const errorMsg = 'Falha crítica: Não foi possível obter ou gerar o BRCode (Copia e Cola).';
-            console.error(`[EFI Pix Auto] Erro Crítico: ${errorMsg}`);
-            try { fs.appendFileSync('debug_onboarding.log', `[EFI Pix Auto] FATAL: ${errorMsg}\n`); } catch (e) { }
-            throw new Error(errorMsg);
-        }
-
-        const logFinal = `[EFI Pix Auto] RESULTADO FINAL: brCode=${brCode ? 'OK' : 'NULL'}, idRec=${idRec}\n`;
-        try { fs.appendFileSync('debug_onboarding.log', logFinal); } catch (e) { }
-
-        return {
-            acordoId: idRec || recResponse.data.txid || null,
-            status: recResponse.data.status || 'CRIADA',
-            urlConsentimento: '',
-            pixCopiaECola: brCode || undefined,
-            expiracao: recResponse.data.expiracao || '2099-12-31T23:59:59Z'
-        };
-    }
-
-    /**
-     * Gera um BRCode (Copia e Cola padrão EMV) locamente quando a API de leitura falha por falta de escopo.
-     * Requer apenas a `locationUrl` retornada pela criação do payload e o nome do favorecido.
-     * @param locationUrl A URL da EFI (ex: qrcodespix-h.sejaefi.com.br/v2/rec/123)
-     * @param merchantName Nome do recebedor (opcional)
-     */
-    private gerarBRCodeLocal(locationUrl: string, merchantName: string = 'BeeGym'): string {
-        // Função auxiliar para formatar o TLV (Type-Length-Value)
-        const formatTlv = (id: string, value: string) => {
-            const length = String(value.length).padStart(2, '0');
-            return `${id}${length}${value}`;
-        };
-
-        // 1. Payload Format Indicator (00) - Fixo '01'
-        const payloadFormatIndicator = formatTlv('00', '01');
-
-        // 2. Merchant Account Information (26)
-        // SubID 00: GUI da instituição (br.gov.bcb.pix)
-        // SubID 25: URL do payload gerada pela EFI (NOTA: Pelo padrão BCB, o schema HTTPS NÃO deve estar presente no payload)
-        const gui = formatTlv('00', 'br.gov.bcb.pix');
-        const urlSemHttps = locationUrl.replace(/^https?:\/\//i, '');
-        const urlPayload = formatTlv('25', urlSemHttps);
-        const merchantAccountInfo = formatTlv('26', `${gui}${urlPayload}`);
-
-        // 3. Merchant Category Code (52) - Fixo '0000' para não definido
-        const merchantCategoryCode = formatTlv('52', '0000');
-
-        // 4. Transaction Currency (53) - '986' (BRL)
-        const transactionCurrency = formatTlv('53', '986');
-
-        // 5. Country Code (58) - 'BR'
-        const countryCode = formatTlv('58', 'BR');
-
-        // 6. Merchant Name (59)
-        const sanitizedName = merchantName.substring(0, 25).replace(/[^\w\s-]/gi, '').trim() || 'BeeGym';
-        const name = formatTlv('59', sanitizedName);
-
-        // 7. Merchant City (60)
-        const city = formatTlv('60', 'SAO PAULO'); // Padrão
-
-        // 8. Additional Data Field Template (62)
-        // Como a transação é dinâmica por Payload URL, o txid geralmente é '***' ou omitido no brcode principal
-        const referenceLabel = formatTlv('05', '***');
-        const additionalDataField = formatTlv('62', referenceLabel);
-
-        // Monta a string principal sem o CRC no final
-        const brCodeUnsigned = `${payloadFormatIndicator}${merchantAccountInfo}${merchantCategoryCode}${transactionCurrency}${countryCode}${name}${city}${additionalDataField}6304`;
-
-        // 9. Calcular CRC16-CCITT (Polinômio: 0x1021, Inicial: 0xFFFF)
-        let crc = 0xFFFF;
-        for (let i = 0; i < brCodeUnsigned.length; i++) {
-            crc ^= brCodeUnsigned.charCodeAt(i) << 8;
-            for (let j = 0; j < 8; j++) {
-                if ((crc & 0x8000) !== 0) {
-                    crc = (crc << 1) ^ 0x1021;
-                } else {
-                    crc = crc << 1;
-                }
-            }
-        }
-        crc = crc & 0xFFFF;
-        const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
-
-        return `${brCodeUnsigned}${crcHex}`;
     }
 
     /**
      * Consulta detalhes de uma Recorrência
-     */
+     * /
     public async consultarAcordo(acordoId: string): Promise<AcordoPixAutomatico> {
         const baseUrl = this.getBaseUrl();
         const response = await efiClient.get(`${baseUrl}/v2/rec/${acordoId}`);
