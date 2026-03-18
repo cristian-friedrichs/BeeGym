@@ -9,7 +9,7 @@ import { MetodoPagamento, Metodo } from '@/components/onboarding/pagamento/Metod
 import { InstrucoesPix } from '@/components/onboarding/pagamento/InstrucoesPix';
 import { FormCartao, FormCartaoRef } from '@/components/onboarding/pagamento/FormCartao';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Loader2, CheckCircle, CheckCircle2, QrCode as QrCodeIcon, Copy, Check, ArrowRight, Shield } from 'lucide-react';
+import { Lock, Loader2, CheckCircle, CheckCircle2, QrCode as QrCodeIcon, Copy, Check, ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
@@ -254,6 +254,20 @@ export default function PagamentoPage() {
     };
 
     if (!plano) {
+        if (isHydrated && !onboardingData.planId) {
+            return (
+                <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 space-y-4 p-4 text-center">
+                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
+                        <AlertCircle className="w-8 h-8 text-slate-500" />
+                    </div>
+                    <h2 className="text-xl font-bold font-display text-slate-800">Sessão Expirada</h2>
+                    <p className="text-slate-500 max-w-md">Não encontramos um plano selecionado. Por favor, volte e escolha um plano novamente para prosseguir.</p>
+                    <Button onClick={() => router.replace('/app/onboarding/step-3')} className="mt-4 bg-bee-amber text-bee-midnight hover:bg-amber-500 font-bold rounded-xl h-12 px-8">
+                        Voltar para os planos
+                    </Button>
+                </div>
+            );
+        }
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <Loader2 className="w-6 h-6 animate-spin text-slate-400" />

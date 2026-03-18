@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
@@ -67,6 +67,7 @@ export default function OnboardingStep3() {
     useEffect(() => {
         const fetchPlans = async () => {
             try {
+                const supabase = createClient()
                 setIsFetchingPlans(true)
                 const { data: dbPlans, error } = await supabase
                     .from('saas_plans')
