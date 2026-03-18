@@ -114,24 +114,34 @@ export class EfiPixAutomaticoService {
                 const qrResponse = await efiClient.get(`${baseUrl}/v2/locrec/${locId}/qrcode`);
                 brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
             } catch (err: any) {
-                console.error('[EFI Pix Auto] Erro locrec/qrcode:', err.response?.data || err.message);
+                console.warn('[EFI Pix Auto] Erro locrec/qrcode:', err.response?.data?.message || err.message);
             }
         }
 
         if (!brCode && locId) {
-            // Fallback: /v2/loc/:id/qrcode
+            // Fallback 1: /v2/loc/:id/qrcode
             try {
                 const qrResponse = await efiClient.get(`${baseUrl}/v2/loc/${locId}/qrcode`);
                 brCode = qrResponse.data.qrcode || qrResponse.data.pixCopiaECola || null;
             } catch (err: any) {
-                console.error('[EFI Pix Auto] Fallback loc falhou:', err.response?.data || err.message);
+                console.warn('[EFI Pix Auto] Fallback loc falhou:', err.response?.data?.message || err.message);
             }
         }
 
-        // Último fallback: usar a location URL como conteúdo do QR Code
+        // Fallback DEFINITIVO: Gerar BRCode localmente a partir da locationUrl
+        // A EFI está falhando com "Access token has insufficient scope" na hora de buscar o QR Code da recorrência 
+        // em algumas contas novas, mesmo com as permissões marcadas.
         if (!brCode && locationUrl) {
-            brCode = locationUrl;
-            console.warn('[EFI Pix Auto] Usando location URL como fallback para QR Code');
+            console.log('[EFI Pix Auto] Gerando BRCode localmente a partir da URL...', locationUrl);
+            brCode = this.gerarBRCodeLocal(locationUrl, dados.devedor.nome);
+        }
+
+        // Se mesmo localmente falhar, aí sim lançamos o erro
+        if (!brCode) {
+            const errorMsg = 'Falha crítica: Não foi possível obter ou gerar o BRCode (Copia e Cola).';
+            console.error(`[EFI Pix Auto] Erro Crítico: ${errorMsg}`);
+            try { fs.appendFileSync('debug_onboarding.log', `[EFI Pix Auto] FATAL: ${errorMsg}\n`); } catch (e) { }
+            throw new Error(errorMsg);
         }
 
         const logFinal = `[EFI Pix Auto] RESULTADO FINAL: brCode=${brCode ? 'OK' : 'NULL'}, idRec=${idRec}\n`;
@@ -144,6 +154,72 @@ export class EfiPixAutomaticoService {
             pixCopiaECola: brCode || undefined,
             expiracao: recResponse.data.expiracao || '2099-12-31T23:59:59Z'
         };
+    }
+
+    /**
+     * Gera um BRCode (Copia e Cola padrão EMV) locamente quando a API de leitura falha por falta de escopo.
+     * Requer apenas a `locationUrl` retornada pela criação do payload e o nome do favorecido.
+     * @param locationUrl A URL da EFI (ex: qrcodespix-h.sejaefi.com.br/v2/rec/123)
+     * @param merchantName Nome do recebedor (opcional)
+     */
+    private gerarBRCodeLocal(locationUrl: string, merchantName: string = 'BeeGym'): string {
+        // Função auxiliar para formatar o TLV (Type-Length-Value)
+        const formatTlv = (id: string, value: string) => {
+            const length = String(value.length).padStart(2, '0');
+            return `${id}${length}${value}`;
+        };
+
+        // 1. Payload Format Indicator (00) - Fixo '01'
+        const payloadFormatIndicator = formatTlv('00', '01');
+
+        // 2. Merchant Account Information (26)
+        // SubID 00: GUI da instituição (br.gov.bcb.pix)
+        // SubID 25: URL do payload gerada pela EFI
+        const gui = formatTlv('00', 'br.gov.bcb.pix');
+        const urlAsHttps = locationUrl.startsWith('http') ? locationUrl : `https://${locationUrl}`;
+        const urlPayload = formatTlv('25', urlAsHttps);
+        const merchantAccountInfo = formatTlv('26', `${gui}${urlPayload}`);
+
+        // 3. Merchant Category Code (52) - Fixo '0000' para não definido
+        const merchantCategoryCode = formatTlv('52', '0000');
+
+        // 4. Transaction Currency (53) - '986' (BRL)
+        const transactionCurrency = formatTlv('53', '986');
+
+        // 5. Country Code (58) - 'BR'
+        const countryCode = formatTlv('58', 'BR');
+
+        // 6. Merchant Name (59)
+        const sanitizedName = merchantName.substring(0, 25).replace(/[^\w\s-]/gi, '').trim() || 'BeeGym';
+        const name = formatTlv('59', sanitizedName);
+
+        // 7. Merchant City (60)
+        const city = formatTlv('60', 'SAO PAULO'); // Padrão
+
+        // 8. Additional Data Field Template (62)
+        // Como a transação é dinâmica por Payload URL, o txid geralmente é '***' ou omitido no brcode principal
+        const referenceLabel = formatTlv('05', '***');
+        const additionalDataField = formatTlv('62', referenceLabel);
+
+        // Monta a string principal sem o CRC no final
+        const brCodeUnsigned = `${payloadFormatIndicator}${merchantAccountInfo}${merchantCategoryCode}${transactionCurrency}${countryCode}${name}${city}${additionalDataField}6304`;
+
+        // 9. Calcular CRC16-CCITT (Polinômio: 0x1021, Inicial: 0xFFFF)
+        let crc = 0xFFFF;
+        for (let i = 0; i < brCodeUnsigned.length; i++) {
+            crc ^= brCodeUnsigned.charCodeAt(i) << 8;
+            for (let j = 0; j < 8; j++) {
+                if ((crc & 0x8000) !== 0) {
+                    crc = (crc << 1) ^ 0x1021;
+                } else {
+                    crc = crc << 1;
+                }
+            }
+        }
+        crc = crc & 0xFFFF;
+        const crcHex = crc.toString(16).toUpperCase().padStart(4, '0');
+
+        return `${brCodeUnsigned}${crcHex}`;
     }
 
     /**
