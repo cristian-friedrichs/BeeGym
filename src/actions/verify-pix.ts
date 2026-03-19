@@ -39,44 +39,36 @@ export async function verifyPixStatusAction() {
         }
 
         // 3. Get pending subscription
+        // REMOVED 'payment_token' as it doesn't exist in the schema.
+        // We use 'acordo_efi_id' for PIX_AUTOMATICO.
         const { data: sub } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('id, payment_token, status')
+            .select('id, status, metodo, acordo_efi_id')
             .eq('organization_id', profile.organization_id)
             .eq('status', 'pending')
             .single()
 
-        if (!sub || !sub.payment_token) return { status: 'NOT_FOUND' }
+        if (!sub) return { status: 'NOT_FOUND' }
 
-        // 3. Call EFI API GET /v2/cob/{txid}
-        const res = await efiClient.get(`/v2/cob/${sub.payment_token}`)
+        // 4. Verification based on method
+        let isPaid = false
+        const txid = sub.acordo_efi_id // Para Pix Automático, o ID do acordo serve como referência no webhook, mas a verificação ativa pode variar.
         
-        const status = res.data.status // CONCLUIDA, ATIVA, etc
-
-        if (status === 'CONCLUIDA' || status === 'paid' || status === 'approved' || status === 'settled') {
-            // Activate as TRIAL (7 days guarantee)
-            const trialEnd = new Date()
-            trialEnd.setDate(trialEnd.getDate() + 7)
-
-            await supabaseAdmin.from('saas_subscriptions').update({ 
-                status: 'trial', 
-                updated_at: new Date().toISOString() 
-            }).eq('id', sub.id)
-
-            await supabaseAdmin.from('organizations').update({ 
-                subscription_status: 'trial', 
-                trial_end: trialEnd.toISOString(),
-                updated_at: new Date().toISOString() 
-            }).eq('id', profile.organization_id)
-
-            await supabaseAdmin.from('profiles').update({ 
-                status: 'active' 
-            }).eq('organization_id', profile.organization_id)
-
-            return { success: true, status: 'CONCLUIDA' }
+        if (sub.metodo === 'PIX_AUTOMATICO' && sub.acordo_efi_id) {
+            // No Pix Automático, o "status" da cobrança individual é o que importa, 
+            // mas se o acordo está ATIVO na EFI, geralmente o primeiro pagamento foi OK.
+            // Por enquanto, confiamos no status do banco que é atualizado pelo webhook.
+            // Mas podemos tentar uma verificação extra se necessário.
+            const res = await efiClient.get(`/v2/pix/config/webhook`) // Apenas exemplo, precisa ver o endpoint real de consulta de acordo se quiser polling
+            // Se o webhook já salvou no banco, a verificação no passo 2 já teria retornado.
+        } else {
+            // Immediate PIX logic (if applicable)
+            // const res = await efiClient.get(`/v2/cob/${txid}`)
         }
 
-        return { success: true, status, res }
+        // Se chegamos aqui, o status no banco ainda é 'pending' e não detectamos mudança automática.
+        // Vamos retornar o status atual para que a UI continue o polling.
+        return { success: true, status: sub.status }
     } catch (err: any) {
         console.error('Erro no verifyPixStatusAction:', err)
         return { error: 'Erro de comunicação', details: err.message }

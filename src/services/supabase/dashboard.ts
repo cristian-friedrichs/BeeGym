@@ -48,7 +48,7 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
 
     try {
         // 1. Active Students
-        let studentsQuery = supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'ACTIVE');
+        let studentsQuery = supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'active');
         if (unitId && unitId.length > 10) studentsQuery = studentsQuery.eq('organization_id', unitId);
 
         const { count: activeStudents, error: studentsError } = await studentsQuery;
@@ -181,7 +181,7 @@ export async function getUpcomingClasses(organizationId?: string): Promise<Sched
                 type: event.type || 'AULA',
                 trainer: instructor.name || 'Instrutor',
                 capacity: '0/0', // Capacidade mockada por enquanto
-                status: event.status === 'SCHEDULED' ? 'Agendado' : event.status,
+                status: event.status === 'scheduled' ? 'Agendado' : event.status,
                 statusColor: 'bg-blue-100 text-blue-700', // Padrão
                 classType: 'group', // Default safe value
                 date: startTime // Objeto Date real para ordenação/comparação
@@ -201,7 +201,7 @@ export async function getAlerts(unitId?: string): Promise<Alert[]> {
         let query = supabase
             .from('students')
             .select(`id, full_name, status`)
-            .eq('status', 'INACTIVE')
+            .eq('status', 'inactive')
             .limit(3);
 
         if (unitId && unitId.length > 10) query = query.eq('organization_id', unitId);

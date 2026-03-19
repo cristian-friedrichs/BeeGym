@@ -10,7 +10,7 @@ export type StudentProfileData = {
     email: string | null;
     phone: string | null;
     avatar_url: string | null;
-    status: 'ACTIVE' | 'INACTIVE' | 'OVERDUE';
+    status: 'active' | 'inactive' | 'overdue';
     objective: string | null;
     created_at: string;
     unit_id: string;
@@ -44,7 +44,7 @@ export type FrequencyEvent = {
     date: string;
     start_time: string;
     end_time: string;
-    status: 'SCHEDULED' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
+    status: 'scheduled' | 'completed' | 'missed' | 'cancelled';
     event_type: 'CLASS' | 'TRAINING';
     class_template?: {
         name: string;
@@ -61,7 +61,7 @@ export type PaymentInvoice = {
     id: string;
     amount: number;
     due_date: string;
-    status: 'PAID' | 'PENDING' | 'OVERDUE' | 'CANCELLED';
+    status: 'paid' | 'pending' | 'overdue' | 'cancelled';
     payment_date: string | null;
 };
 
@@ -107,7 +107,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
         email: dataAny.email,
         phone: dataAny.phone,
         avatar_url: dataAny.avatar_url,
-        status: dataAny.status as 'ACTIVE' | 'INACTIVE' | 'OVERDUE',
+        status: dataAny.status as 'active' | 'inactive' | 'overdue',
         objective: dataAny.objective,
         created_at: dataAny.created_at || new Date().toISOString(),
         unit_id: '',
@@ -256,7 +256,7 @@ export async function getStudentActiveWorkouts(studentId: string): Promise<Activ
  */
 export async function updateStudentStatus(
     studentId: string,
-    status: 'ACTIVE' | 'INACTIVE',
+    status: 'active' | 'inactive',
     reason?: string
 ): Promise<boolean> {
     const supabase = createClient();
@@ -272,7 +272,7 @@ export async function updateStudentStatus(
     }
 
     // Optionally log the reason for inactivation
-    if (status === 'INACTIVE' && reason) {
+    if (status === 'inactive' && reason) {
         await logActivity({
             action: 'UPDATE',
             resource: 'students',

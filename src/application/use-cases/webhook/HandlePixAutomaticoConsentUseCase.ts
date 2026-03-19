@@ -14,8 +14,8 @@ export class HandlePixAutomaticoConsentUseCase {
         }
 
         if (status === 'ATIVO') {
-            // 1. Mudar para ATIVO (acesso liberado após consentimento)
-            await assinaturaRepository.updateStatus(assinatura.id, 'ATIVO');
+            // 1. Mudar para active (acesso liberado após consentimento)
+            await assinaturaRepository.updateStatus(assinatura.id, 'active');
 
             // 2. Liberar acesso real no Supabase
             await contratanteRepository.liberarAcesso(assinatura.contratanteId);
@@ -24,7 +24,7 @@ export class HandlePixAutomaticoConsentUseCase {
         }
 
         if (status === 'CANCELADO_PELO_PAGADOR' || status === 'EXPIRADO') {
-            await assinaturaRepository.updateStatus(assinatura.id, 'INATIVO');
+            await assinaturaRepository.updateStatus(assinatura.id, 'canceled');
             console.warn(`[Pix-Auto-Consent] Acordo ${acordoId} foi cancelado ou expirou.`);
         }
     }

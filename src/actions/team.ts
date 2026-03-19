@@ -33,10 +33,10 @@ export async function createTeamMemberAction(formData: {
                 .insert({
                     id: profileId,
                     full_name: formData.fullName,
-                    role: formData.role || 'STAFF',
+                    role: (formData.role || 'staff').toLowerCase(),
                     role_id: formData.roleId || null,
                     organization_id: formData.organizationId,
-                    status: 'ACTIVE',
+                    status: 'active',
                     has_system_access: false,
                     is_instructor: formData.isInstructor,
                     email: null,
@@ -61,9 +61,9 @@ export async function createTeamMemberAction(formData: {
                     full_name: formData.fullName,
                 },
                 app_metadata: {
-                    status: 'ACTIVE',
+                    status: 'active',
                     organization_id: formData.organizationId,
-                    role: formData.role,
+                    role: formData.role.toLowerCase(),
                 }
             });
 
@@ -83,10 +83,10 @@ export async function createTeamMemberAction(formData: {
                 .from('profiles')
                 .update({
                     full_name: formData.fullName,
-                    role: formData.role || 'STAFF',
+                    role: (formData.role || 'staff').toLowerCase(),
                     role_id: formData.roleId || null,
                     organization_id: formData.organizationId,
-                    status: 'ACTIVE',
+                    status: 'active',
                     has_system_access: true,
                     must_change_password: true,
                     is_instructor: formData.isInstructor,
