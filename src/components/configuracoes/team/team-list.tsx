@@ -36,8 +36,7 @@ interface TeamListProps {
 }
 
 function isOwner(member: any): boolean {
-    const role = member.role?.toLowerCase();
-    return role === 'owner' || role === 'proprietary' || role === 'beegym_admin';
+    return member.role === 'OWNER' || member.role === 'PROPRIETARY';
 }
 
 export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
@@ -53,7 +52,7 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
     }, [initialUsers]);
 
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
-        const newStatus = currentStatus ? 'pending' : 'active';
+        const newStatus = currentStatus ? 'PENDING' : 'ACTIVE';
 
         const { error } = await (supabase
             .from('profiles') as any)
@@ -83,21 +82,20 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
     };
 
     const getRoleBadge = (role: string) => {
-        switch (role?.toLowerCase()) {
-            case 'owner':
-            case 'proprietary':
-            case 'beegym_admin':
+        switch (role) {
+            case 'OWNER':
+            case 'PROPRIETARY':
                 return (
                     <Badge variant="destructive" className="bg-amber-600 hover:bg-amber-700 gap-1">
                         <Crown className="h-3 w-3" />
                         Proprietário
                     </Badge>
                 );
-            case 'admin':
+            case 'ADMIN':
                 return <Badge variant="destructive" className="bg-red-500/10 text-red-600 border-red-200 hover:bg-red-500/20">Admin</Badge>;
-            case 'instructor':
+            case 'INSTRUCTOR':
                 return <Badge variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20">Instrutor</Badge>;
-            case 'manager':
+            case 'MANAGER':
                 return <Badge variant="outline" className="border-bee-amber text-bee-amber">Gerente</Badge>;
             default:
                 return <Badge variant="secondary">Equipe</Badge>;
@@ -152,7 +150,7 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     {getRoleBadge(member.role)}
-                                                    {member.is_instructor && member.role?.toLowerCase() !== 'instructor' && (
+                                                    {member.is_instructor && member.role !== 'INSTRUCTOR' && (
                                                         <Badge variant="default" className="bg-blue-500/10 text-blue-600 border-blue-200 hover:bg-blue-500/20">
                                                             Instrutor
                                                         </Badge>

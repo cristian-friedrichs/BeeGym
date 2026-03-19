@@ -25,7 +25,7 @@ export function useStudentLimit() {
                     .from('students')
                     .select('*', { count: 'exact', head: true })
                     .eq('organization_id', organizationId)
-                    .eq('status', 'active')
+                    .eq('status', 'ACTIVE')
 
                 if (error) {
                     console.error('[useStudentLimit] Erro ao buscar alunos:', error)

@@ -68,13 +68,13 @@ export async function requirePermission(
  * Retorna permissões padrão baseadas no UserRole
  */
 function getDefaultPermissionsForRole(role: string): Permissions {
-    switch (role?.toLowerCase()) {
-        case 'owner':
-        case 'admin':
-        case 'beegym_admin':
+    switch (role?.toUpperCase()) {
+        case 'OWNER':
+        case 'ADMIN':
+        case 'BEEGYM_ADMIN':
             return FULL_PERMISSIONS;
 
-        case 'manager':
+        case 'MANAGER':
             return {
                 dashboard: { view: true },
                 agenda: { view: true, manage: true },
@@ -88,7 +88,7 @@ function getDefaultPermissionsForRole(role: string): Permissions {
                 settings: { view: true, manage: false },
             };
 
-        case 'instructor':
+        case 'INSTRUCTOR':
             return {
                 dashboard: { view: true },
                 agenda: { view: true, manage: true },
@@ -102,7 +102,7 @@ function getDefaultPermissionsForRole(role: string): Permissions {
                 settings: { view: false, manage: false },
             };
 
-        case 'staff':
+        case 'STAFF':
             return {
                 dashboard: { view: true },
                 agenda: { view: true, manage: false },

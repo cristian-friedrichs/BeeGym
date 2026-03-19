@@ -21,8 +21,8 @@ export async function updateMemberRole(userId: string, role: string, hasSystemAc
     const { error } = await (supabase as any)
         .from('profiles')
         .update({
-            role: role.toLowerCase(),
-            status: hasSystemAccess ? 'active' : 'pending'
+            role,
+            status: hasSystemAccess ? 'ACTIVE' : 'PENDING'
         })
         .eq('id', userId);
 

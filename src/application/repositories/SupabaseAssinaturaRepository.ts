@@ -124,10 +124,9 @@ export const SupabaseAssinaturaRepository = {
     },
 
     async updateStatus(id: string, status: AssinaturaStatus): Promise<boolean> {
-        const statusLower = status.toLowerCase() as AssinaturaStatus;
         const { error } = await supabaseAdmin
             .from('saas_subscriptions')
-            .update({ status: statusLower, updated_at: new Date().toISOString() })
+            .update({ status, updated_at: new Date().toISOString() })
             .eq('id', id);
 
         if (error) {
@@ -139,7 +138,7 @@ export const SupabaseAssinaturaRepository = {
         const { data: sub } = await supabaseAdmin.from('saas_subscriptions').select('organization_id').eq('id', id).single();
         if (sub?.organization_id) {
             await supabaseAdmin.from('organizations').update({
-                subscription_status: statusLower,
+                subscription_status: status.toLowerCase(),
                 updated_at: new Date().toISOString()
             }).eq('id', sub.organization_id);
         }

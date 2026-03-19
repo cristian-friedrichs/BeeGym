@@ -72,7 +72,7 @@ export class HandleRecurringPaymentUseCase {
 
         if (statusNormalizado === 'FALHA') {
             console.warn(`[Recurring-Payment] Falha no pagamento da assinatura ${assinatura.id}. Iniciando inadimplência.`);
-            await assinaturaRepository.updateStatus(assinatura.id, 'past_due');
+            await assinaturaRepository.updateStatus(assinatura.id, 'INADIMPLENTE');
             await assinaturaRepository.setInicioCarencia(assinatura.id, new Date());
 
             // Registrar cobrança no histórico FALHA

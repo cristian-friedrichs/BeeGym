@@ -9,7 +9,7 @@ interface UserProfile {
     id: string
     full_name: string | null
     email: string | null
-    role: 'admin' | 'instructor' | 'manager' | 'student'
+    role: 'ADMIN' | 'INSTRUCTOR' | 'MANAGER' | 'STUDENT'
     organization_id: string
     avatar_url: string | null
     status: 'active' | 'pending'
@@ -153,8 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 loading,
                 signOut,
                 refreshProfile,
-                isAdmin: profile?.role === 'admin',
-                isInstructor: profile?.role === 'instructor' || profile?.role === 'admin',
+                isAdmin: profile?.role === 'ADMIN',
+                isInstructor: profile?.role === 'INSTRUCTOR' || profile?.role === 'ADMIN',
                 organizationId: profile?.organization_id ?? null,
             }}
         >

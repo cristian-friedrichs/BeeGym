@@ -94,7 +94,7 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
         try {
             const result = await createTeamMemberAction({
                 fullName: values.fullName, email: values.email, password: values.password,
-                role: 'staff', roleId: values.roleId || undefined, organizationId,
+                role: 'STAFF', roleId: values.roleId || undefined, organizationId,
                 hasSystemAccess: values.hasSystemAccess, isInstructor: values.isInstructor,
             });
 
