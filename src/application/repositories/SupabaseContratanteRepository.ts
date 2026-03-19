@@ -74,7 +74,7 @@ export const SupabaseContratanteRepository = {
         // 2. Ativar todos os profiles associados
         const { error: profError } = await supabaseAdmin
             .from('profiles')
-            .update({ status: 'ACTIVE' })
+            .update({ status: 'active' })
             .eq('organization_id', organizationId);
 
         if (profError) {

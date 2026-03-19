@@ -89,7 +89,7 @@ export const SupabaseAssinaturaRepository = {
                 .from('saas_subscriptions')
                 .select('*')
                 .eq('metodo', 'CARTAO_RECORRENTE')
-                .in('status', ['TRIAL', 'ATIVO', 'INADIMPLENTE', 'PENDENTE'])
+                .in('status', ['trial', 'active', 'past_due', 'pending'])
                 .order('created_at', { ascending: false })
                 .limit(1)
                 .maybeSingle();
@@ -114,7 +114,7 @@ export const SupabaseAssinaturaRepository = {
             .from('saas_subscriptions')
             .select('*')
             .eq('organization_id', orgId)
-            .in('status', ['ATIVO', 'TRIAL', 'PENDENTE', 'INADIMPLENTE'])
+            .in('status', ['active', 'trial', 'pending', 'past_due'])
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();
@@ -151,7 +151,7 @@ export const SupabaseAssinaturaRepository = {
             .from('saas_subscriptions')
             .update({
                 proximo_vencimento: proximoVencimento.toISOString(),
-                status: 'ATIVO',
+                status: 'active',
                 updated_at: new Date().toISOString()
             })
             .eq('id', id);
@@ -217,7 +217,7 @@ export const SupabaseAssinaturaRepository = {
             .from('saas_subscriptions')
             .select('*')
             .not('inicio_carencia', 'is', null)
-            .eq('status', 'INADIMPLENTE');
+            .eq('status', 'past_due');
 
         if (error || !data) return [];
         return data.map(sub => this.mapToInternal(sub));

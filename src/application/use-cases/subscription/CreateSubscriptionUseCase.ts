@@ -111,7 +111,7 @@ export class CreateSubscriptionUseCase {
                 saasPlanId: plano.id,
                 planoId: plano.id,
                 metodo: 'PIX_AUTOMATICO',
-                status: 'PENDENTE',
+                status: 'pending',
                 acordoEfiId: acordo.acordoId,
                 diaVencimento,
                 valorMensal,
@@ -172,7 +172,7 @@ export class CreateSubscriptionUseCase {
                 saasPlanId: plano.id,
                 planoId: plano.id,
                 metodo: 'CARTAO_RECORRENTE',
-                status: isApproved ? 'ATIVO' : 'PENDENTE', // ← Mudança: só entra como ATIVO se aprovado
+                status: isApproved ? 'active' : 'pending', // ← Mudança: só entra como active se aprovado
                 subscriptionEfiId: assinaturaEfi.subscription_id,
                 diaVencimento,
                 valorMensal,

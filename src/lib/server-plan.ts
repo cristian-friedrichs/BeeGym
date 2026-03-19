@@ -3,8 +3,7 @@ import { getPlanById, BeeGymPlan } from '@/config/plans'
 import type { PlanFeature } from '@/config/plans'
 
 const ACTIVE_STATUSES = [
-    'active', 'ativo', 'pago',
-    'ATIVO', 'PAGO'
+    'active', 'trial'
 ]
 
 /**
@@ -26,7 +25,7 @@ export async function getServerPlan(organizationId: string): Promise<{
         .single()
 
     const hasAccess = org?.onboarding_completed &&
-        (org?.subscription_status === 'active' || org?.subscription_status === 'pago' || org?.subscription_status === 'ativo');
+        (org?.subscription_status === 'active' || org?.subscription_status === 'trial');
     const isActive = hasAccess
 
     // 2. Buscar plano via saas_subscriptions (independe do pagamento)

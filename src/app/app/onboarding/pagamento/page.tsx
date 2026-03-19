@@ -272,16 +272,29 @@ export default function PagamentoPage() {
     const handleFinalizeOnboarding = async () => {
         setIsFinalizing(true);
         try {
-            const result = await finalizeOnboardingAction();
-            if (result?.error) throw new Error(result.error);
+            // 1. Verificar se o pagamento realmente caiu no banco
+            const verif = await verifyPixStatusAction();
             
-            toast({ title: 'Conta ativada com sucesso!', description: 'Bem-vindo ao BeeGym!' });
-            resetData();
-            router.push('/app/painel');
+            if (verif.success && (verif.status === 'CONCLUIDA' || verif.status === 'active' || verif.status === 'trial')) {
+                // 2. Se caiu, finalizar o onboarding
+                const result = await finalizeOnboardingAction();
+                if (result?.error) throw new Error(result.error);
+                
+                toast({ title: 'Pagamento Confirmado!', description: 'Sua conta foi ativada com sucesso. Bem-vindo ao BeeGym!' });
+                resetData();
+                router.push('/app/painel');
+            } else {
+                // 3. Se não caiu, avisar o usuário (Fim do Falso Sucesso)
+                toast({ 
+                    variant: 'destructive',
+                    title: 'Pagamento não detectado', 
+                    description: 'Ainda não recebemos a confirmação do seu banco. Aguarde alguns instantes e tente novamente.' 
+                });
+            }
         } catch (err: any) {
             toast({
                 variant: 'destructive',
-                title: 'Erro ao ativar conta',
+                title: 'Erro ao verificar pagamento',
                 description: err.message || 'Tente novamente.'
             });
         } finally {
