@@ -18,15 +18,29 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
     public async execute(txidOrChargeId: string, status: string, method: 'PIX' | 'CARTAO'): Promise<void> {
         console.log(`[ConfirmInvoiceUseCase] Recebido webhook para ${method} | TXID/Charge: ${txidOrChargeId} | Status: ${status}`);
 
-        const { data: sub, error: subError } = await supabaseAdmin
+        let sub: any = null;
+
+        const { data: subByPaymentToken, error: subError1 } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('id, organization_id, status')
+            .select('id, organization_id, status, acordo_efi_id')
             .eq('payment_token', txidOrChargeId)
             .single();
 
-        if (subError || !sub) {
-            console.error(`[ConfirmInvoiceUseCase] Fatura não encontrada para TXID/ChargeID: ${txidOrChargeId}`);
-            return;
+        if (subByPaymentToken) {
+            sub = subByPaymentToken;
+        } else {
+            const { data: subByAcordo, error: subError2 } = await supabaseAdmin
+                .from('saas_subscriptions')
+                .select('id, organization_id, status, acordo_efi_id')
+                .eq('acordo_efi_id', txidOrChargeId)
+                .single();
+
+            if (subByAcordo) {
+                sub = subByAcordo;
+            } else {
+                console.error(`[ConfirmInvoiceUseCase] Fatura não encontrada para TXID/ChargeID: ${txidOrChargeId}`);
+                return;
+            }
         }
 
         // Se a assinatura já está ativa ou paga, idempotência
@@ -61,6 +75,7 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
                     .update({ 
                         subscription_status: 'trial', 
                         trial_end: trialEnd.toISOString(),
+                        onboarding_completed: true,
                         updated_at: new Date().toISOString() 
                     })
                     .eq('id', sub.organization_id);
@@ -77,7 +92,7 @@ export class ConfirmInvoiceUseCase implements IPaymentConfirmationUseCase {
                     .eq('organization_id', sub.organization_id);
             }
 
-            console.log(`[ConfirmInvoiceUseCase] ✅ Assinatura ${sub.id} ativada como TRIAL com sucesso via ${method}!`);
+            console.log(`[ConfirmInvoiceUseCase] Assinatura ${sub.id} ativada como TRIAL com sucesso via ${method}!`);
         } else {
             console.log(`[ConfirmInvoiceUseCase] Status ${status} não requer ativação para a assinatura ${sub.id}.`);
         }

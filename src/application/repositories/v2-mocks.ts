@@ -33,8 +33,8 @@ export const planoRepository = {
 
 export const assinaturaRepository = {
     create: async (data: Partial<Assinatura>) => ({ id: "mock-sub-123", ...data } as Assinatura),
-    findByAcordoId: async (acordoId: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", status: "PENDENTE" } as Assinatura),
-    findByReferenceId: async (refId: string, metodo: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", status: "TRIAL", diaVencimento: 10, metodo, valorMensal: 100 } as Assinatura),
+    findByAcordoId: async (acordoId: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", planoId: "plan-123", metodo: "PIX_AUTOMATICO" as MetodoPagamento, status: "pending" as AssinaturaStatus, diaVencimento: 10, valorMensal: 100 } as Assinatura),
+    findByReferenceId: async (refId: string, metodo: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", planoId: "plan-123", metodo: "PIX_AUTOMATICO" as MetodoPagamento, status: "trial" as AssinaturaStatus, diaVencimento: 10, valorMensal: 100 } as Assinatura),
     updateStatus: async (id: string, status: AssinaturaStatus) => true,
     renovar: async (id: string, proximoVencimento: Date) => true,
     setInicioCarencia: async (id: string, data: Date) => true,

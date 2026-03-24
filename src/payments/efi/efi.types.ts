@@ -165,11 +165,15 @@ export interface CartaoCobranca {
 
 // ── Status de Assinatura (interno BeeGym) ──────────────────────
 export type AssinaturaStatus =
-    | 'pending'      // Criou conta, aguardando pagamento
-    | 'trial'        // Pagamento confirmado, período de garantia (7 dias)
-    | 'active'       // Assinatura ativa e confirmada
-    | 'past_due'     // Inadimplente (pagamento falhou)
-    | 'canceled';    // Assinatura cancelada
+    | 'pending'            // Criou conta, aguardando pagamento
+    | 'AGUARDANDO_PAGAMENTO' // Aguardando confirmação do pagamento PIX
+    | 'trial'            // Pagamento confirmado, período de garantia (7 dias)
+    | 'active'           // Assinatura ativa e confirmada
+    | 'ATIVO'            // Alias para active (usado em webhooks)
+    | 'past_due'         // Inadimplente (pagamento falhou)
+    | 'INADIMPLENTE'     // Alias para past_due (usado em webhooks)
+    | 'INATIVO'          // Assinatura inativa/cancelada
+    | 'canceled';        // Assinatura cancelada
 
 export type MetodoPagamento = 'PIX_AUTOMATICO' | 'CARTAO_RECORRENTE';
 

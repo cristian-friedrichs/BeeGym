@@ -38,18 +38,23 @@ export async function verifyPixStatusAction() {
             return { success: true, status: org.subscription_status }
         }
 
-        // 3. Get pending subscription
+        // 3. Get pending subscription (try both payment_token and acordo_efi_id)
         const { data: sub } = await supabaseAdmin
             .from('saas_subscriptions')
-            .select('id, payment_token, status')
+            .select('id, payment_token, acordo_efi_id, status, metodo')
             .eq('organization_id', profile.organization_id)
-            .eq('status', 'pending')
-            .single()
+            .in('status', ['pending', 'AGUARDANDO_PAGAMENTO'])
+            .limit(1)
+            .maybeSingle()
 
-        if (!sub || !sub.payment_token) return { status: 'NOT_FOUND' }
+        if (!sub) return { status: 'NOT_FOUND' }
 
-        // 3. Call EFI API GET /v2/cob/{txid}
-        const res = await efiClient.get(`/v2/cob/${sub.payment_token}`)
+        // Get the identifier to check (payment_token takes precedence)
+        const txid = sub.payment_token || sub.acordo_efi_id
+        if (!txid) return { status: 'NO_TOKEN' }
+
+        // 4. Call EFI API GET /v2/cob/{txid}
+        const res = await efiClient.get(`/v2/cob/${txid}`)
         
         const status = res.data.status // CONCLUIDA, ATIVA, etc
 
@@ -66,6 +71,7 @@ export async function verifyPixStatusAction() {
             await supabaseAdmin.from('organizations').update({ 
                 subscription_status: 'trial', 
                 trial_end: trialEnd.toISOString(),
+                onboarding_completed: true,
                 updated_at: new Date().toISOString() 
             }).eq('id', profile.organization_id)
 

@@ -10,6 +10,7 @@ export interface Assinatura {
     status: AssinaturaStatus;
     acordoEfiId?: string;
     subscriptionEfiId?: number;
+    paymentToken?: string;
     diaVencimento: number;
     valorMensal: number;
     proximoVencimento?: Date;
@@ -34,6 +35,7 @@ export const SupabaseAssinaturaRepository = {
                 metodo: data.metodo,
                 acordo_efi_id: data.acordoEfiId,
                 subscription_efi_id: data.subscriptionEfiId,
+                payment_token: data.paymentToken,
                 dia_vencimento: data.diaVencimento,
                 valor_mensal: data.valorMensal,
                 proximo_vencimento: data.proximoVencimento?.toISOString(),
@@ -277,6 +279,7 @@ export const SupabaseAssinaturaRepository = {
             status: dbSub.status as AssinaturaStatus,
             acordoEfiId: dbSub.acordo_efi_id,
             subscriptionEfiId: dbSub.subscription_efi_id,
+            paymentToken: dbSub.payment_token,
             diaVencimento: dbSub.dia_vencimento,
             valorMensal: Number(dbSub.valor_mensal),
             proximoVencimento: dbSub.proximo_vencimento ? new Date(dbSub.proximo_vencimento) : undefined,

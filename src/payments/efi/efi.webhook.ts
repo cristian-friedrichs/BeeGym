@@ -23,17 +23,38 @@ export class EfiWebhookService {
 
     /**
      * Valida se a requisição originou-se legitimamente da EFI.
-     * Dependendo da infraestrutura, a recomendação oficial é mTLS no servidor,
-     * ou validação via HMCA Signature enviada pela Gerencianet/EFI no header (x-webhook-signature / x-api-key)
-     * 
-     * Atenção: A validação oficial de webhook PIX da EFI em produção é mTLS obrigatoriamente (o seu servidor exige certificado cliente).
-     * Abaixo exemplificamos também uma checagem customizada de Hash simulada para homologações sem mTLS completo na borda.
+     * A EFI envia um HMAC-SHA256 signature no header x-api-key ou x-webhook-signature.
+     * A validação é feita calculando o HMAC do body com a chave secreta do webhook.
      */
     public async validateRequest(headers: Record<string, string>, bodyString: string): Promise<boolean> {
-        // Exemplo de validação customizada caso o desenvolvedor opte por enviar um header
-        // na montagem da URL: https://api.beegym/webhook?token=xxxx
-        // Em produção o ideal é configurar NGINX/Kong/Cloudflare para validar o Client Certificate da EFI.
-        return true;
+        const signature = headers['x-webhook-signature'] || headers['x-api-key'];
+        const webhookSecret = process.env.EFI_WEBHOOK_SECRET;
+
+        if (!webhookSecret) {
+            console.warn('[EFI Webhook] EFI_WEBHOOK_SECRET não configurado - validando apenas mTLS.');
+            return true;
+        }
+
+        if (!signature) {
+            console.error('[EFI Webhook] Header de assinatura ausente.');
+            return false;
+        }
+
+        const expectedSignature = crypto
+            .createHmac('sha256', webhookSecret)
+            .update(bodyString)
+            .digest('hex');
+
+        const isValid = crypto.timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(expectedSignature)
+        );
+
+        if (!isValid) {
+            console.error('[EFI Webhook] Assinatura HMAC inválida. Request rejeitado.');
+        }
+
+        return isValid;
     }
 
     public async handle(rawBody: unknown, method: 'PIX' | 'CARTAO'): Promise<void> {

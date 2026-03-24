@@ -113,6 +113,7 @@ export class CreateSubscriptionUseCase {
                 metodo: 'PIX_AUTOMATICO',
                 status: 'pending',
                 acordoEfiId: acordo.acordoId,
+                paymentToken: acordo.acordoId,
                 diaVencimento,
                 valorMensal,
                 promoPrice: absoluteDiscountValue > 0 ? finalPrice : undefined,
