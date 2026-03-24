@@ -3,6 +3,7 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { efiClient } from '@/payments/efi/efi.client'
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env-config'
 
 export async function verifyPixStatusAction() {
     try {
@@ -11,8 +12,8 @@ export async function verifyPixStatusAction() {
         if (!user) return { error: 'Não autenticado' }
 
         const supabaseAdmin = createAdminClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
+            SUPABASE_URL,
+            SUPABASE_SERVICE_ROLE_KEY,
             {
                 auth: { autoRefreshToken: false, persistSession: false }
             }

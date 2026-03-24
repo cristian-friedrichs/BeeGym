@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseCouponRepository } from '@/application/repositories/SupabaseCouponRepository';
+import { requireAdmin } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 30);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const coupons = await SupabaseCouponRepository.listAll();
         return NextResponse.json({ coupons });
@@ -12,6 +20,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await request.json();
 

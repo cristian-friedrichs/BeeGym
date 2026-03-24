@@ -5,6 +5,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { randomUUID } from 'node:crypto'
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env-config'
 
 interface CompleteOnboardingData {
     organizationName: string
@@ -39,8 +40,8 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
     // Para operações críticas de Onboarding (criar conta e vincular perfil), 
     // usamos o Service Role para contornar políticas rigorosas de RLS temporárias
     const supabaseAdmin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        SUPABASE_URL,
+        SUPABASE_SERVICE_ROLE_KEY,
         {
             auth: {
                 autoRefreshToken: false,

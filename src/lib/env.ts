@@ -1,15 +1,17 @@
 /**
- * Valida variáveis de ambiente obrigatórias
- * Lança erro se alguma estiver faltando ou mal formatada
+ * Validates required environment variables.
+ * Throws if any are missing or malformed.
  */
-export function validateEnv() {
-    const required = [
-        'NEXT_PUBLIC_SUPABASE_URL',
-        'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-        'SUPABASE_SERVICE_ROLE_KEY',
-    ] as const;
+import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env-config';
 
-    const missing = required.filter(key => !process.env[key]);
+export function validateEnv() {
+    const checks: Array<[string, string]> = [
+        ['SUPABASE_URL', SUPABASE_URL],
+        ['SUPABASE_ANON_KEY', SUPABASE_ANON_KEY],
+        ['SUPABASE_SERVICE_ROLE_KEY', SUPABASE_SERVICE_ROLE_KEY],
+    ];
+
+    const missing = checks.filter(([, val]) => !val).map(([name]) => name);
 
     if (missing.length > 0) {
         throw new Error(
@@ -18,14 +20,12 @@ export function validateEnv() {
         );
     }
 
-    // Validar formato das URLs
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (supabaseUrl && !supabaseUrl.startsWith('https://')) {
-        throw new Error('❌ Configuration Error: NEXT_PUBLIC_SUPABASE_URL must start with https://');
+    if (SUPABASE_URL && !SUPABASE_URL.startsWith('https://')) {
+        throw new Error('❌ Configuration Error: SUPABASE_URL must start with https://');
     }
 }
 
-// Auto-validar em development para feedback rápido
+// Auto-validate in development for rapid feedback
 if (process.env.NODE_ENV !== 'production') {
     try {
         validateEnv();

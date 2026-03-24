@@ -3,6 +3,7 @@ import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 import { SupabaseContratanteRepository } from '@/application/repositories/SupabaseContratanteRepository';
 import { SupabaseSaasPlanRepository } from '@/application/repositories/SupabaseSaasPlanRepository';
+import { IS_EFI_PRODUCTION } from '@/lib/env-config';
 
 export interface UpgradeSubscriptionInput {
     organizationId: string;
@@ -28,8 +29,7 @@ export class UpgradeSubscriptionUseCase {
             if (!assinatura.subscriptionEfiId) {
                 throw new Error('Assinatura sem ID da EFI.');
             }
-            // Na EFI sandbox, usamos efi_plan_id_hml
-            const efiPlanId = (process.env.NEXT_PUBLIC_EFI_AMBIENTE === 'producao')
+            const efiPlanId = IS_EFI_PRODUCTION
                 ? novoPlano.efi_plan_id_prd
                 : novoPlano.efi_plan_id_hml;
 

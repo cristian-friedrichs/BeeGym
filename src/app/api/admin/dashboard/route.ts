@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-// Helpers para Mapa e Agrupamento de Meses
 const STATE_COORDS: Record<string, [number, number]> = {
     'AC': [-9.0238, -70.812], 'AL': [-9.5328, -36.6666], 'AP': [1.41, -51.7792],
     'AM': [-3.0626, -60.025], 'BA': [-12.9714, -38.5014], 'CE': [-3.7172, -38.5431],
@@ -23,7 +24,13 @@ function generateMonthLabels(count: number) {
     });
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 30);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const supabase = supabaseAdmin;
 

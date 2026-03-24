@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { BEEGYM_PLANS } from '@/config/plans';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
 const NON_PAYING_STATUSES = ['TESTE', 'DEMO', 'AGUARDANDO_PAGAMENTO', 'TESTE_MANUAL'];
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(req, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(req);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_CHANGE_PLAN', {
+        userId: auth.user.id,
+        path: req.nextUrl.pathname,
+        action: 'change_plan'
+    });
+
     try {
         const { id: orgId } = await params;
         const { newPlanId } = await req.json();

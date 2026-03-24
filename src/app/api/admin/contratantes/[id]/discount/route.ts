@@ -1,9 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(req, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(req);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_APPLY_DISCOUNT', {
+        userId: auth.user.id,
+        path: req.nextUrl.pathname,
+        action: 'apply_discount'
+    });
+
     try {
         const body = await req.json();
         const { id } = await params;

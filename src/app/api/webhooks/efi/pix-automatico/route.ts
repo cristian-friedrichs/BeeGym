@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { HandlePixAutomaticoConsentUseCase } from '@/application/use-cases/webhook/HandlePixAutomaticoConsentUseCase';
 import { HandleRecurringPaymentUseCase } from '@/application/use-cases/webhook/HandleRecurringPaymentUseCase';
+import { validateWebhookSignature } from '@/lib/webhook-validation';
 
 const consentUseCase = new HandlePixAutomaticoConsentUseCase();
 const paymentUseCase = new HandleRecurringPaymentUseCase();
 
 export async function POST(request: NextRequest) {
     try {
+        const signature = request.headers.get('x-webhook-signature');
+        const webhookSecret = process.env.EFI_WEBHOOK_PIX_AUTOMATICO_SECRET;
+
         const textBody = await request.text();
+
+        if (!validateWebhookSignature(textBody, signature, webhookSecret)) {
+            console.error('[Webhook Pix Auto] Assinatura inválida');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+
         const payload = JSON.parse(textBody);
 
         // 1. Eventos de Consentimento do Acordo (usuário autorizou o débito automático no app)

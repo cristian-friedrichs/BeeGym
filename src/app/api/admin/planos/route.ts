@@ -3,8 +3,14 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { BEEGYM_PLANS } from '@/config/plans';
 import { efiPlansService } from '@/payments/efi/efi.plans';
 import { efiConfig } from '@/payments/efi/efi.config';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 30);
+    if (rateLimitResponse) return rateLimitResponse;
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
     try {
         const supabase = supabaseAdmin;
 
@@ -62,7 +68,19 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
+        logSecurityEvent('ADMIN_PLAN_CREATE', {
+            userId: auth.user.id,
+            path: request.nextUrl.pathname,
+            action: 'create_plan'
+        });
+
         const body = await request.json();
         const supabase = supabaseAdmin;
 
@@ -124,7 +142,19 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
+        logSecurityEvent('ADMIN_PLAN_UPDATE', {
+            userId: auth.user.id,
+            path: request.nextUrl.pathname,
+            action: 'update_plan'
+        });
+
         const body = await request.json();
         const supabase = supabaseAdmin;
 

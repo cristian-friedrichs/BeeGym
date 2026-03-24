@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-// Mocks in-memory (substituir por UpdatePlanUseCase / DeletePlanUseCase)
 const CONTAGEM_ASSINANTES: Record<string, number> = {
     'plan-1': 87,
     'plan-2': 65,
@@ -9,6 +10,12 @@ const CONTAGEM_ASSINANTES: Record<string, number> = {
 };
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(request, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     const { id } = await params;
     const body = await request.json();
     const supabase = supabaseAdmin;
@@ -35,7 +42,19 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json(updatedPlan);
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(request, 5);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_DELETE_PLAN', {
+        userId: auth.user.id,
+        path: request.nextUrl.pathname,
+        action: 'delete_plan'
+    });
+
     const { id } = await params;
     const assinantes = CONTAGEM_ASSINANTES[id] ?? 0;
 

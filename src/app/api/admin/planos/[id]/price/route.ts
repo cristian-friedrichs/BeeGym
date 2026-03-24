@@ -3,8 +3,22 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { SupabaseSaasPlanRepository } from '@/application/repositories/SupabaseSaasPlanRepository';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(request, 5);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_UPDATE_PLAN_PRICE', {
+        userId: auth.user.id,
+        path: request.nextUrl.pathname,
+        action: 'update_plan_price'
+    });
+
     try {
         const { id } = await params;
         const body = await request.json();

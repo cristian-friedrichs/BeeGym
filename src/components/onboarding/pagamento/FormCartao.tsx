@@ -1,19 +1,6 @@
 'use client';
 
-// Shim process for console debugging and libraries that expect it
-if (typeof window !== 'undefined') {
-    if (!window.process) {
-        (window as any).process = { env: {} };
-    }
-    // Fallback for missing env vars in some browser environments
-    (window as any).process.env = {
-        ...((window as any).process.env || {}),
-        NEXT_PUBLIC_EFI_PAYEE_CODE: (window as any).process.env?.NEXT_PUBLIC_EFI_PAYEE_CODE || '',
-        NEXT_PUBLIC_EFI_AMBIENTE: (window as any).process.env?.NEXT_PUBLIC_EFI_AMBIENTE || 'homologacao'
-    };
-}
-
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
@@ -46,6 +33,11 @@ interface Props {
     initialName?: string;
     initialDoc?: string;
     onRef?: (ref: FormCartaoRef) => void;
+}
+
+interface EfiClientConfig {
+    payeeCode: string;
+    environment: 'production' | 'sandbox';
 }
 
 const formatCardNumber = (v: string) =>
@@ -84,6 +76,7 @@ declare global {
 
 export function FormCartao({ email = '', initialName = '', initialDoc = '', onRef }: Props) {
     const [isCepLoading, setIsCepLoading] = useState(false);
+    const efiConfigRef = useRef<EfiClientConfig | null>(null);
 
     const [card, setCard] = useState({ number: '', name: '', expiry: '', cvv: '' });
     const [billing, setBilling] = useState({ street: '', number: '', neighborhood: '', zipcode: '', city: '', state: '' });
@@ -93,6 +86,18 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
         phone_number: '',
         birth: ''
     });
+
+    // Fetch EFI config from server-side API (no secrets in client bundle)
+    useEffect(() => {
+        fetch('/api/efi-config')
+            .then(res => res.json())
+            .then(data => {
+                if (data.payeeCode) {
+                    efiConfigRef.current = data;
+                }
+            })
+            .catch(err => console.error('[FormCartao] Failed to load EFI config:', err));
+    }, []);
 
     // Sincroniza dados iniciais quando carregarem
     useEffect(() => {
@@ -112,16 +117,14 @@ export function FormCartao({ email = '', initialName = '', initialDoc = '', onRe
                 const EfiPayModule = await import('payment-token-efi');
                 const EfiPay = EfiPayModule.default || EfiPayModule;
 
-                const payeeCode = process.env.NEXT_PUBLIC_EFI_PAYEE_CODE || '';
-                const environment = process.env.NEXT_PUBLIC_EFI_AMBIENTE === 'producao'
-                    ? 'production'
-                    : 'sandbox';
-
-                console.warn('🚀 [FormCartao] INICIANDO TOKENIZAÇÃO COM SDK EFI');
-
-                if (!payeeCode) {
+                const config = efiConfigRef.current;
+                if (!config?.payeeCode) {
                     throw new Error('Configuração de pagamento incompleta. PAYEE_CODE não configurado.');
                 }
+
+                const { payeeCode, environment } = config;
+
+                console.warn('🚀 [FormCartao] INICIANDO TOKENIZAÇÃO COM SDK EFI');
 
                 const bloqueado = await EfiPay.CreditCard.isScriptBlocked();
                 if (bloqueado) {

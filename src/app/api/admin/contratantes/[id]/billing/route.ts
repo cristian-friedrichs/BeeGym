@@ -2,8 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 import { SupabaseSaasPlanRepository } from '@/application/repositories/SupabaseSaasPlanRepository';
 import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const rateLimitResponse = await withRateLimit(request, 10);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_BILLING_UPDATE', {
+        userId: auth.user.id,
+        path: request.nextUrl.pathname,
+        action: 'update_billing'
+    });
+
     try {
         const { id } = await params; // organization_id
         const body = await request.json();

@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
 export async function GET(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 30);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(request.url);
         const page = Number(searchParams.get('page') ?? 1);

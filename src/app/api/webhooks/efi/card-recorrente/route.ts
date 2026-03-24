@@ -2,12 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { HandleRecurringPaymentUseCase } from '@/application/use-cases/webhook/HandleRecurringPaymentUseCase';
 import { efiClient } from '@/payments/efi/efi.client';
 import { efiConfig } from '@/payments/efi/efi.config';
+import { validateWebhookSignature } from '@/lib/webhook-validation';
 
 const recurringPaymentUseCase = new HandleRecurringPaymentUseCase();
 
 export async function POST(request: NextRequest) {
     try {
+        const signature = request.headers.get('x-webhook-signature');
+        const webhookSecret = process.env.EFI_WEBHOOK_CARD_RECORRENTE_SECRET;
+
         const textBody = await request.text();
+
+        if (!validateWebhookSignature(textBody, signature, webhookSecret)) {
+            console.error('[Webhook Card Rec.] Assinatura inválida');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+        }
+
         const payload = JSON.parse(textBody);
 
         // A EFI envia um "notification" token — precisamos buscar os detalhes reais via GET

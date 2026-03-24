@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
 export async function POST(req: NextRequest) {
+    const rateLimitResponse = await withRateLimit(req, 5);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(req);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_CREATE_CONTRATANTE', {
+        userId: auth.user.id,
+        path: req.nextUrl.pathname,
+        action: 'create_contratante'
+    });
+
     try {
         const body = await req.json();
         const {

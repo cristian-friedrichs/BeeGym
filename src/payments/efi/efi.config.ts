@@ -1,17 +1,13 @@
 import dotenv from 'dotenv';
 import { EfiConfig, EfiEnv } from './efi.types';
 import { EfiAuthError } from './efi.errors';
+import { EFI_AMBIENTE } from '@/lib/env-config';
 
 // Garante que o .env seja carregado
 dotenv.config();
 
 export function getEfiConfig(): EfiConfig {
-    // Aceita ambas as variantes — NEXT_PUBLIC_ (usada pelo frontend) e sem prefixo (legado)
-    const ambiente = (
-        process.env.NEXT_PUBLIC_EFI_AMBIENTE ||
-        process.env.EFI_AMBIENTE ||
-        'homologacao'
-    ) as EfiEnv;
+    const ambiente = EFI_AMBIENTE as EfiEnv;
 
     const isProd = ambiente === 'producao';
 

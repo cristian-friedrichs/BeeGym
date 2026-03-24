@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const { id } = await params;
         const supabase = supabaseAdmin;
@@ -98,7 +102,15 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
+        logSecurityEvent('ADMIN_CONTRATANTE_ACTION', {
+            userId: auth.user.id,
+            path: request.nextUrl.pathname,
+            action: 'manage_subscription'
+        });
         const { id } = await params;
         const body = await request.json(); // Pega body com status/acao
 
@@ -148,6 +160,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
     try {
         const { id } = await params;
         const body = await request.json();

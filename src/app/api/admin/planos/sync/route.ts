@@ -1,9 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { efiPlansService } from '@/payments/efi/efi.plans';
 import { efiConfig } from '@/payments/efi/efi.config';
+import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
+import { withRateLimit } from '@/lib/rate-limit/limiter';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+    const rateLimitResponse = await withRateLimit(request, 5);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const auth = await requireAdmin(request);
+    if ('error' in auth) return auth.error;
+
+    logSecurityEvent('ADMIN_PLAN_SYNC', {
+        userId: auth.user.id,
+        path: request.nextUrl.pathname,
+        action: 'sync_plans_efi'
+    });
+
     try {
         const supabase = supabaseAdmin;
 

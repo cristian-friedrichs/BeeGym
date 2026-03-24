@@ -1,16 +1,14 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '@/lib/env-config';
 
 export async function debugStudentData() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
         return { error: 'Missing Supabase environment variables' };
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     try {
         const { data: students, error } = await supabase
