@@ -1,48 +1,55 @@
-import { UserPlus, Settings, Rocket } from 'lucide-react';
+const STEPS = [
+    {
+        num: '01',
+        title: 'Crie sua conta em 2 minutos',
+        desc: 'Configure sua organização, planos e instrutores. Sem burocracia, sem formulário longo.',
+        time: '2 min',
+    },
+    {
+        num: '02',
+        title: 'Cadastre seus alunos',
+        desc: 'Importe ou adicione alunos, vincule aos planos e ative o faturamento automático na hora.',
+        time: '5 min',
+    },
+    {
+        num: '03',
+        title: 'Comece a crescer',
+        desc: 'Prescreva treinos, receba pagamentos e acompanhe os indicadores do seu negócio fitness.',
+        time: 'Sempre',
+    },
+];
 
 export function HowItWorks() {
-    const steps = [
-        {
-            icon: UserPlus,
-            step: "01",
-            title: "Crie sua conta estruturada",
-            desc: "Em menos de 2 minutos você configura sua vitrine, seus instrutores e os planos que deseja vender.",
-        },
-        {
-            icon: Settings,
-            step: "02",
-            title: "Cadastre seus alunos",
-            desc: "Importe ou cadastre alunos, associe-os aos planos e configure o faturamento automático na hora.",
-        },
-        {
-            icon: Rocket,
-            step: "03",
-            title: "Comece a escalar",
-            desc: "Prescreva treinos, envie faturas e acompanhe os indicadores de crescimento da sua academia.",
-        }
-    ];
-
     return (
-        <section className="py-24 bg-slate-50">
-            <div className="container mx-auto px-6 md:px-12 text-center">
-                <h2 className="text-3xl md:text-5xl font-display font-bold text-bee-midnight mb-16 animate-fade-in-up">
-                    Como começar usar a BeeGym?
-                </h2>
+        <section id="como-funciona" className="py-28 md:py-36 bg-[#0B0F1A]">
+            <div className="container mx-auto px-6 md:px-12">
+                <div className="max-w-2xl mb-20">
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">
+                        Como funciona
+                    </p>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight">
+                        Três passos para transformar seu negócio.
+                    </h2>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                    {/* Connector line for desktop */}
-                    <div className="hidden md:block absolute top-[4.5rem] left-[16%] right-[16%] h-[2px] bg-gradient-to-r from-slate-200 via-bee-amber/50 to-slate-200 -z-10" />
-
-                    {steps.map((s, idx) => (
-                        <div key={idx} className="flex flex-col items-center relative z-10">
-                            <div className="w-16 h-16 rounded-2xl bg-white shadow-xl flex items-center justify-center mb-6 border-2 border-slate-100">
-                                <span className="text-xl font-display font-bold text-slate-300 absolute -top-4 -left-2">{s.step}</span>
-                                <s.icon className="w-8 h-8 text-bee-midnight" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/5">
+                    {STEPS.map((step, i) => (
+                        <div
+                            key={i}
+                            className="bg-[#0B0F1A] p-10 md:p-12 flex flex-col gap-6 hover:bg-white/2 transition-colors duration-300"
+                        >
+                            <div className="flex items-start justify-between">
+                                <span className="text-[5rem] font-display font-bold text-white/5 leading-none">
+                                    {step.num}
+                                </span>
+                                <span className="text-xs font-bold uppercase tracking-widest text-bee-amber border border-bee-amber/30 px-2 py-1 mt-2">
+                                    {step.time}
+                                </span>
                             </div>
-                            <h3 className="text-2xl font-bold text-bee-midnight mb-4">{s.title}</h3>
-                            <p className="text-slate-600 font-medium leading-relaxed max-w-sm">
-                                {s.desc}
-                            </p>
+                            <div>
+                                <h3 className="text-xl font-bold text-white mb-3 tracking-tight">{step.title}</h3>
+                                <p className="text-slate-400 font-medium leading-relaxed">{step.desc}</p>
+                            </div>
                         </div>
                     ))}
                 </div>

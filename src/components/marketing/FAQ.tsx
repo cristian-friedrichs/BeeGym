@@ -1,58 +1,81 @@
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion";
+'use client';
+
+import { useState } from 'react';
+import { Plus, Minus } from 'lucide-react';
+
+const FAQS = [
+    {
+        q: 'A BeeGym é difícil de usar?',
+        a: 'Não. A plataforma foi criada desde o primeiro dia com o princípio de simplicidade. Sem menus escondidos ou configurações confusas de ERPs antigos.',
+    },
+    {
+        q: 'Preciso instalar algum software?',
+        a: 'Zero instalação. A BeeGym roda 100% na nuvem, acessível via navegador do seu celular, tablet ou computador, de qualquer lugar.',
+    },
+    {
+        q: 'O sistema emite notas fiscais automaticamente?',
+        a: 'Cobrimos todo o processamento financeiro (cartões, Pix Automático, estornos) via Efí. Emissão de NF está no roadmap.',
+    },
+    {
+        q: 'Posso cancelar quando quiser?',
+        a: 'Sim. Sem contratos de fidelidade obscuros. Você cancela a qualquer momento diretamente pelo painel — sem ligar para ninguém.',
+    },
+    {
+        q: 'Meus alunos têm acesso ao portal?',
+        a: 'Sim! A BeeGym oferece um portal exclusivo para seus alunos consultarem treinos, efetuarem pagamentos e visualizarem o histórico. Disponível a partir do plano Studio.',
+    },
+    {
+        q: 'O faturamento é realmente automático?',
+        a: 'Sim. Com Pix Automático e Cartão Recorrente integrados, você configura uma vez e as cobranças acontecem sozinhas todo mês, com notificações automáticas.',
+    },
+];
 
 export function FAQ() {
-    const faqs = [
-        {
-            question: "A BeeGym é difícil de usar?",
-            answer: "Não. A plataforma foi criada desde o primeiro dia com o princípio de simplicidade. Sem menus escondidos ou configurações confusas de ERPs antigos."
-        },
-        {
-            question: "Preciso instalar algum software?",
-            answer: "Zero instalação. A BeeGym roda 100% na nuvem, acessível via navegador do seu celular, tablet ou computador, de qualquer lugar."
-        },
-        {
-            question: "O sistema emite notas fiscais automaticamente?",
-            answer: "No momento cobrimos todo o processamento financeiro (cartões, PIX automático, estornos) via Efí. A integração direta com prefeituras é um add-on que está no nosso roadmap."
-        },
-        {
-            question: "Posso cancelar quando quiser?",
-            answer: "Sim. Sem contratos de fidelidade obscuros. Você pode cancelar a qualquer momento diretamente pelo seu painel."
-        },
-        {
-            question: "Meus alunos têm acesso ao aplicativo?",
-            answer: "Sim! A BeeGym fornece acesso exclusivo para seus clientes consultarem treinos, efetuarem os pagamentos e visualizarem o histórico deles de forma transparente."
-        }
-    ];
+    const [open, setOpen] = useState<number | null>(null);
 
     return (
-        <section className="py-24 bg-slate-50" id="faq">
-            <div className="container mx-auto px-6 md:px-12 flex flex-col md:flex-row gap-16">
-                <div className="md:w-1/3 animate-fade-in-up">
-                    <h2 className="text-3xl md:text-5xl font-display font-bold text-bee-midnight mb-6">
-                        Perguntas<br />Frequentes
-                    </h2>
-                    <p className="text-lg text-slate-600 font-medium">
-                        Tem alguma dúvida que não está aqui? Mande um e-mail para nossa equipe de suporte.
-                    </p>
-                </div>
-                <div className="md:w-2/3 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                    <Accordion type="single" collapsible className="w-full space-y-4">
-                        {faqs.map((faq, idx) => (
-                            <AccordionItem key={idx} value={`item-${idx}`} className="bg-white border border-slate-200 rounded-2xl px-6 data-[state=open]:border-bee-amber/50 data-[state=open]:shadow-soft transition-all">
-                                <AccordionTrigger className="text-left font-bold text-lg text-bee-midnight hover:no-underline py-6">
-                                    {faq.question}
-                                </AccordionTrigger>
-                                <AccordionContent className="text-slate-600 font-medium text-base leading-relaxed pb-6">
-                                    {faq.answer}
-                                </AccordionContent>
-                            </AccordionItem>
+        <section id="faq" className="py-28 md:py-36">
+            <div className="container mx-auto px-6 md:px-12">
+                <div className="flex flex-col lg:flex-row gap-16 items-start">
+                    {/* Left */}
+                    <div className="lg:w-80 shrink-0">
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">FAQ</p>
+                        <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
+                            Perguntas frequentes.
+                        </h2>
+                        <p className="text-slate-500 font-medium">
+                            Não encontrou o que procura?{' '}
+                            <a href="mailto:suporte@beegym.com.br" className="text-bee-amber font-bold underline underline-offset-2 hover:text-white transition-colors">
+                                Fale com a gente
+                            </a>
+                            .
+                        </p>
+                    </div>
+
+                    {/* Right — custom accordion */}
+                    <div className="flex-1 divide-y divide-white/10 border-t border-white/10">
+                        {FAQS.map((faq, i) => (
+                            <div key={i} id={`faq-${i}`}>
+                                <button
+                                    className="w-full flex items-center justify-between gap-6 py-6 text-left group"
+                                    onClick={() => setOpen(open === i ? null : i)}
+                                    aria-expanded={open === i}
+                                >
+                                    <span className="text-lg font-bold text-white group-hover:text-bee-amber transition-colors leading-snug">
+                                        {faq.q}
+                                    </span>
+                                    <span className="shrink-0 w-8 h-8 border border-white/20 flex items-center justify-center text-slate-500 group-hover:border-bee-amber group-hover:text-bee-amber transition-all">
+                                        {open === i ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                                    </span>
+                                </button>
+                                {open === i && (
+                                    <div className="pb-6 text-slate-400 font-medium leading-relaxed text-base">
+                                        {faq.a}
+                                    </div>
+                                )}
+                            </div>
                         ))}
-                    </Accordion>
+                    </div>
                 </div>
             </div>
         </section>

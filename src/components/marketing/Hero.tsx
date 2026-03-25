@@ -1,106 +1,91 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2 } from 'lucide-react';
+import { ArrowRight, Zap } from 'lucide-react';
+
+// Navbar height: py-5 (20px top + 20px bottom) + logo h-10 (40px) = 80px
+const NAVBAR_H = 80;
 
 export function Hero() {
     return (
-        <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-16 overflow-hidden">
-            {/* Background abstract shapes - No cliches! */}
-            <div className="absolute top-0 inset-x-0 h-full w-full bg-white -z-10" />
-            <div className="absolute top-[-10%] sm:top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-bee-amber/5 blur-[120px] -z-10" />
-            <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-bee-orange/5 blur-[120px] -z-10" />
+        <section
+            id="hero"
+            className="relative flex items-center justify-center bg-[#0B0F1A] overflow-hidden"
+            style={{ marginTop: NAVBAR_H, height: `calc(100vh - ${NAVBAR_H}px)` }}
+        >
+            {/* Background decorations */}
+            <div className="absolute inset-0 pointer-events-none -z-0" aria-hidden="true">
+                <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full bg-bee-amber/8 blur-[140px]" />
+                <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-[#E67E22]/6 blur-[120px]" />
+                <div
+                    className="absolute inset-0 opacity-[0.03]"
+                    style={{
+                        backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                        backgroundSize: '60px 60px',
+                    }}
+                />
+            </div>
 
-            <div className="container mx-auto px-6 md:px-12 w-full mt-4 md:mt-8">
-                <div className="flex flex-col items-center text-center max-w-5xl mx-auto animate-fade-in-up">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-sm font-medium text-slate-700 mb-10 md:mb-12 shine-effect">
-                        <span className="flex h-2 w-2 rounded-full bg-emerald-brand animate-pulse"></span>
-                        A plataforma N° 1 para negócios fitness. <span className="text-bee-midnight font-bold ml-1">a partir de R$ 9,90</span>
-                    </div>
-
-                    <h1 className="text-4xl md:text-6xl font-display font-bold tracking-tight text-bee-midnight leading-[1.1] mb-8">
-                        A plataforma de gestão para <br />
-                        <span className="text-bee-amber italic font-medium inline-block md:whitespace-nowrap">Personal Trainers, Studios e Academias.</span>
-                    </h1>
-
-                    <p className="text-lg md:text-xl text-slate-700 max-w-3xl mx-auto mb-16 md:mb-20 leading-relaxed font-medium">
-                        Gerencie alunos, treinos, agenda e pagamentos em um único sistema.<br className="hidden md:block" />
-                        Mais organização, profissionalismo e controle do seu negócio fitness.
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto mb-10">
-                        <Link href="/register" className="w-full sm:w-auto">
-                            <Button size="lg" className="w-full sm:w-auto bg-bee-midnight hover:bg-bee-midnight/90 text-white font-bold h-14 px-8 rounded-full text-lg shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                                Crie uma Conta
-                            </Button>
-                        </Link>
-                        <Link href="/login" className="w-full sm:w-auto">
-                            <Button variant="outline" size="lg" className="w-full sm:w-auto border-2 border-slate-200 hover:border-slate-300 text-bee-midnight font-bold h-14 px-8 rounded-full text-lg bg-transparent transition-all hover:bg-slate-50">
-                                Fazer Login
-                            </Button>
-                        </Link>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-sm font-medium text-slate-600">
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-brand" />
-                            <span>Plataforma completa de gestão</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-brand" />
-                            <span>Interface simples e intuitiva</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-brand" />
-                            <span>Garantia de devolução 100%</span>
-                        </div>
-                    </div>
+            <div className="relative z-10 container mx-auto px-6 md:px-12 flex flex-col items-center justify-center gap-6 md:gap-8 py-8">
+                {/* Badge */}
+                <div
+                    id="hero-badge"
+                    className="inline-flex items-center gap-2.5 border border-bee-amber/30 bg-bee-amber/5 px-4 py-1.5 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] text-bee-amber"
+                >
+                    <Zap className="w-3 h-3 fill-bee-amber shrink-0" />
+                    Gestão fitness a partir de R$ 9,90/mês
                 </div>
 
-                {/* Dashboard Mockup - Overlapping visual to break cliché */}
-                <div className="mt-20 relative mx-auto max-w-5xl animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                    <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-b from-slate-200/50 to-white opacity-50 blur-xl"></div>
-                    <div className="relative rounded-[2rem] border border-slate-200/50 bg-white shadow-2xl overflow-hidden animate-float">
-                        {/* We will use a placeholder div that looks like a Mac window, until image is updated */}
-                        <div className="flex items-center px-4 py-3 bg-slate-50 border-b border-slate-100">
-                            <div className="flex gap-1.5">
-                                <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-                                <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-                                <div className="w-3 h-3 rounded-full bg-slate-300"></div>
-                            </div>
-                        </div>
-                        <div className="aspect-[16/9] w-full bg-slate-50 relative overflow-hidden">
-                            {/* Dashboard content wrapper, to inject screenshot later */}
-                            <div className="absolute inset-0 flex items-center justify-center flex-col text-slate-400 bg-slate-100">
-                                <p className="font-medium">Dashboard Screenshot Space</p>
-                                <span className="text-sm">(Insira a imagem real no src/public)</span>
-                            </div>
-                        </div>
-                    </div>
-                    {/* Overlapping small widgets for depth */}
-                    <div className="absolute -right-8 top-1/3 hidden lg:block rounded-2xl border border-slate-200/50 bg-white p-4 shadow-xl animate-float" style={{ animationDelay: '1s' }}>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-brand/20 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-brand" />
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-bee-midnight">Pagamento Aprovado</p>
-                                <p className="text-xs text-slate-500">Há 2 minutos</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="absolute -left-8 bottom-1/4 hidden lg:block rounded-2xl border border-slate-200/50 bg-white p-4 shadow-xl animate-float" style={{ animationDelay: '1.5s' }}>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-bee-amber flex items-center justify-center text-bee-midnight font-bold">
-                                +5
-                            </div>
-                            <div>
-                                <p className="text-sm font-bold text-bee-midnight">Novos Alunos</p>
-                                <p className="text-xs text-slate-500">Esta semana</p>
-                            </div>
-                        </div>
-                    </div>
+                {/* Headline */}
+                <h1 className="text-center font-display leading-[1.0] tracking-[-0.03em] text-white">
+                    <span className="block text-[clamp(2.4rem,6vw,5.5rem)] font-bold mb-2">
+                        Sua gestão fitness
+                    </span>
+                    <span className="block text-[clamp(2rem,5vw,5rem)] font-bold text-bee-amber italic">
+                        inteligente e descomplicada.
+                    </span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="text-center text-slate-400 text-sm md:text-lg max-w-xl mx-auto leading-relaxed font-medium">
+                    Alunos, treinos e pagamentos 100% integrados. Criado para Personal Trainers, Studios e Academias.
+                </p>
+
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+                    <Link href="/register" className="w-full sm:w-auto">
+                        <Button
+                            id="hero-cta-primary"
+                            size="lg"
+                            className="group w-full sm:w-auto bg-bee-amber text-bee-midnight font-bold h-12 md:h-14 px-8 md:px-10 rounded-full text-sm md:text-base tracking-widest uppercase hover:bg-[#E67E22] transition-all duration-200 shadow-[0_0_40px_rgba(255,191,0,0.25)] hover:shadow-[0_0_60px_rgba(255,191,0,0.4)] hover:-translate-y-0.5 flex items-center gap-2"
+                        >
+                            Começar Agora
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+                    </Link>
+                    <Link href="#planos" className="w-full sm:w-auto">
+                        <Button
+                            id="hero-cta-secondary"
+                            variant="outline"
+                            size="lg"
+                            className="w-full sm:w-auto border border-white/20 text-white font-bold h-12 md:h-14 px-8 md:px-10 rounded-full text-sm md:text-base tracking-wide bg-transparent hover:bg-white/5 hover:border-white/40 transition-all duration-200"
+                        >
+                            Ver Planos
+                        </Button>
+                    </Link>
                 </div>
+
+                {/* Trust row */}
+                <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs md:text-sm font-medium text-slate-500">
+                    {['7 dias de teste completo', 'Cancele quando quiser'].map((item) => (
+                        <span key={item} className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 rounded-full bg-bee-amber inline-block" />
+                            {item}
+                        </span>
+                    ))}
+                </div>
+
+                {/* Bottom divider */}
+                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             </div>
         </section>
     );

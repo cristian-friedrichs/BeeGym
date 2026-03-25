@@ -4,9 +4,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { User, Dumbbell, Building2, Stethoscope, Trophy } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
+import { BeeGymLogo } from '@/components/ui/beegym-logo'
 
 const businessTypes = [
     {
@@ -40,8 +40,6 @@ const businessTypes = [
         icon: Trophy,
     },
 ]
-
-
 
 export default function OnboardingStep1() {
     const router = useRouter()
@@ -77,36 +75,39 @@ export default function OnboardingStep1() {
     }
 
     return (
-        <div className="flex min-h-[100dvh] bg-white p-4 md:p-8">
+        <div className="flex min-h-[100dvh] bg-[#0B0F1A] p-4 md:p-8">
             <div className="max-w-6xl mx-auto w-full my-auto space-y-10 pb-24">
+                {/* Logo */}
+                <div className="flex justify-center">
+                    <BeeGymLogo variant="dark" size="lg" />
+                </div>
+
                 <OnboardingProgress currentStep={1} />
 
                 {/* Title */}
                 <div className="text-center space-y-3">
-                    <h1 className="text-4xl font-black text-bee-midnight font-display tracking-tight">Qual o seu tipo de negócio?</h1>
+                    <h1 className="text-4xl font-black text-white font-display tracking-tight">Qual o seu tipo de negócio?</h1>
                     <p className="text-slate-500 max-w-xl mx-auto">Selecione a opção que melhor descreve sua atuação para personalizarmos sua experiência no BeeGym.</p>
                 </div>
 
                 {/* Cards Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-px bg-white/10">
                     {businessTypes.map((type) => {
                         const Icon = type.icon
                         return (
-                            <Card
+                            <div
                                 key={type.id}
-                                className="cursor-pointer transition-all duration-300 hover:ring-2 hover:ring-bee-amber/20 hover:border-bee-amber hover:shadow-2xl hover:shadow-bee-amber/10 group border-slate-100 overflow-hidden bg-white rounded-3xl"
+                                className="cursor-pointer transition-all duration-300 bg-[#0B0F1A] hover:bg-white/[0.04] group p-8 flex flex-col items-center text-center space-y-4"
                                 onClick={() => handleSelect(type.id)}
                             >
-                                <CardHeader className="p-6 flex flex-col items-center text-center space-y-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center group-hover:bg-bee-amber group-hover:rotate-6 transition-all duration-500 shadow-sm group-hover:shadow-bee-amber/20">
-                                        <Icon className="w-7 h-7 text-bee-amber group-hover:text-bee-midnight transition-colors" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg font-black text-bee-midnight mb-1 font-display">{type.title}</CardTitle>
-                                        <CardDescription className="text-xs leading-relaxed text-slate-400 font-medium">{type.description}</CardDescription>
-                                    </div>
-                                </CardHeader>
-                            </Card>
+                                <div className="w-14 h-14 bg-bee-amber/10 flex items-center justify-center group-hover:bg-bee-amber transition-all duration-500">
+                                    <Icon className="w-7 h-7 text-bee-amber group-hover:text-bee-midnight transition-colors" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-white mb-1 font-display">{type.title}</h3>
+                                    <p className="text-xs leading-relaxed text-slate-500 font-medium">{type.description}</p>
+                                </div>
+                            </div>
                         )
                     })}
                 </div>
@@ -115,7 +116,7 @@ export default function OnboardingStep1() {
                 <div className="flex justify-center">
                     <button
                         onClick={handleLogout}
-                        className="text-xs text-slate-400 hover:text-bee-midnight transition-colors font-bold uppercase tracking-widest"
+                        className="text-xs text-slate-600 hover:text-bee-amber transition-colors font-bold uppercase tracking-widest"
                     >
                         Sair e voltar ao Login
                     </button>

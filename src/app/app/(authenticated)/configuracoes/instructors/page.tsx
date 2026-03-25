@@ -1,10 +1,39 @@
-'use client';
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, Construction } from 'lucide-react';
 import { SectionHeader } from '@/components/ui/section-header';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { getServerPlan } from '@/lib/server-plan';
 
-export default function InstructorsPage() {
+export default async function InstructorsPage() {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id, role')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.organization_id) {
+        return <div className="p-8 text-center text-muted-foreground">Erro: Usuário sem organização vinculada.</div>;
+    }
+
+    const { plan, isActive } = await getServerPlan(profile.organization_id);
+
+    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
+        (profile as any).role === 'ADMIN' ||
+        (profile as any).role === 'BEEGYM_ADMIN';
+
+    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
+        redirect('/app/configuracoes');
+    }
+
     return (
         <div className="space-y-6">
             <SectionHeader

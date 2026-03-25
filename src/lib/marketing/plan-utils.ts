@@ -32,7 +32,7 @@ export const MARKETING_FEATURES: PlanFeature[] = [
         name: "App do Aluno",
         description: "Acesso exclusivo para seu aluno ver treinos e evoluções.",
         icon: Smartphone,
-        includedTiers: ["PLUS", "STUDIO", "PRO", "ENTERPRISE", "CUSTOM"]
+        includedTiers: ["STUDIO", "PRO", "ENTERPRISE", "CUSTOM"]
     },
     {
         name: "Gestão Financeira",

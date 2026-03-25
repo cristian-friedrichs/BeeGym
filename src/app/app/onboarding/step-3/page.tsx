@@ -11,6 +11,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext'
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
 import { completeOnboardingAction } from '@/actions/onboarding'
 import { cn } from '@/lib/utils'
+import { BeeGymLogo } from '@/components/ui/beegym-logo'
 
 interface Plan {
     id: string
@@ -180,17 +181,20 @@ export default function OnboardingStep3() {
     }
 
     return (
-        <div className="flex min-h-[100dvh] bg-white p-4 md:p-8">
+        <div className="flex min-h-[100dvh] bg-[#0B0F1A] p-4 md:p-8">
             <div className="max-w-6xl mx-auto w-full my-auto space-y-10 pb-24">
+                <div className="flex justify-center">
+                    <BeeGymLogo variant="dark" size="lg" />
+                </div>
                 <OnboardingProgress currentStep={3} />
 
                 <div>
-                    <h1 className="text-4xl font-black font-display text-bee-midnight tracking-tight">Escolha o seu Plano</h1>
+                    <h1 className="text-4xl font-black font-display text-white tracking-tight">Escolha o seu Plano</h1>
                     <p className="text-sm text-slate-500 mt-2 font-medium">Planos flexíveis que crescem com você no BeeGym.</p>
                 </div>
 
-                <Card className="border-slate-100 shadow-2xl shadow-slate-200/40 bg-white overflow-hidden rounded-[2.5rem] border-t-4 border-t-bee-amber">
-                    <CardContent className="p-8">
+                <div className="border border-white/10 bg-white/[0.02] overflow-hidden border-t-2 border-t-bee-amber">
+                    <div className="p-8">
                 {isFetchingPlans ? (
                     <div className="flex flex-col items-center justify-center py-20 space-y-4">
                         <Loader2 className="w-10 h-10 animate-spin text-bee-amber" />
@@ -212,16 +216,16 @@ export default function OnboardingStep3() {
                                 <div
                                     key={plan.id}
                                     onClick={() => isCompatible && setSelectedPlanId(plan.id)}
-                                    className={`relative flex flex-col p-6 rounded-3xl border-2 transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${isSelected
-                                        ? 'border-bee-amber bg-amber-50 shadow-xl shadow-bee-amber/10'
+                                    className={`relative flex flex-col p-6 border-2 transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${isSelected
+                                        ? 'border-bee-amber bg-bee-amber/10'
                                         : isCompatible
-                                            ? 'border-slate-100 bg-white hover:border-bee-amber/30 hover:shadow-lg'
-                                            : 'border-slate-100 bg-slate-50 opacity-60 grayscale cursor-not-allowed'
+                                            ? 'border-white/10 bg-white/[0.02] hover:border-bee-amber/30 hover:bg-white/[0.04]'
+                                            : 'border-white/10 bg-white/5 opacity-40 grayscale cursor-not-allowed'
                                         }`}
                                 >
                                     {!isCompatible && (
                                         <div className="absolute top-2 right-2">
-                                            <div className="bg-slate-200 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 rounded uppercase">
+                                            <div className="bg-white/10 text-slate-500 text-[8px] font-bold px-1.5 py-0.5 uppercase">
                                                 Incompatível
                                             </div>
                                         </div>
@@ -231,19 +235,19 @@ export default function OnboardingStep3() {
                                         <Icon className={`w-6 h-6 ${plan.colorClass}`} />
                                     </div>
 
-                                    <h3 className="text-sm font-black text-[#0B0F1A] mb-1">{plan.name}</h3>
+                                    <h3 className="text-sm font-black text-white mb-1">{plan.name}</h3>
                                     <p className="text-[10px] text-slate-500 mb-4 line-clamp-2 h-8 leading-tight">
                                         {plan.description}
                                     </p>
 
-                                    <div className="mt-auto pt-5 border-t border-slate-100/80">
+                                    <div className="mt-auto pt-5 border-t border-white/10">
                                         {plan.promo_price && plan.promo_price > 0 ? (
                                             <div className="flex flex-col">
                                                 <span className="text-[10px] text-slate-400 line-through font-bold">
                                                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
                                                 </span>
                                                 <div className="flex items-baseline gap-1">
-                                                    <span className="text-xl font-black text-bee-midnight font-display">
+                                                    <span className="text-xl font-black text-white font-display">
                                                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.promo_price)}
                                                     </span>
                                                     <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">/mês</span>
@@ -251,7 +255,7 @@ export default function OnboardingStep3() {
                                             </div>
                                         ) : (
                                             <div className="flex items-baseline gap-1">
-                                                <span className="text-xl font-black text-bee-midnight font-display">
+                                                <span className="text-xl font-black text-white font-display">
                                                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
                                                 </span>
                                                 <span className="text-xs text-slate-400 font-bold uppercase tracking-tighter">/mês</span>
@@ -269,20 +273,20 @@ export default function OnboardingStep3() {
                         })}
                     </div>
                 )}
-                    </CardContent>
+                    </div>
 
-                    <CardFooter className="flex justify-between border-t p-6 bg-slate-50/50">
+                    <div className="flex justify-between border-t border-white/10 p-6 bg-white/[0.02]">
                         <Button
                             variant="ghost"
                             onClick={() => router.push('/app/onboarding/step-2')}
-                            className="rounded-xl text-slate-400 font-bold uppercase tracking-widest text-[10px] hover:text-bee-midnight"
+                            className="text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:text-bee-amber hover:bg-white/5"
                         >
                             Voltar
                         </Button>
                         <Button
                             onClick={handleComplete}
                             disabled={!selectedPlanId || isLoading}
-                            className="bg-bee-amber hover:bg-amber-500 px-10 h-14 rounded-2xl font-black shadow-xl shadow-bee-amber/20 transition-all font-display text-bee-midnight text-sm uppercase tracking-wider"
+                            className="bg-bee-amber hover:bg-amber-500 px-10 h-14 rounded-full font-black shadow-xl shadow-bee-amber/20 transition-all font-display text-bee-midnight text-sm uppercase tracking-wider"
                         >
                             {isLoading ? (
                                 <>
@@ -295,8 +299,8 @@ export default function OnboardingStep3() {
                                 </>
                             )}
                         </Button>
-                    </CardFooter>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     )

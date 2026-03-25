@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Loader2, ArrowRight } from 'lucide-react'
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress'
+import { BeeGymLogo } from '@/components/ui/beegym-logo'
 
 export default function OnboardingStep2() {
     const router = useRouter()
@@ -202,37 +203,40 @@ export default function OnboardingStep2() {
     }
 
     return (
-        <div className="flex min-h-[100dvh] bg-white p-2 md:p-4">
+        <div className="flex min-h-[100dvh] bg-[#0B0F1A] p-2 md:p-4">
             <div className="max-w-6xl mx-auto w-full my-auto space-y-4 flex flex-col justify-center pb-32">
+                <div className="flex justify-center mb-2">
+                    <BeeGymLogo variant="dark" size="lg" />
+                </div>
                 <OnboardingProgress currentStep={2} />
 
-                <Card className="border-slate-100 shadow-2xl shadow-slate-200/40 bg-white overflow-hidden rounded-[2.5rem] border-t-4 border-t-bee-amber">
-                    <CardContent className="p-0">
+                <div className="border border-white/10 bg-white/[0.02] overflow-hidden border-t-2 border-t-bee-amber">
+                    <div className="p-0">
                         <div className="grid grid-cols-1 lg:grid-cols-2">
                             {/* Coluna 1: Identificação e Contato */}
                             <div className="p-6 space-y-4">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-bee-midnight font-display">Identificação do Espaço</h3>
+                                        <div className="w-1.5 h-6 bg-bee-amber" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white font-display">Identificação do Espaço</h3>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-bold text-slate-500 ml-1">Nome do Estabelecimento *</Label>
+                                        <Label className="text-xs font-bold text-slate-400 ml-1">Nome do Estabelecimento *</Label>
                                         <Input
                                             name="organizationName"
                                             value={formData.organizationName}
                                             onChange={handleChange}
                                             placeholder="Ex: BeeGym Studio"
-                                            className="h-12 rounded-2xl border-slate-200 bg-white/50 focus:bg-white transition-all"
+                                            className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 ml-1">Tipo *</Label>
+                                            <Label className="text-xs font-bold text-slate-400 ml-1">Tipo *</Label>
                                             <Select value={formData.documentType} onValueChange={(v) => handleSelectChange('documentType', v)}>
-                                                <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white/50">
+                                                <SelectTrigger className="h-12 border-white/10 bg-white/5 text-white">
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -242,47 +246,47 @@ export default function OnboardingStep2() {
                                             </Select>
                                         </div>
                                         <div className="sm:col-span-2 space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 ml-1">{formData.documentType} *</Label>
+                                            <Label className="text-xs font-bold text-slate-400 ml-1">{formData.documentType} *</Label>
                                             <Input
                                                 name="document"
                                                 value={formData.document}
                                                 onChange={handleChange}
                                                 placeholder={formData.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0001-00'}
                                                 maxLength={formData.documentType === 'CPF' ? 14 : 18}
-                                                className="h-12 rounded-2xl border-slate-200 bg-white/50 focus:bg-white transition-all"
+                                                className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 ml-1">Telefone *</Label>
+                                            <Label className="text-xs font-bold text-slate-400 ml-1">Telefone *</Label>
                                             <Input
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleChange}
                                                 placeholder="(00) 00000-0000"
                                                 maxLength={15}
-                                                className="h-12 rounded-2xl border-slate-200 bg-white/50 focus:bg-white transition-all"
+                                                className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-xs font-bold text-slate-500 ml-1">E-mail Comercial *</Label>
+                                            <Label className="text-xs font-bold text-slate-400 ml-1">E-mail Comercial *</Label>
                                             <Input
                                                 name="email"
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 placeholder="contato@exemplo.com"
-                                                className="h-12 rounded-2xl border-slate-200 bg-white/50 focus:bg-white transition-all"
+                                                className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-bold text-slate-500 ml-1">Número de Alunos *</Label>
+                                        <Label className="text-xs font-bold text-slate-400 ml-1">Número de Alunos *</Label>
                                         <Select value={formData.studentRange} onValueChange={(v) => handleSelectChange('studentRange', v)}>
-                                            <SelectTrigger className="h-12 rounded-2xl border-slate-200 bg-white/50">
+                                            <SelectTrigger className="h-12 border-white/10 bg-white/5 text-white">
                                                 <SelectValue placeholder="Selecione..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -298,14 +302,14 @@ export default function OnboardingStep2() {
                             </div>
 
                             {/* Coluna 2: Localização */}
-                            <div className="p-6 bg-slate-50/50 border-l border-slate-100 space-y-4">
+                            <div className="p-6 bg-white/[0.02] border-l border-white/10 space-y-4">
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-1.5 h-6 bg-bee-amber rounded-full" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-bee-midnight font-display">Localização</h3>
+                                        <div className="w-1.5 h-6 bg-bee-amber" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white font-display">Localização</h3>
                                     </div>
 
-                                    <div className="flex items-center space-x-3 p-4 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className="flex items-center space-x-3 p-4 bg-white/5 border border-white/10">
                                         <Switch
                                             id="physical-location"
                                             checked={!formData.hasPhysicalLocation}
@@ -321,13 +325,13 @@ export default function OnboardingStep2() {
                                                 addressState: prev.addressState,
                                             }))}
                                         />
-                                        <Label htmlFor="physical-location" className="text-xs text-slate-500 font-medium cursor-pointer">Atendimento 100% Online / Domiciliar</Label>
+                                        <Label htmlFor="physical-location" className="text-xs text-slate-400 font-medium cursor-pointer">Atendimento 100% Online / Domiciliar</Label>
                                     </div>
 
                                     {formData.hasPhysicalLocation ? (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 ml-1">CEP *</Label>
+                                                <Label className="text-xs font-bold text-slate-400 ml-1">CEP *</Label>
                                                 <div className="relative">
                                                     <Input
                                                         name="addressZip"
@@ -336,7 +340,7 @@ export default function OnboardingStep2() {
                                                         onBlur={handleCepBlur}
                                                         placeholder="00000-000"
                                                         maxLength={9}
-                                                        className="h-12 rounded-2xl border-slate-200 transition-all focus:ring-orange-500/20"
+                                                        className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 transition-all focus:ring-bee-amber/20"
                                                     />
                                                     {isCepLoading && (
                                                         <div className="absolute right-3 top-4">
@@ -348,43 +352,43 @@ export default function OnboardingStep2() {
 
                                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                                 <div className="sm:col-span-3 space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">Endereço</Label>
-                                                    <Input name="addressLine1" value={formData.addressLine1} readOnly className="h-12 rounded-2xl bg-slate-100/50 text-slate-500 border-none italic" placeholder="Preenchido via CEP" />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">Endereço</Label>
+                                                    <Input name="addressLine1" value={formData.addressLine1} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" placeholder="Preenchido via CEP" />
                                                 </div>
                                                 <div className="sm:col-span-1 space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">Nº *</Label>
-                                                    <Input name="addressNumber" value={formData.addressNumber} onChange={handleChange} className="h-12 rounded-2xl border-slate-200" placeholder="00" />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">Nº *</Label>
+                                                    <Input name="addressNumber" value={formData.addressNumber} onChange={handleChange} className="h-12 border-white/10 bg-white/5 text-white" placeholder="00" />
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">Bairro</Label>
-                                                    <Input name="addressNeighborhood" value={formData.addressNeighborhood} readOnly className="h-12 rounded-2xl bg-slate-100/50 text-slate-500 border-none italic" />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">Bairro</Label>
+                                                    <Input name="addressNeighborhood" value={formData.addressNeighborhood} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">Complemento</Label>
-                                                    <Input name="addressComplement" value={formData.addressComplement} onChange={handleChange} className="h-12 rounded-2xl border-slate-200" placeholder="Sala, Apto..." />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">Complemento</Label>
+                                                    <Input name="addressComplement" value={formData.addressComplement} onChange={handleChange} className="h-12 border-white/10 bg-white/5 text-white" placeholder="Sala, Apto..." />
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">Cidade</Label>
-                                                    <Input name="addressCity" value={formData.addressCity} readOnly className="h-12 rounded-2xl bg-slate-100/50 text-slate-500 border-none italic" />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">Cidade</Label>
+                                                    <Input name="addressCity" value={formData.addressCity} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-xs font-bold text-slate-500 ml-1">UF</Label>
-                                                    <Input name="addressState" value={formData.addressState} readOnly className="h-12 rounded-2xl bg-slate-100/50 text-slate-500 border-none italic uppercase" />
+                                                    <Label className="text-xs font-bold text-slate-400 ml-1">UF</Label>
+                                                    <Input name="addressState" value={formData.addressState} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic uppercase" />
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 ml-1">Estado (UF) *</Label>
+                                                <Label className="text-xs font-bold text-slate-400 ml-1">Estado (UF) *</Label>
                                                 <Select value={formData.addressState} onValueChange={(v) => setFormData(prev => ({ ...prev, addressState: v, addressCity: '' }))}>
-                                                    <SelectTrigger className="h-12 rounded-2xl border-slate-200">
+                                                    <SelectTrigger className="h-12 border-white/10 bg-white/5 text-white">
                                                         <SelectValue placeholder="Selecione..." />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -395,7 +399,7 @@ export default function OnboardingStep2() {
                                                 </Select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-xs font-bold text-slate-500 ml-1">Cidade Principal de Atuação *</Label>
+                                                <Label className="text-xs font-bold text-slate-400 ml-1">Cidade Principal de Atuação *</Label>
                                                 <div className="relative">
                                                     <Input
                                                         name="addressCity"
@@ -404,7 +408,7 @@ export default function OnboardingStep2() {
                                                         placeholder="Ex: São Paulo"
                                                         list="cities-list"
                                                         disabled={!formData.addressState || isCitiesLoading}
-                                                        className="h-12 rounded-2xl border-slate-200"
+                                                        className="h-12 border-white/10 bg-white/5 text-white"
                                                     />
                                                     {isCitiesLoading && <Loader2 className="absolute right-3 top-4 h-4 w-4 animate-spin text-orange-500" />}
                                                 </div>
@@ -417,25 +421,25 @@ export default function OnboardingStep2() {
                                 </div>
                             </div>
                         </div>
-                    </CardContent>
+                    </div>
 
-                    <CardFooter className="flex justify-between border-t p-6 bg-white">
+                    <div className="flex justify-between border-t border-white/10 p-6 bg-white/[0.02]">
                         <Button
                             variant="ghost"
                             onClick={() => router.push('/app/onboarding')}
-                            className="rounded-2xl text-slate-400 hover:text-bee-midnight hover:bg-slate-50 px-8 h-12 font-bold uppercase tracking-widest text-[10px]"
+                            className="text-slate-500 hover:text-bee-amber hover:bg-white/5 px-8 h-12 font-bold uppercase tracking-widest text-[10px]"
                         >
                             Voltar
                         </Button>
                         <Button
                             onClick={handleNext}
                             disabled={!formData.organizationName || !formData.document || !formData.phone || !formData.email || !formData.studentRange || (formData.hasPhysicalLocation && (!formData.addressZip || !formData.addressNumber)) || (!formData.hasPhysicalLocation && (!formData.addressState || !formData.addressCity))}
-                            className="h-14 px-12 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-2xl shadow-xl shadow-bee-amber/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-display text-sm uppercase tracking-wider"
+                            className="h-14 px-12 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full shadow-xl shadow-bee-amber/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-display text-sm uppercase tracking-wider"
                         >
                             Próximo Passo <ArrowRight className="w-5 h-5 ml-2" />
                         </Button>
-                    </CardFooter>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     )

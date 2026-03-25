@@ -1,71 +1,100 @@
-import { Users, CalendarDays, Dumbbell, MessageSquare, LineChart, Wallet } from 'lucide-react';
+import { Users, CalendarDays, Dumbbell, Wallet, LineChart, MessageSquare } from 'lucide-react';
+
+const FEATURES = [
+    {
+        icon: Users,
+        title: 'Gestão de Alunos',
+        description: 'Ficha completa, histórico de treinos, avaliações físicas e acompanhamento de evolução. Tudo em tempo real.',
+        highlight: true,
+    },
+    {
+        icon: Dumbbell,
+        title: 'Treinos Personalizados',
+        description: 'Monte treinos profissionais com biblioteca de exercícios e envie diretamente para o aluno.',
+    },
+    {
+        icon: CalendarDays,
+        title: 'Agenda Integrada',
+        description: 'Organize aulas, sessões e horários sem conflitos. Visão diária, semanal e mensal.',
+    },
+    {
+        icon: Wallet,
+        title: 'Cobranças Automáticas',
+        description: 'Pix Automático e cartão recorrente integrados. Cobranças no piloto automático, zero inadimplência.',
+        highlight: true,
+    },
+    {
+        icon: LineChart,
+        title: 'Relatórios e Métricas',
+        description: 'Veja o desempenho do negócio, receita, alunos ativos e inadimplência em dashboards claros.',
+    },
+    {
+        icon: MessageSquare,
+        title: 'Comunicação Centralizada',
+        description: 'Feedbacks, recibos e notificações — tudo dentro da plataforma, sem WhatsApp.',
+    },
+];
 
 export function FeaturesGrid() {
-    const features = [
-        {
-            icon: Users,
-            title: "Gestão de Alunos",
-            description: "Cadastre, acompanhe e organize todos os seus alunos em um único lugar com fichas detalhadas.",
-            delay: "0.1s"
-        },
-        {
-            icon: CalendarDays,
-            title: "Agenda Inteligente",
-            description: "Organize aulas, sessões e compromissos com facilidade. Evite choques de horários.",
-            delay: "0.2s"
-        },
-        {
-            icon: Dumbbell,
-            title: "Treinos Personalizados",
-            description: "Monte e acompanhe treinos profissionais para seus alunos com biblioteca de exercícios.",
-            delay: "0.3s"
-        },
-        {
-            icon: MessageSquare,
-            title: "Comunicação Eficiente",
-            description: "Centralize conversas e feedbacks. Mantenha seus alunos engajados na jornada.",
-            delay: "0.4s"
-        },
-        {
-            icon: Wallet,
-            title: "Controle Financeiro",
-            description: "Acompanhe receitas, pagamentos e pendências. Faturamento automático via Pix e Cartão.",
-            delay: "0.5s"
-        },
-        {
-            icon: LineChart,
-            title: "Relatórios e Métricas",
-            description: "Entenda o desempenho do seu negócio fitness com dashboards claros e visuais.",
-            delay: "0.6s"
-        }
-    ];
-
     return (
-        <section className="py-24 bg-slate-50">
+        <section id="recursos" className="py-28 md:py-36 bg-slate-50">
             <div className="container mx-auto px-6 md:px-12">
-                <div className="text-center max-w-2xl mx-auto mb-16 animate-fade-in-up">
-                    <h2 className="text-3xl md:text-5xl font-display font-bold text-bee-midnight mb-6">
-                        Ferramentas para Entregar Excelência
+                {/* Header */}
+                <div className="max-w-3xl mb-20">
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">
+                        Recursos
+                    </p>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-bee-midnight leading-[1.05] tracking-tight mb-6">
+                        Ferramentas que fazem seu negócio crescer.
                     </h2>
                     <p className="text-lg text-slate-600 font-medium">
-                        Tudo o que você precisa para profissionalizar sua operação, organizado em um painel intuitivo.
+                        Nada de app por cima de app. Um sistema que cobre do aluno ao financeiro.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                    {features.map((feature, idx) => (
+                {/* Asymmetric feature grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-slate-200">
+                    {FEATURES.map((feature, i) => (
                         <div
-                            key={idx}
-                            className="group p-8 bg-white border border-slate-200 hover:border-bee-amber/50 rounded-3xl shadow-soft hover:shadow-xl transition-all duration-300 animate-fade-in-up hover:-translate-y-1"
-                            style={{ animationDelay: feature.delay }}
+                            key={i}
+                            id={`feature-${i}`}
+                            className={`group relative p-8 md:p-10 transition-all duration-200 ${
+                                feature.highlight
+                                    ? 'bg-bee-midnight text-white'
+                                    : 'bg-white hover:bg-slate-50'
+                            }`}
                         >
-                            <div className="w-14 h-14 rounded-2xl bg-slate-100 group-hover:bg-bee-amber/20 flex items-center justify-center mb-6 transition-colors duration-300">
-                                <feature.icon className="w-7 h-7 text-bee-midnight" />
+                            {/* Icon */}
+                            <div
+                                className={`w-12 h-12 flex items-center justify-center mb-6 ${
+                                    feature.highlight
+                                        ? 'bg-bee-amber/15 text-bee-amber'
+                                        : 'bg-slate-100 text-bee-midnight group-hover:bg-bee-amber/15 group-hover:text-bee-amber transition-colors duration-200'
+                                }`}
+                            >
+                                <feature.icon className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-bold tracking-tight text-bee-midnight mb-3">{feature.title}</h3>
-                            <p className="text-slate-600 leading-relaxed font-medium">
+
+                            <h3
+                                className={`text-xl font-bold mb-3 tracking-tight ${
+                                    feature.highlight ? 'text-white' : 'text-bee-midnight'
+                                }`}
+                            >
+                                {feature.title}
+                            </h3>
+                            <p
+                                className={`text-sm leading-relaxed font-medium ${
+                                    feature.highlight ? 'text-slate-400' : 'text-slate-500'
+                                }`}
+                            >
                                 {feature.description}
                             </p>
+
+                            {feature.highlight && (
+                                <div className="absolute bottom-8 right-8 text-bee-amber/20 font-display font-bold text-6xl leading-none pointer-events-none">
+                                    ↗
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>

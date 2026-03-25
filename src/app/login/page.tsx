@@ -591,7 +591,7 @@ function LoginForm() {
                   onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                   onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
                 >
-                  Cadastre-se grátis
+                  Crie sua conta
                 </Link>
               </p>
             </div>

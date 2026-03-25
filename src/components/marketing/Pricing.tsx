@@ -13,110 +13,95 @@ interface PricingProps {
 }
 
 export function Pricing({ plans }: PricingProps) {
-    // Se não houver planos ativos no BD, renderiza versão de fallback/vazia segura
-    if (!plans || plans.length === 0) {
-        return null;
-    }
+    if (!plans || plans.length === 0) return null;
 
     return (
-        <section className="py-24 md:py-32 bg-white" id="planos">
-            <div className="container mx-auto px-6 md:px-12">
-                <div className="text-center max-w-2xl mx-auto mb-20 animate-fade-in-up">
-                    <h2 className="text-4xl md:text-5xl font-display font-bold text-bee-midnight tracking-tight mb-6">
-                        Planos sob medida para o seu fitness
+        <section id="planos" className="py-28 md:py-36 bg-[#0B0F1A] relative overflow-hidden">
+            {/* Amber bleed center */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-bee-amber/30 to-transparent" />
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[600px] h-[600px] bg-bee-amber/5 blur-[160px] pointer-events-none" />
+
+            <div className="container mx-auto px-6 md:px-12 relative z-10">
+                <div className="text-center max-w-2xl mx-auto mb-20">
+                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">Planos</p>
+                    <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
+                        Preço simples. Valor real.
                     </h2>
-                    <p className="text-lg md:text-xl text-slate-600 font-medium">
-                        Temos uma estrutura de preços projetada para acompanhar o crescimento do seu negócio.
+                    <p className="text-slate-400 font-medium text-lg">
+                        Escolha o plano que acompanha o tamanho do seu negócio.
                     </p>
                 </div>
 
-                <div className="flex flex-col lg:flex-row items-stretch justify-center gap-8 max-w-6xl mx-auto">
+                <div className="flex flex-col lg:flex-row items-stretch justify-center gap-px bg-white/5 border border-white/5 max-w-5xl mx-auto">
                     {plans.map((plan, idx) => {
-                        // Regra visual de destaque: se for o plano do meio (estratégico)
                         const isHighlighted = idx === Math.floor(plans.length / 2);
-
-                        // Tratamento de Promoções nativas do banco
                         const hasPromo = plan.promo_price !== null;
                         const finalPrice = hasPromo ? plan.promo_price : plan.price;
-
-                        // Extrair features dinâmicas com base no tier do banco
-                        // Extrair features dinâmicas com base no que foi salvo no banco
                         const dbFeatures = getFeaturesForTier(plan.tier, (plan as any).allowed_features as string[]);
-
-                        // Priorizar os Highlights de Marketing salvos no banco, se existirem
-                        const highlights = (plan as any).marketing_highlights && (plan as any).marketing_highlights.length > 0
+                        const highlights = (plan as any).marketing_highlights?.length > 0
                             ? (plan as any).marketing_highlights
                             : dbFeatures.map((f: any) => f.name);
-
-                        // Fallback de Subtítulo
-                        const subtitle = (plan as any).marketing_subtitle || plan.description || "O plano perfeito para começar a sua gestão fitness profissional.";
-
+                        const subtitle = (plan as any).marketing_subtitle || plan.description || '';
 
                         return (
                             <div
                                 key={plan.id}
-                                className={`relative flex flex-col p-8 md:p-10 rounded-[2rem] w-full lg:w-1/3 transition-all duration-300 animate-fade-in-up hover:-translate-y-2
-                  ${isHighlighted
-                                        ? 'bg-bee-midnight text-white shadow-2xl scale-100 lg:scale-105 z-10 border border-bee-midnight'
-                                        : 'bg-white text-bee-midnight shadow-xl border border-slate-200'
-                                    }`}
-                                style={{ animationDelay: `${0.1 * idx}s` }}
+                                id={`plan-${plan.tier}`}
+                                className={`relative flex flex-col w-full lg:w-1/3 p-8 md:p-10 transition-all duration-300 ${
+                                    isHighlighted
+                                        ? 'bg-bee-amber text-bee-midnight'
+                                        : 'bg-[#0B0F1A] text-white hover:bg-white/3'
+                                }`}
                             >
-                                {/* Badge Highlight */}
+                                {/* Popular badge */}
                                 {isHighlighted && (
-                                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-bee-amber text-bee-midnight text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
-                                        Mais Popular
+                                    <div className="absolute -top-3 left-8 bg-bee-midnight text-bee-amber text-[10px] font-bold uppercase tracking-[0.2em] px-3 py-1">
+                                        Mais popular
                                     </div>
                                 )}
 
+                                {/* Plan name */}
                                 <div className="mb-8">
-                                    <h3 className={`text-2xl font-bold mb-2 ${isHighlighted ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
-                                    <p className={`text-sm font-medium h-10 leading-tight ${isHighlighted ? 'text-slate-300' : 'text-slate-500'}`}>
+                                    <h3 className={`text-xl font-bold mb-1 tracking-tight ${isHighlighted ? 'text-bee-midnight' : 'text-white'}`}>
+                                        {plan.name}
+                                    </h3>
+                                    <p className={`text-sm font-medium ${isHighlighted ? 'text-bee-midnight/60' : 'text-slate-500'}`}>
                                         {subtitle}
                                     </p>
                                 </div>
 
-                                <div className="mb-8 flex-1">
-                                    <div className="flex items-end gap-1 mb-2">
-                                        <span className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{finalPrice?.toFixed(2)}</span>
-                                        <span className={`text-sm font-medium mb-1 ${isHighlighted ? 'text-slate-400' : 'text-slate-500'}`}>/mês</span>
+                                {/* Price */}
+                                <div className="mb-8">
+                                    <div className="flex items-end gap-1">
+                                        <span className={`text-5xl font-display font-bold tracking-tight ${isHighlighted ? 'text-bee-midnight' : 'text-white'}`}>
+                                            R$ {Number(finalPrice).toFixed(2).replace('.', ',')}
+                                        </span>
+                                        <span className={`text-sm font-medium mb-1.5 ${isHighlighted ? 'text-bee-midnight/60' : 'text-slate-500'}`}>
+                                            /mês
+                                        </span>
                                     </div>
-
                                     {hasPromo && (
-                                        <div className="inline-block mt-1">
-                                            <span className={`text-sm line-through ${isHighlighted ? 'text-slate-400' : 'text-slate-400'}`}>
-                                                {Number(plan.price).toFixed(2)}
-                                            </span>
-                                            <span className={`text-xs ml-2 font-bold px-2 py-0.5 rounded-md ${isHighlighted ? 'bg-white/10 text-white' : 'bg-coral-red/10 text-coral-red'}`}>
-                                                Oferta Válida
-                                            </span>
-                                        </div>
+                                        <p className={`text-sm line-through mt-1 ${isHighlighted ? 'text-bee-midnight/40' : 'text-slate-600'}`}>
+                                            R$ {Number(plan.price).toFixed(2).replace('.', ',')}
+                                        </p>
                                     )}
                                 </div>
 
-                                <ul className="space-y-4 mb-10 flex-1">
-                                    {/* Mostrar limite de alunos primeiro, se existir */}
-                                    {(plan as any).max_students ? (
+                                {/* Features */}
+                                <ul className="space-y-3 mb-10 flex-1">
+                                    {(plan as any).max_students != null && (
                                         <li className="flex items-center gap-3">
-                                            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-brand" />
-                                            <span className={`text-sm font-bold ${isHighlighted ? 'text-white' : 'text-bee-midnight'}`}>
-                                                Até {(plan as any).max_students} alunos ativos
+                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${isHighlighted ? 'text-bee-midnight' : 'text-bee-amber'}`} />
+                                            <span className={`text-sm font-bold ${isHighlighted ? 'text-bee-midnight' : 'text-white'}`}>
+                                                {(plan as any).max_students ? `Até ${(plan as any).max_students} alunos` : 'Alunos ilimitados'}
                                             </span>
                                         </li>
-                                    ) : (plan as any).max_students === null ? (
-                                        <li className="flex items-center gap-3">
-                                            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-brand" />
-                                            <span className={`text-sm font-bold ${isHighlighted ? 'text-white' : 'text-bee-midnight'}`}>
-                                                Alunos Ilimitados
-                                            </span>
-                                        </li>
-                                    ) : null}
-
-                                    {highlights.map((highlight: string, hIdx: number) => (
-                                        <li key={hIdx} className="flex items-center gap-3">
-                                            <CheckCircle2 className={`w-5 h-5 shrink-0 ${isHighlighted ? 'text-emerald-brand' : 'text-emerald-brand'}`} />
-                                            <span className={`text-sm font-medium ${isHighlighted ? 'text-slate-300' : 'text-slate-600'}`}>
-                                                {highlight}
+                                    )}
+                                    {highlights.map((h: string, hi: number) => (
+                                        <li key={hi} className="flex items-center gap-3">
+                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${isHighlighted ? 'text-bee-midnight' : 'text-bee-amber'}`} />
+                                            <span className={`text-sm font-medium ${isHighlighted ? 'text-bee-midnight/80' : 'text-slate-400'}`}>
+                                                {h}
                                             </span>
                                         </li>
                                     ))}
@@ -124,19 +109,24 @@ export function Pricing({ plans }: PricingProps) {
 
                                 <Link href="/register" className="mt-auto">
                                     <Button
-                                        className={`w-full h-12 rounded-xl font-bold text-base transition-all hover:-translate-y-0.5 hover:shadow-lg
-                      ${isHighlighted
-                                                ? 'bg-bee-amber text-bee-midnight'
-                                                : 'bg-slate-100 text-bee-midnight'
-                                            }`}
+                                        id={`plan-cta-${plan.tier}`}
+                                        className={`w-full h-12 rounded-full font-bold text-sm tracking-widest uppercase transition-all hover:-translate-y-0.5 ${
+                                            isHighlighted
+                                                ? 'bg-bee-midnight text-white hover:bg-bee-midnight/90'
+                                                : 'bg-bee-amber text-bee-midnight hover:bg-[#E67E22]'
+                                        }`}
                                     >
-                                        Começar Agora
+                                        Começar agora
                                     </Button>
                                 </Link>
                             </div>
                         );
                     })}
                 </div>
+
+                <p className="text-center text-slate-600 text-sm mt-8 font-medium">
+                    Todos os planos incluem 7 dias de teste · Sem necessidade de cartão de crédito
+                </p>
             </div>
         </section>
     );

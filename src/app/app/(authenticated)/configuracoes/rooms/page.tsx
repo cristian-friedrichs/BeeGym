@@ -31,10 +31,7 @@ export default async function RoomsPage() {
         (profile as any).role === 'ADMIN' ||
         (profile as any).role === 'BEEGYM_ADMIN';
 
-    // Rooms are usually part of the basic plan (configuracoes), but we can check a feature if needed.
-    // Assuming 'configuracoes' is enough unless it's advanced.
-    // For now, no specific feature gate for rooms, but checking isActive.
-    if (!isMasterAdmin && !isActive) {
+    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('salas'))) {
         redirect('/app/configuracoes');
     }
 

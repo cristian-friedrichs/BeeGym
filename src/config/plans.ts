@@ -51,8 +51,8 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         featuresList: [
             'Até 20 Alunos Ativos',
             'Gestão de Alunos e Pagamentos',
-            'Calendário Completo',
-            'Controle de Frequência e Treinos',
+            'Calendário e Agenda',
+            'Prescrição de Treinos',
             'Biblioteca de Exercícios',
         ],
         allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes'],
@@ -69,10 +69,9 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         featuresList: [
             'Até 40 Alunos Ativos',
             'Tudo do STARTER',
-            'App do Aluno (breve)',
-            'Chat Integrado',
+            'Relatórios Básicos',
         ],
-        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas'],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes'],
         icon: Zap,
     },
     plan_studio: {
@@ -86,11 +85,11 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         featuresList: [
             'Até 100 Alunos Ativos',
             'Tudo do PLUS',
+            'App do Aluno (em breve)',
+            'Multi-instrutores e Salas',
             'Aulas Coletivas e Turmas',
-            'Múltiplos Agendamentos',
-            'Automação de Cobrança (breve)',
         ],
-        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas'],
+        allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas', 'multiplos_usuarios'],
         icon: Dumbbell,
     },
     plan_pro: {

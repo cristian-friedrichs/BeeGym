@@ -15,6 +15,7 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { OnboardingProgress } from '@/components/onboarding/OnboardingProgress';
 import { finalizeOnboardingAction } from '@/actions/onboarding-complete';
 import { verifyPixStatusAction } from '@/actions/verify-pix';
+import { BeeGymLogo } from '@/components/ui/beegym-logo';
 
 // O plano é carregado dinamicamente do BD no useEffect
 
@@ -305,13 +306,13 @@ export default function PagamentoPage() {
     if (!plano) {
         if (isHydrated && !onboardingData.planId) {
             return (
-                <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 space-y-4 p-4 text-center">
-                    <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-                        <AlertCircle className="w-8 h-8 text-slate-500" />
+                <div className="flex min-h-screen flex-col items-center justify-center bg-[#0B0F1A] space-y-4 p-4 text-center">
+                    <div className="w-16 h-16 bg-white/10 flex items-center justify-center mb-4">
+                        <AlertCircle className="w-8 h-8 text-slate-400" />
                     </div>
-                    <h2 className="text-xl font-bold font-display text-slate-800">Sessão Expirada</h2>
+                    <h2 className="text-xl font-bold font-display text-white">Sessão Expirada</h2>
                     <p className="text-slate-500 max-w-md">Não encontramos um plano selecionado. Por favor, volte e escolha um plano novamente para prosseguir.</p>
-                    <Button onClick={() => router.replace('/app/onboarding/step-3')} className="mt-4 bg-bee-amber text-bee-midnight hover:bg-amber-500 font-bold rounded-xl h-12 px-8">
+                    <Button onClick={() => router.replace('/app/onboarding/step-3')} className="mt-4 bg-bee-amber text-bee-midnight hover:bg-amber-500 font-bold rounded-full h-12 px-8">
                         Voltar para os planos
                     </Button>
                 </div>
@@ -364,8 +365,11 @@ export default function PagamentoPage() {
     };
 
     return (
-        <div className="flex min-h-[100dvh] bg-white p-4 md:p-8">
+        <div className="flex min-h-[100dvh] bg-[#0B0F1A] p-4 md:p-8">
             <div className="max-w-6xl mx-auto w-full my-auto space-y-6 pb-24">
+                <div className="flex justify-center">
+                    <BeeGymLogo variant="dark" size="lg" />
+                </div>
                 <OnboardingProgress currentStep={4} />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
@@ -378,7 +382,7 @@ export default function PagamentoPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => router.push('/app/onboarding/step-3')}
-                                    className="text-slate-400 hover:text-bee-midnight font-bold h-auto p-1 -ml-1 text-[10px] uppercase tracking-widest"
+                                    className="text-slate-600 hover:text-bee-amber font-bold h-auto p-1 -ml-1 text-[10px] uppercase tracking-widest"
                                 >
                                     ← Escolher outro plano
                                 </Button>
@@ -387,22 +391,22 @@ export default function PagamentoPage() {
 
                         {!showPix && (
                             /* Card de Cupom */
-                            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm mt-4">
-                                <h4 className="text-sm font-bold text-[#0B0F1A] mb-3">Possui um cupom de desconto?</h4>
+                            <div className="bg-[#0B0F1A] p-4 border border-white/10 mt-4">
+                                <h4 className="text-sm font-bold text-white mb-3">Possui um cupom de desconto?</h4>
                                 {!appliedCoupon ? (
                                     <div className="space-y-2">
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 placeholder="Digite seu código"
-                                                className="flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm uppercase placeholder:normal-case focus:outline-none focus:border-bee-amber"
+                                                className="flex-1 border border-white/10 bg-white/5 text-white px-3 py-2 text-sm uppercase placeholder:normal-case placeholder:text-slate-600 focus:outline-none focus:border-bee-amber"
                                                 value={couponCode}
                                                 onChange={e => setCouponCode(e.target.value.toUpperCase())}
                                             />
                                             <Button
                                                 onClick={handleApplyCoupon}
                                                 disabled={!couponCode || couponLoading}
-                                                className="bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                                className="bg-white/10 text-slate-300 hover:bg-white/20"
                                             >
                                                 {couponLoading ? 'Aplicando...' : 'Aplicar'}
                                             </Button>
@@ -436,12 +440,12 @@ export default function PagamentoPage() {
                         <div className="flex flex-col space-y-6">
                             {/* Método */}
                             <div className="space-y-3">
-                                <p className="text-sm font-bold text-[#0B0F1A]">Como você quer pagar?</p>
+                                <p className="text-sm font-bold text-white">Como você quer pagar?</p>
                                 <MetodoPagamento value={metodo} onChange={m => setMetodo(m)} />
                             </div>
 
                             {/* Formulário Branco (Base apenas para dados) */}
-                            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-2xl shadow-slate-200/40 p-8 flex flex-col space-y-6 flex-1">
+                            <div className="bg-[#0B0F1A] border border-white/10 p-8 flex flex-col space-y-6 flex-1">
 
                                 {/* Conteúdo variável por método */}
                                 <div className="flex-1">
@@ -466,7 +470,7 @@ export default function PagamentoPage() {
                                     <Button
                                         onClick={handleAssinar}
                                         disabled={isLoading}
-                                        className="w-full h-14 text-sm font-black bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-2xl shadow-xl shadow-bee-amber/20 transition-all font-display uppercase tracking-wider"
+                                        className="w-full h-14 text-sm font-black bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full shadow-xl shadow-bee-amber/20 transition-all font-display uppercase tracking-wider"
                                     >
                                         {isLoading ? (
                                             <><Loader2 className="w-5 h-5 animate-spin mr-2 text-bee-midnight" />Processando...</>
