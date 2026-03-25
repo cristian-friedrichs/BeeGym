@@ -1,28 +1,26 @@
-import { User, Users2, Trophy, Building2 } from 'lucide-react';
-
 const TARGETS = [
     {
-        icon: User,
+        image: '/images/marketing/audiences/personal-trainer.png',
         tag: 'Solo',
-        title: 'Personal Trainers',
+        title: 'Personal Trainer',
         desc: 'Organize alunos, prescreva treinos e controle sua agenda sem depender de Word ou planilhas.',
     },
     {
-        icon: Users2,
+        image: '/images/marketing/audiences/pilates-studio.png',
         tag: 'Grupo',
-        title: 'Studios de Treinamento',
+        title: 'Studios de Pilates',
         desc: 'Gerencie turmas, check-ins, professores e acompanhamento em grupo com facilidade.',
     },
     {
-        icon: Trophy,
+        image: '/images/marketing/audiences/judo-school.png',
         tag: 'Esporte',
-        title: 'Escolas Esportivas',
+        title: 'Escola de Judô',
         desc: 'Controle atletas, matrículas, evoluções técnicas e mensalidades em um só sistema.',
     },
     {
-        icon: Building2,
+        image: '/images/marketing/audiences/gym.png',
         tag: 'Escala',
-        title: 'Academias',
+        title: 'Academia',
         desc: 'Centralize planos, contratos, instrutores e relatórios em um painel completo.',
     },
 ];
@@ -45,26 +43,36 @@ export function Audiences() {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 overflow-hidden">
                     {TARGETS.map((t, i) => (
                         <div
                             key={i}
-                            className="group bg-[#0B0F1A] p-8 md:p-10 flex flex-col gap-5 hover:bg-white/[0.03] transition-all duration-300"
+                            className="group bg-[#0B0F1A] border-r border-[#0B0F1A] last:border-0 flex flex-col hover:bg-white/[0.03] transition-all duration-300"
                         >
-                            <div className="flex items-start justify-between">
-                                <div className="w-12 h-12 bg-bee-amber flex items-center justify-center text-bee-midnight shrink-0">
-                                    <t.icon className="w-6 h-6" />
-                                </div>
-                                <span className="text-xs font-bold uppercase tracking-widest text-slate-700 group-hover:text-slate-500 pt-1">
+                            {/* Image Visual */}
+                            <div className="relative aspect-video overflow-hidden group">
+                                <img 
+                                    src={t.image} 
+                                    alt={t.title}
+                                    className="w-full h-full object-cover grayscale brightness-75 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700 h-full"
+                                />
+                                <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0B0F1A] to-transparent" />
+                                
+                                {/* Tag Overlay */}
+                                <div className="absolute top-4 left-6 bg-bee-amber text-bee-midnight text-[9px] font-black uppercase tracking-widest px-2 py-1">
                                     {t.tag}
-                                </span>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-bold text-white tracking-tight">
-                                {t.title}
-                            </h3>
-                            <p className="text-slate-500 group-hover:text-slate-400 font-medium leading-relaxed text-sm">
-                                {t.desc}
-                            </p>
+
+                            {/* Content */}
+                            <div className="p-8 md:p-10 flex flex-col gap-4">
+                                <h3 className="text-xl font-bold text-white tracking-tight group-hover:text-bee-amber transition-colors">
+                                    {t.title}
+                                </h3>
+                                <p className="text-slate-500 group-hover:text-slate-400 font-medium leading-relaxed text-sm">
+                                    {t.desc}
+                                </p>
+                            </div>
                         </div>
                     ))}
                 </div>

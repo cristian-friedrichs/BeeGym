@@ -60,11 +60,14 @@ export default function RecursosPage() {
 
                 {/* Feature Narrative */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/5 border border-white/5 mb-28">
-                    <div className="p-10 md:p-16 flex items-center order-2 md:order-1">
-                        <div className="relative aspect-video w-full bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center">
-                            <div className="text-slate-600 font-medium text-sm uppercase tracking-widest">
-                                Visual: Dashboard Financeiro
-                            </div>
+                    <div className="p-10 md:p-16 flex items-center order-2 md:order-1 overflow-hidden">
+                        <div className="relative aspect-video w-full bg-white/5 border border-white/10 overflow-hidden group">
+                            <img 
+                                src="/images/marketing/financial-dashboard.png" 
+                                alt="Dashboard Financeiro BeeGym"
+                                className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700 brightness-90 group-hover:brightness-100"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F1A]/60 to-transparent pointer-events-none" />
                         </div>
                     </div>
                     <div className="p-10 md:p-16 order-1 md:order-2 flex flex-col justify-center">

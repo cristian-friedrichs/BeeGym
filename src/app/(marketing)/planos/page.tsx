@@ -32,7 +32,7 @@ export default async function PlanosPage(props: {
                     </p>
                 </div>
 
-                <Pricing plans={displayPlans} />
+                <Pricing plans={displayPlans} showHeader={false} />
 
                 {/* Comparison Table */}
                 <div className="mt-28 max-w-6xl mx-auto">

@@ -41,16 +41,21 @@ export default function ParaQuemEPage() {
                         </div>
 
                         <div className="relative h-[400px] lg:h-full min-h-[400px] flex items-center justify-center">
-                            <div className="w-full h-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 font-display text-2xl font-bold uppercase tracking-widest rotate-3">
-                                [Success Story Visual]
+                            <div className="relative w-full h-full bg-white/5 border border-white/10 overflow-hidden rotate-3 shadow-2xl group">
+                                <img 
+                                    src="/images/marketing/success-trainer.png" 
+                                    alt="Personal Trainer de Sucesso"
+                                    className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:brightness-100 transition-all duration-700" 
+                                />
+                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bee-midnight/80 to-transparent" />
                             </div>
-                            <div className="absolute -bottom-6 -left-6 bg-[#0B0F1A] border border-white/10 p-6 max-w-xs shadow-2xl">
+                            <div className="absolute -bottom-6 -left-6 bg-[#0B0F1A] border border-white/10 p-6 max-w-xs shadow-2xl z-20">
                                 <p className="text-sm italic font-medium mb-4 text-slate-300">&quot;O BeeGym mudou a forma como gerencio meu Studio. Hoje tenho 3x mais tempo para focar na aula.&quot;</p>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-bee-amber" />
+                                    <div className="w-10 h-10 bg-bee-amber flex items-center justify-center text-bee-midnight font-bold">MF</div>
                                     <div>
-                                        <p className="text-xs font-bold text-white">Ricardo Silva</p>
-                                        <p className="text-[10px] text-slate-500">Studio Fit Life</p>
+                                        <p className="text-xs font-bold text-white uppercase tracking-wider">Maria Flor</p>
+                                        <p className="text-[10px] text-slate-500 font-medium">Studio Fit Life</p>
                                     </div>
                                 </div>
                             </div>

@@ -46,8 +46,9 @@ export function Hero() {
                 </h1>
 
                 {/* Subtitle */}
-                <p className="text-center text-slate-400 text-sm md:text-lg max-w-xl mx-auto leading-relaxed font-medium">
-                    Alunos, treinos e pagamentos 100% integrados. Criado para Personal Trainers, Studios e Academias.
+                <p className="text-center text-slate-400 text-sm md:text-lg max-w-4xl mx-auto leading-relaxed font-medium">
+                    Alunos, treinos e pagamentos 100% integrados. <br className="hidden md:block" />
+                    Criado para <strong className="text-white font-extrabold tracking-tight">Personal Trainers, Studios, Escolas Esportivas e Academias.</strong>
                 </p>
 
                 {/* CTAs */}

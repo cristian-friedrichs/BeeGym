@@ -70,6 +70,7 @@ export const MODULE_TO_MARKETING: Record<string, { name: string; description: st
     'painel': { name: 'Painel de Gestão', description: 'Visão geral do seu negócio em tempo real.' },
     'agenda': { name: 'Agenda Inteligente', description: 'Agendamentos simplificados e visualização diária/semanal.' },
     'aulas': { name: 'Aulas Coletivas', description: 'Crie turmas, controle capacidade e presença.' },
+    'frequencia': { name: 'Controle de Frequência', description: 'Registro de entrada e presença de alunos.' },
     'treinos': { name: 'Prescrição de Treinos', description: 'Envie treinos personalizados diretamente ao aluno.' },
     'alunos': { name: 'Gestão de Alunos', description: 'Cadastro completo, histórico e controle de status.' },
     'conversas': { name: 'Chat Integrado', description: 'Comunique-se com seus alunos sem sair do app.' },
@@ -82,12 +83,10 @@ export const MODULE_TO_MARKETING: Record<string, { name: string; description: st
     'automacao_cobranca': { name: 'Automação de Cobrança', description: 'Envio automático de links de pagamento e cobrança via WhatsApp.', upcoming: true },
     'api_acesso': { name: 'Controle de Acesso', description: 'Integração com catracas e biometria.', upcoming: true },
     'alertas': { name: 'Alertas WhatsApp', description: 'Notificações de vencimento e novidades automáticas.', upcoming: true },
-    'multiplos_agendamentos': { name: 'Múltiplos Agendamentos', description: 'Permita que o aluno agende várias aulas de uma só vez.' },
+    'salas': { name: 'Gestão de Salas', description: 'Organize seu espaço físico por ambientes ou salas.' },
     'multiplos_usuarios': { name: 'Múltiplos Usuários', description: 'Acesse o sistema com sua equipe, cada um com seu papel.' },
     'multipropriedade': { name: 'Multinunidades', description: 'Gerencie várias unidades ou franquias no mesmo painel.', upcoming: true },
     'api_externa': { name: 'API Externa', description: 'Integre o BeeGym com outras ferramentas favoritas.', upcoming: true },
-    'suporte_prioritario': { name: 'Suporte Prioritário', description: 'Atendimento prioritário pela nossa equipe de sucesso.' },
-    'white_label': { name: 'Domínio / White-label', description: 'Seu próprio domínio e marca em evidência no sistema.' },
 };
 
 export function getFeaturesForTier(tier: string, allowedFeatures?: string[]) {

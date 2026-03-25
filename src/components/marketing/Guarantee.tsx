@@ -11,7 +11,7 @@ export function Guarantee() {
                             <ShieldCheck className="w-12 h-12 text-bee-midnight" />
                         </div>
                         <span className="text-xs font-bold uppercase tracking-[0.2em] text-bee-midnight/60">
-                            Garantia 30 dias
+                            Garantia 7 dias
                         </span>
                     </div>
 
@@ -21,7 +21,7 @@ export function Guarantee() {
                             Sem risco. Sem letrinhas miúdas.
                         </h2>
                         <p className="text-bee-midnight/70 text-lg font-medium leading-relaxed">
-                            Testou a BeeGym por 30 dias e decidiu que não é para você?{' '}
+                            Testou a BeeGym por 7 dias e decidiu que não é para você?{' '}
                             <strong className="text-bee-midnight">Devolvemos 100% do seu investimento.</strong>{' '}
                             Sem perguntas, sem processo, sem burocracia. A nossa garantia é incondicional porque confiamos na plataforma.
                         </p>

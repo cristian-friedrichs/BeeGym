@@ -10,27 +10,30 @@ type SaasPlan = Database['public']['Tables']['saas_plans']['Row'];
 
 interface PricingProps {
     plans: SaasPlan[];
+    showHeader?: boolean;
 }
 
-export function Pricing({ plans }: PricingProps) {
+export function Pricing({ plans, showHeader = true }: PricingProps) {
     if (!plans || plans.length === 0) return null;
 
     return (
-        <section id="planos" className="py-28 md:py-36 bg-[#0B0F1A] relative overflow-hidden">
+        <section id="planos" className={`${showHeader ? 'py-28 md:py-36' : 'pt-12 pb-0'} bg-[#0B0F1A] relative overflow-hidden`}>
             {/* Amber bleed center */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-bee-amber/30 to-transparent" />
             <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[600px] h-[600px] bg-bee-amber/5 blur-[160px] pointer-events-none" />
 
             <div className="container mx-auto px-6 md:px-12 relative z-10">
-                <div className="text-center max-w-2xl mx-auto mb-20">
-                    <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">Planos</p>
-                    <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
-                        Preço simples. Valor real.
-                    </h2>
-                    <p className="text-slate-400 font-medium text-lg">
-                        Escolha o plano que acompanha o tamanho do seu negócio.
-                    </p>
-                </div>
+                {showHeader && (
+                    <div className="text-center max-w-2xl mx-auto mb-20">
+                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-bee-amber mb-5">Planos</p>
+                        <h2 className="text-4xl md:text-5xl font-display font-bold text-white leading-[1.05] tracking-tight mb-6">
+                            Preço simples. Valor real.
+                        </h2>
+                        <p className="text-slate-400 font-medium text-lg">
+                            Escolha o plano que acompanha o tamanho do seu negócio.
+                        </p>
+                    </div>
+                )}
 
                 <div className="flex flex-col lg:flex-row items-stretch justify-center gap-px bg-white/5 border border-white/5 max-w-5xl mx-auto">
                     {plans.map((plan, idx) => {
@@ -97,12 +100,23 @@ export function Pricing({ plans }: PricingProps) {
                                             </span>
                                         </li>
                                     )}
-                                    {highlights.map((h: string, hi: number) => (
+                                    {dbFeatures.map((f: any, hi: number) => (
                                         <li key={hi} className="flex items-center gap-3">
                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${isHighlighted ? 'text-bee-midnight' : 'text-bee-amber'}`} />
-                                            <span className={`text-sm font-medium ${isHighlighted ? 'text-bee-midnight/80' : 'text-slate-400'}`}>
-                                                {h}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-sm font-medium ${isHighlighted ? 'text-bee-midnight/80' : 'text-slate-400'}`}>
+                                                    {f.name}
+                                                </span>
+                                                {f.upcoming && (
+                                                    <span className={`text-[8px] font-black uppercase tracking-tighter px-1.5 py-0.5 border ${
+                                                        isHighlighted 
+                                                            ? 'text-bee-midnight border-bee-midnight/20 bg-bee-midnight/5' 
+                                                            : 'text-bee-amber border-bee-amber/20 bg-bee-amber/10'
+                                                    }`}>
+                                                        Breve
+                                                    </span>
+                                                )}
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
