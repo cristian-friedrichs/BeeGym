@@ -52,7 +52,8 @@ export default function OnboardingStep1() {
         router.refresh()
     }
 
-    // Attempt to self-heal stuck sessions
+    // Attempt to self-heal stuck sessions - REMOVED: potentially causing redirect loops
+    /*
     useEffect(() => {
         const checkStatus = async () => {
             try {
@@ -68,6 +69,7 @@ export default function OnboardingStep1() {
         }
         checkStatus()
     }, [router])
+    */
 
     const handleSelect = (typeId: string) => {
         updateData({ businessType: typeId })
