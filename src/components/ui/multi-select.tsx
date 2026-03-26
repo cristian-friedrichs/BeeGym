@@ -87,7 +87,7 @@ export function MultiSelect({
                             {options.map((option) => (
                                 <CommandItem
                                     key={option.value}
-                                    value={option.label} // Usamos label para busca visual
+                                    value={option.value} // Use value for accurate matching
                                     onSelect={() => {
                                         const isSelected = selected.includes(option.value);
                                         if (isSelected) {
@@ -95,18 +95,19 @@ export function MultiSelect({
                                         } else {
                                             onChange([...selected, option.value]);
                                         }
-                                        // Mantém aberto para selecionar múltiplos
                                     }}
                                 >
-                                    <Check
-                                        className={cn(
-                                            "mr-2 h-4 w-4",
-                                            selected.includes(option.value)
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                        )}
-                                    />
-                                    {option.label}
+                                    <div className="flex items-center w-full">
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                selected.includes(option.value)
+                                                    ? "opacity-100"
+                                                    : "opacity-0"
+                                            )}
+                                        />
+                                        <span>{option.label}</span>
+                                    </div>
                                 </CommandItem>
                             ))}
                         </CommandGroup>

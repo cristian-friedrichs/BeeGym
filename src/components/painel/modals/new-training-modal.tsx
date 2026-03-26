@@ -25,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ExerciseSearch } from '@/components/treinos/exercise-search';
 import { Trash2, Plus } from 'lucide-react';
+import { useUnit } from '@/context/UnitContext';
 
 interface MultiSelectOption { value: string; label: string; }
 
@@ -71,6 +72,7 @@ export function NewTrainingModal({
 }: NewTrainingModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { currentUnitId } = useUnit();
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
 
@@ -311,6 +313,7 @@ export function NewTrainingModal({
                     status: 'Agendado',
                     student_id: selectedStudent,
                     organization_id: userData.organization_id,
+                    unit_id: currentUnitId,
                     is_makeup: isMakeup,
                     credit_cost: isMakeup ? 0 : 1,
                 };
@@ -321,7 +324,8 @@ export function NewTrainingModal({
                         ...basePayload,
                         scheduled_at: start,
                         end_time: end,
-                        recurrence_id: recurrenceId
+                        recurrence_id: recurrenceId,
+                        unit_id: currentUnitId
                     }).select();
                     if (error) throw error;
                     return data;
@@ -336,6 +340,7 @@ export function NewTrainingModal({
                             sets: ex.sets,
                             reps: ex.reps,
                             weight: ex.weight || '0',
+                            unit_id: currentUnitId,
                             notes: ''
                         }));
                         const { error: exError } = await (supabase as any).from('workout_exercises').insert(exercisePayloads);
@@ -391,6 +396,7 @@ export function NewTrainingModal({
                     room_id: locationType === 'internal' ? selectedRoom : null,
                     address: locationType === 'external' ? address : null,
                     organization_id: userData.organization_id,
+                    unit_id: currentUnitId,
                     status: 'SCHEDULED',
                 };
 
@@ -416,6 +422,7 @@ export function NewTrainingModal({
                             event_id: eventData.id,
                             student_id: studentId,
                             organization_id: userData.organization_id,
+                            unit_id: currentUnitId,
                             status: 'CONFIRMED'
                         }));
                         await ((supabase as any).from('event_enrollments') as any).insert(attendances);

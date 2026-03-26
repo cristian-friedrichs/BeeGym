@@ -78,12 +78,14 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
-  // Guard: redireciona se plano não permite aulas coletivas
+  // Guard: O plano agora permite aulas coletivas para todos os administradores SaaS
+  /* 
   useEffect(() => {
     if (!subLoading && !hasFeature('aulas')) {
       router.replace('/app/painel');
     }
   }, [subLoading, hasFeature, router]);
+  */
 
   // Estados dos Filtros
   const [searchTerm, setSearchTerm] = useState('');
