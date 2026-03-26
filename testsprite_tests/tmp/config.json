@@ -1,0 +1,20 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "https://beegym.vercel.app/login",
+  "loginUser": "teste10@test.com",
+  "loginPassword": "123456",
+  "executionArgs": {
+    "projectName": "BeeGym",
+    "projectPath": "c:\\Projetos\\BeeGym",
+    "testIds": [],
+    "additionalInstruction": "Testing on production environment: https://beegym.vercel.app/login. Use valid test data that matches the project's Zod schemas (e.g. CPF 123.456.789-10). Focus on High and Medium priority test cases. Skip any steps related to local server tunnels if possible, or use the Vercel URL directly.",
+    "serverMode": "production",
+    "envs": {
+      "API_KEY": "sk-user-q3acgxG9hKeabGjpd0aS7szPb4P6iQ3DrxTtpf4_H04CS_6m7wE0Pa6uubkoijSbABrVYmiFpNhpDv-w9V5Kx9IxRD5x6wAweFQuVqOMpu6kLW80OCFRRIAqMyjrw9rbIrs"
+    }
+  },
+  "serverPort": 56829,
+  "proxy": "http://823c3432-3baa-4ffa-b170-030b552516a1:ejtdlATrvsU2WyncTMU9DjIXAOJLApMi@tun.testsprite.com:8080"
+}

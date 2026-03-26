@@ -40,7 +40,7 @@ export default async function PlansPage() {
         profile.role === 'ADMIN' ||
         profile.role === 'BEEGYM_ADMIN';
 
-    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('automacao_cobranca'))) {
+    if (!isMasterAdmin) {
         redirect('/app/configuracoes');
     }
 

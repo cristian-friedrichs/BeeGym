@@ -300,6 +300,22 @@ export default function OnboardingStep3() {
                             )}
                         </Button>
                     </div>
+
+                    {/* Botão Sair */}
+                    <div className="flex justify-center mt-6">
+                        <button
+                            onClick={async () => {
+                                const { createClient } = await import('@/lib/supabase/client')
+                                const supabase = createClient()
+                                await supabase.auth.signOut()
+                                router.push('/login')
+                                router.refresh()
+                            }}
+                            className="text-[10px] text-slate-600 hover:text-bee-amber transition-colors font-bold uppercase tracking-widest"
+                        >
+                            Sair e voltar ao Login
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
