@@ -1,20 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/env-config';
+import { createClient } from '@/lib/supabase/server';
 
 export async function getAuthenticatedUser(request: NextRequest) {
-    const supabase = createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
+    const supabase = await createClient();
 
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return null;
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
         return null;
@@ -24,21 +14,12 @@ export async function getAuthenticatedUser(request: NextRequest) {
 }
 
 export async function requireAdmin(request: NextRequest): Promise<{ error: NextResponse } | { user: { id: string; email: string; role: string; organization_id: string } }> {
-    const supabase = createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON_KEY
-    );
+    const supabase = await createClient();
 
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-        return { error: NextResponse.json({ error: 'Unauthorized: No token provided' }, { status: 401 }) };
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
-        return { error: NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 }) };
+        return { error: NextResponse.json({ error: 'Unauthorized: Invalid session' }, { status: 401 }) };
     }
 
     const { data: profile } = await supabase
