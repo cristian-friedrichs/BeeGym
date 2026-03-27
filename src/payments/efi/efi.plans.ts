@@ -1,4 +1,4 @@
-import { efiClient } from './efi.client';
+import { efiCobrancasClient } from './efi.client';
 import { efiConfig } from './efi.config';
 
 export interface EfiPlanInput {
@@ -13,8 +13,10 @@ export class EfiPlansService {
      * Endpoint: POST /v1/plan (API de Cobranças, NÃO a API Pix)
      */
     public async criarPlano(dados: EfiPlanInput): Promise<number> {
-        const baseUrl = efiConfig.baseUrlCobrancas;
-
+        // A url base já está configurada no efiCobrancasClient, não precisamos repassá-la
+        // se usarmos rota relativa, mas o client aceita absolute urls tbm se passarmos tudo.
+        // O baseURL no interceptor ajuda a lidar com isso.
+        
         let payload: any = {
             name: dados.name,
             interval: dados.interval
@@ -25,7 +27,8 @@ export class EfiPlansService {
         }
 
         try {
-            const response = await efiClient.post(`${baseUrl}/v1/plan`, payload);
+            // Usa o cliente de cobranças (cartões/assinaturas)
+            const response = await efiCobrancasClient.post('/v1/plan', payload);
 
             if (response.data && response.data.data && response.data.data.plan_id) {
                 return response.data.data.plan_id;
