@@ -16,8 +16,8 @@ export function getEfiConfig(): EfiConfig {
     const baseUrlPix = isProd ? process.env.EFI_BASE_URL_PRD : process.env.EFI_BASE_URL_HML;
     const baseUrlOauth = isProd ? process.env.EFI_OAUTH_URL_PRD : process.env.EFI_OAUTH_URL_HML;
     const baseUrlCobrancas = isProd
-        ? (process.env.EFI_COBRANCAS_URL_PRD || 'https://api.efipay.com.br')
-        : (process.env.EFI_COBRANCAS_URL_HML || 'https://api.efipay.com.br');
+        ? (process.env.EFI_COBRANCAS_URL_PRD || 'https://api.gerencianet.com.br')
+        : (process.env.EFI_COBRANCAS_URL_HML || 'https://cobrancas-h.api.efipay.com.br');
 
     const certPath = process.env.EFI_CERT_PATH || '';
     const certBase64 = process.env.EFI_CERT_BASE64;
