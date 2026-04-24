@@ -54,8 +54,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             status: sub.status,
             valor_mensal: sub.valor_mensal,
             proximo_vencimento: sub.proximo_vencimento,
-            acordo_efi_id: sub.acordo_efi_id,
-            subscription_efi_id: sub.subscription_efi_id,
+
             manual_discount_amount: sub.manual_discount_amount,
             manual_discount_percentage: sub.manual_discount_percentage,
         } : {
@@ -66,8 +65,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             status: org.subscription_status?.toUpperCase() || 'INATIVA',
             valor_mensal: 0,
             proximo_vencimento: null,
-            acordo_efi_id: null,
-            subscription_efi_id: null,
+
             manual_discount_amount: null,
             manual_discount_percentage: null,
         };

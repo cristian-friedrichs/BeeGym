@@ -144,7 +144,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
     }
 
     // 4. Upsert saas_subscriptions with pending status
-    // Reads price/promo from saas_plans to ensure EFI charges use admin-configured values
+    // Reads price/promo from saas_plans to ensure charges use admin-configured values
     if (data.planId) {
         // Fetch plan pricing from saas_plans (source of truth)
         const { data: planData } = await supabaseAdmin

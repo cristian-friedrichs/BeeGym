@@ -32,8 +32,8 @@ export async function GET(request: Request) {
             const passedDays = daysSince(assinatura.inicioCarencia);
 
             if (passedDays >= diasPermitidos) {
-                // Prazo esgotado! Promove 'INADIMPLENTE' para 'INATIVO' (Preto) e bloqueia o Contratante
-                await assinaturaRepository.updateStatus(assinatura.id, 'INATIVO');
+                // Prazo esgotado! Cancela a assinatura e bloqueia o Contratante
+                await assinaturaRepository.updateStatus(assinatura.id, 'canceled');
                 await suspenderAcesso(assinatura.contratanteId);
                 await notificacaoService.enviarAcessoSuspenso(assinatura.contratanteId);
 

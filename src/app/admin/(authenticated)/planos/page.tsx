@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { PlanosTable } from '@/components/admin/planos/PlanosTable';
-import { PlanoSyncButton } from '@/components/admin/planos/PlanoSyncButton';
 import { SectionHeader } from '@/components/ui/section-header';
 
 export default function AdminPlanosPage() {
@@ -14,10 +13,9 @@ export default function AdminPlanosPage() {
         <div className="space-y-6 pb-12">
             <SectionHeader
                 title="Planos"
-                subtitle="Gerencie planos e sincronização com EFI"
+                subtitle="Gerencie os planos da plataforma"
                 action={
                     <>
-                        <PlanoSyncButton />
                         <Button
                             className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold gap-2 shadow-sm"
                             onClick={() => setOpenNew(true)}

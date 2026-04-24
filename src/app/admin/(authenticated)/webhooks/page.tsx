@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Play, ShieldAlert, CheckCircle2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 export default function WebhooksAdminPage() {
+    const { toast } = useToast();
     const [logs, setLogs] = useState<any[]>([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
     
@@ -28,7 +29,11 @@ export default function WebhooksAdminPage() {
         if (res.success) {
             setLogs(res.data);
         } else {
-            toast.error('Erro ao buscar logs de webhook.');
+            toast({
+                title: 'Erro',
+                description: 'Erro ao buscar logs de webhook.',
+                variant: 'destructive',
+            });
         }
         setLoadingLogs(false);
     };
@@ -39,7 +44,11 @@ export default function WebhooksAdminPage() {
 
     const handleSimulate = async () => {
         if (!simEmail) {
-            toast.error('E-mail é obrigatório para a simulação.');
+            toast({
+                title: 'Atenção',
+                description: 'E-mail é obrigatório para a simulação.',
+                variant: 'destructive',
+            });
             return;
         }
 
@@ -60,13 +69,24 @@ export default function WebhooksAdminPage() {
             const data = await res.json();
             
             if (res.ok) {
-                toast.success('Webhook simulado com sucesso: ' + (data.message || 'Ativação concluída'));
+                toast({
+                    title: 'Sucesso',
+                    description: 'Webhook simulado com sucesso: ' + (data.message || 'Ativação concluída'),
+                });
                 fetchLogs();
             } else {
-                toast.error('Erro na simulação: ' + (data.error || 'Acesso Negado'));
+                toast({
+                    title: 'Erro',
+                    description: 'Erro na simulação: ' + (data.error || 'Acesso Negado'),
+                    variant: 'destructive',
+                });
             }
         } catch (err: any) {
-            toast.error('Falha de conexão com a API.');
+            toast({
+                title: 'Erro',
+                description: 'Falha de conexão com a API.',
+                variant: 'destructive',
+            });
         }
         setIsSimulating(false);
     };

@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { PlanoFormModal } from './PlanoFormModal';
 import { Pencil, Trash2, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { PlanoSyncButton } from './PlanoSyncButton';
 import { cn } from '@/lib/utils';
 
 const tierBadge: Record<string, string> = {
@@ -95,8 +94,6 @@ export function PlanosTable({ externalOpenNew, onExternalOpenHandled }: { extern
                             <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">Valor</TableHead>
                             <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">Intervalo</TableHead>
                             <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14 text-center">Assinantes</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">EFI HML</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest text-slate-400 h-14">EFI PRD</TableHead>
                             <TableHead className="h-14 w-20 px-6 text-right" />
                         </TableRow>
                     </TableHeader>
@@ -128,16 +125,6 @@ export function PlanosTable({ externalOpenNew, onExternalOpenHandled }: { extern
                                         <span className="font-black text-sm text-bee-midnight leading-none">{p.assinantes_ativos}</span>
                                         <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ativos</span>
                                     </div>
-                                </TableCell>
-                                <TableCell>
-                                    <code className="bg-slate-50 text-[10px] text-slate-400 px-2 py-1 rounded-lg border border-slate-100/50 font-mono">
-                                        {p.efi_plan_id_hml ?? '—'}
-                                    </code>
-                                </TableCell>
-                                <TableCell>
-                                    <code className="bg-slate-50 text-[10px] text-slate-400 px-2 py-1 rounded-lg border border-slate-100/50 font-mono">
-                                        {p.efi_plan_id_prd ?? '—'}
-                                    </code>
                                 </TableCell>
                                 <TableCell className="px-6 text-right">
                                     <div className="flex items-center justify-end gap-1">

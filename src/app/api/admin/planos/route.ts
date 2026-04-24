@@ -80,9 +80,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const supabase = supabaseAdmin;
 
-        // 1. A criação no gateway legou para a Kiwify que já está com os planos criados no painel.
-
-        // 2. Insere novo plano do SaaS com a ID da EFI preenchida
+        // 2. Insere novo plano do SaaS
         const { data: novoPlano, error } = await supabase
             .from('saas_plans')
             .insert({

@@ -1,5 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import { AssinaturaStatus, MetodoPagamento } from '@/payments/efi/efi.types';
+
+export type AssinaturaStatus = 'active' | 'trial' | 'pending' | 'past_due' | 'canceled' | 'expired';
+export type MetodoPagamento = 'CARTAO_RECORRENTE' | 'PIX_AUTOMATICO' | 'CARTAO_CREDITO' | 'PIX' | 'BOLETO';
 
 export interface Assinatura {
     id: string;
@@ -8,8 +10,6 @@ export interface Assinatura {
     saasPlanId?: string;
     metodo: MetodoPagamento;
     status: AssinaturaStatus;
-    acordoEfiId?: string;
-    subscriptionEfiId?: number;
     paymentToken?: string;
     diaVencimento: number;
     valorMensal: number;
@@ -33,8 +33,6 @@ export const SupabaseAssinaturaRepository = {
                 saas_plan_id: data.saasPlanId || data.planoId,
                 status: data.status,
                 metodo: data.metodo,
-                acordo_efi_id: data.acordoEfiId,
-                subscription_efi_id: data.subscriptionEfiId,
                 payment_token: data.paymentToken,
                 dia_vencimento: data.diaVencimento,
                 valor_mensal: data.valorMensal,
@@ -56,58 +54,6 @@ export const SupabaseAssinaturaRepository = {
             throw new Error('Falha ao criar assinatura no banco de dados: ' + error.message);
         }
 
-        return this.mapToInternal(sub);
-    },
-
-    async findByAcordoId(acordoId: string): Promise<Assinatura | null> {
-        const { data: sub, error } = await supabaseAdmin
-            .from('saas_subscriptions')
-            .select('*')
-            .eq('acordo_efi_id', acordoId)
-            .maybeSingle();
-
-        if (error || !sub) return null;
-        return this.mapToInternal(sub);
-    },
-
-    async findBySubscriptionEfiId(subscriptionEfiId: number): Promise<Assinatura | null> {
-        const { data: sub, error } = await supabaseAdmin
-            .from('saas_subscriptions')
-            .select('*')
-            .eq('subscription_efi_id', subscriptionEfiId)
-            .maybeSingle();
-
-        if (error || !sub) return null;
-        return this.mapToInternal(sub);
-    },
-
-    async findByReferenceId(refId: string, metodo: string): Promise<Assinatura | null> {
-        // Cartão: refId é charge_id → buscar por subscription_efi_id ou a subscriptiob ligada ao charge
-        // Pix: refId é txid → buscar por acordo_efi_id
-        if (metodo === 'CARTAO_RECORRENTE') {
-            // O charge_id vem como string, buscar todas assinaturas ativas de cartão
-            // e encontrar a certa pelo subscription_efi_id (cenário webhook notification)
-            const { data: sub, error } = await supabaseAdmin
-                .from('saas_subscriptions')
-                .select('*')
-                .eq('metodo', 'CARTAO_RECORRENTE')
-                .in('status', ['trial', 'active', 'past_due', 'pending'])
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-            if (error || !sub) return null;
-            return this.mapToInternal(sub);
-        }
-
-        // PIX_AUTOMATICO: buscar pelo acordo_efi_id
-        const { data: sub, error } = await supabaseAdmin
-            .from('saas_subscriptions')
-            .select('*')
-            .eq('acordo_efi_id', refId)
-            .maybeSingle();
-
-        if (error || !sub) return null;
         return this.mapToInternal(sub);
     },
 
@@ -257,11 +203,10 @@ export const SupabaseAssinaturaRepository = {
     /**
      * Registra uma cobrança na tabela de histórico saas_charges.
      */
-    async registrarCobranca(assinaturaId: string, contratanteId: string, chargeEfiId: string, amount: number, status: 'PAGO' | 'FALHA' | 'PENDENTE', method: MetodoPagamento): Promise<void> {
+    async registrarCobranca(assinaturaId: string, contratanteId: string, amount: number, status: 'PAGO' | 'FALHA' | 'PENDENTE', method: MetodoPagamento): Promise<void> {
         await supabaseAdmin.from('saas_charges').insert({
             saas_subscription_id: assinaturaId,
             organization_id: contratanteId,
-            charge_efi_id: chargeEfiId,
             amount,
             status,
             payment_method: method,
@@ -277,8 +222,6 @@ export const SupabaseAssinaturaRepository = {
             saasPlanId: dbSub.saas_plan_id,
             metodo: dbSub.metodo as MetodoPagamento,
             status: dbSub.status as AssinaturaStatus,
-            acordoEfiId: dbSub.acordo_efi_id,
-            subscriptionEfiId: dbSub.subscription_efi_id,
             paymentToken: dbSub.payment_token,
             diaVencimento: dbSub.dia_vencimento,
             valorMensal: Number(dbSub.valor_mensal),

@@ -5,8 +5,6 @@ export interface SaasPlan {
     name?: string;
     tier: string;
     price: number;
-    efi_plan_id_hml?: number;
-    efi_plan_id_prd?: number;
 }
 
 export const SupabaseSaasPlanRepository = {
@@ -23,9 +21,7 @@ export const SupabaseSaasPlanRepository = {
             id: data.id,
             name: data.name,
             tier: data.tier,
-            price: Number(data.price),
-            efi_plan_id_hml: data.efi_plan_id_hml || undefined,
-            efi_plan_id_prd: data.efi_plan_id_prd || undefined
+            price: Number(data.price)
         };
     },
 
@@ -42,9 +38,7 @@ export const SupabaseSaasPlanRepository = {
             id: data.id,
             name: data.name,
             tier: data.tier,
-            price: Number(data.price),
-            efi_plan_id_hml: data.efi_plan_id_hml || undefined,
-            efi_plan_id_prd: data.efi_plan_id_prd || undefined
+            price: Number(data.price)
         };
     },
 

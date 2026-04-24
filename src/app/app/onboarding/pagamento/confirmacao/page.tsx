@@ -28,11 +28,11 @@ function ConfirmacaoContent() {
                 
                 if (!user) return;
 
-                const { data: profile } = await supabase
+                const { data: profile } = (await supabase
                     .from('profiles')
                     .select('organization_id')
                     .eq('id', user.id)
-                    .single();
+                    .single()) as { data: any };
 
                 if (profile?.organization_id) {
                     // Verifica se já existe uma assinatura no banco ou se a org está ativa

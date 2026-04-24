@@ -84,6 +84,7 @@
     "msw": "^2.12.10",
     "postcss": "^8",
     "sharp": "^0.34.5",
+    "supabase": "^2.95.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
     "vitest": "^4.0.18"

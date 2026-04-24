@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { SupabaseSaasPlanRepository } from '@/application/repositories/SupabaseSaasPlanRepository';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
-import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
 import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
 
@@ -73,20 +72,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
                 // manteremos simples: aplicamos apenas os descontos manuais que já são reflexo do coupon ou overrides base.
                 // Como atualizarPlano do Repository recarrega essas coisas, podemos apenas usá-lo passando o mesmo plano.
 
-                // Atualiza a EFI se aplicavel
-                if (sub.metodo === 'PIX_AUTOMATICO' && sub.acordo_efi_id) {
-                    try {
-                        await efiPixAutomatico.alterarValorAcordo(sub.acordo_efi_id, newSubValue);
-                    } catch (e: any) {
-                        console.error(`[Admin Plan Sync] Falha ao atualizar EFI Pix para a assinatura ${sub.id}:`, e.response?.data || e.message);
-                        erroCount++;
-                        continue; // skip DB update se falhou na EFI
-                    }
-                } else if (sub.metodo === 'CARTAO_RECORRENTE') {
-                    // Cartão na EFI v1 requer recriação, não atualizamos o valor no gateway, mas atualizamos no DB
-                    // Logamos para admin que cartões antigos rodam com preço antigo
-                    pularCount++;
-                }
 
                 // Atualiza o DB para refletir o novo valor
                 await SupabaseAssinaturaRepository.actualizarPlano(

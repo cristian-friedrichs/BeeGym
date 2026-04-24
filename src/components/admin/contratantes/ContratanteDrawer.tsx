@@ -180,12 +180,6 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                         <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Próx. Vencimento</dt>
                                         <dd className="font-bold text-bee-midnight">{detail.assinatura.proximo_vencimento ? formatDate(detail.assinatura.proximo_vencimento) : '-'}</dd>
                                     </div>
-                                    {detail.assinatura.acordo_efi_id && (
-                                        <div className="col-span-2 space-y-1 pt-2">
-                                            <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">ID Acordo EFI</dt>
-                                            <dd className="font-mono text-[10px] font-bold text-slate-400 bg-slate-50 p-2 rounded-lg border border-slate-100/50 break-all">{detail.assinatura.acordo_efi_id}</dd>
-                                        </div>
-                                    )}
                                 </dl>
                             </section>
 
@@ -301,7 +295,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
 
                                 <div className="p-8">
                                     <AlertDialogDescription className="text-slate-600 font-sans text-base leading-relaxed mb-8">
-                                        A assinatura será cancelada na EFI e o acesso <span className="font-bold text-red-600">removido permanentemente</span>. Tem certeza que deseja prosseguir?
+                                        A assinatura será cancelada e o acesso <span className="font-bold text-red-600">removido permanentemente</span>. Tem certeza que deseja prosseguir?
                                     </AlertDialogDescription>
 
                                     <div className="flex gap-3 pt-2">

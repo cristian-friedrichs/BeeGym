@@ -1,9 +1,5 @@
-import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
-import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
-import { SupabaseContratanteRepository } from '@/application/repositories/SupabaseContratanteRepository';
 import { SupabaseSaasPlanRepository } from '@/application/repositories/SupabaseSaasPlanRepository';
-import { IS_EFI_PRODUCTION } from '@/lib/env-config';
 
 export interface UpgradeSubscriptionInput {
     organizationId: string;
@@ -24,36 +20,9 @@ export class UpgradeSubscriptionUseCase {
             throw new Error(`Plano ${input.newPlanTier} não encontrado.`);
         }
 
-        // 3. Atualizar na EFI
-        if (assinatura.metodo === 'CARTAO_RECORRENTE') {
-            if (!assinatura.subscriptionEfiId) {
-                throw new Error('Assinatura sem ID da EFI.');
-            }
-            const efiPlanId = IS_EFI_PRODUCTION
-                ? novoPlano.efi_plan_id_prd
-                : novoPlano.efi_plan_id_hml;
-
-            if (!efiPlanId) {
-                throw new Error(`O plano ${input.newPlanTier} não tem ID EFI configurado.`);
-            }
-
-            await efiCardRecorrente.alterarPlano(assinatura.subscriptionEfiId, efiPlanId);
-        } else if (assinatura.metodo === 'PIX_AUTOMATICO') {
-            // Pix Automático não permite troca de plano no mesmo acordo facilmente (alteração de valorRec)
-            // Para simplicidade inicial, vamos orientar cancelar e assinar novamente, 
-            // ou implementar a alteração de valor se a EFI permitir PATCH /v2/rec/:id com novo valor.
-            // Segundo a pesquisa do subagent, PATCH /v2/rec/:id permite revisar a recorrência.
-            // Vamos assumir que podemos alterar o valor.
-            throw new Error('Alteração de plano para Pix Automático ainda não implementada. Por favor, cancele e assine novamente.');
-        }
-
-        // 4. Atualizar no banco de dados local
-        await SupabaseAssinaturaRepository.actualizarPlano(
-            assinatura.id,
-            novoPlano.id,
-            Number(novoPlano.price)
-        );
-
-        return { success: true };
+        // 3. Atualizar no Gateway
+        // Com a Kiwify, os upgrades devem ser feitos através do checkout de upgrade ou portal do cliente.
+        // O webhook da Kiwify cuidará de atualizar o banco de dados.
+        throw new Error('Para alterar seu plano, por favor acesse o Portal do Cliente Kiwify ou adquira o novo plano através da nossa página de checkout.');
     }
 }

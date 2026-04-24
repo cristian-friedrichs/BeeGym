@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
-import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
+
 import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
 
@@ -43,19 +43,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             discountPayload = { type: 'currency', value: Math.round(absoluteDiscount * 100) };
         }
 
-        // Se for cartão, atualiza no Gateway
-        if (isCartao && assinatura.subscriptionEfiId) {
-            if (discountPayload) {
-                await efiCardRecorrente.aplicarDesconto(assinatura.subscriptionEfiId, discountPayload);
-            } else {
-                // Se removeu desconto
-                await efiCardRecorrente.removerDesconto(assinatura.subscriptionEfiId);
-            }
-        }
 
-        // Se for Pix: No momento, os Acordos Pix Automático não têm endpoint de "desconto" sem recriar, 
-        // mas o nosso motor vai ler 'manual_discount_amount' e 'manual_discount_percentage' para gerar a cobrança (webhook)
-        // do ciclo com o desconto subtraído.
 
         // Atualiza base de dados
         const updateData: any = {

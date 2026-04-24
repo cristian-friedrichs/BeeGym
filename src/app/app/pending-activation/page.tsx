@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { LogOut, Clock, Loader2, CheckCircle2 } from 'lucide-react'
 import { BeeGymLogo } from '@/components/ui/beegym-logo'
-import { verifyPixStatusAction } from '@/actions/verify-pix'
+import { verifyPaymentStatusAction } from '@/actions/verify-payment'
 
 export default function PendingActivation() {
     const { signOut, profile } = useAuth()
@@ -18,7 +18,7 @@ export default function PendingActivation() {
         const checkStatus = async () => {
             if (verified) return
             try {
-                const res = await verifyPixStatusAction()
+                const res = await verifyPaymentStatusAction()
                 if (res.success && res.status === 'CONCLUIDA') {
                     setVerified(true)
                     setTimeout(() => router.push('/app/painel'), 2000)
@@ -35,7 +35,7 @@ export default function PendingActivation() {
 
     const handleManualCheck = async () => {
         setIsChecking(true)
-        const res = await verifyPixStatusAction()
+        const res = await verifyPaymentStatusAction()
         if (res.success && res.status === 'CONCLUIDA') {
             setVerified(true)
             setTimeout(() => window.location.href = '/app/painel', 1500)

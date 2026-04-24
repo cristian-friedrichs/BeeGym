@@ -1,5 +1,3 @@
-import { efiCardRecorrente } from '@/payments/efi/efi.card-recorrente';
-import { efiPixAutomatico } from '@/payments/efi/efi.pix-automatico';
 import { SupabaseAssinaturaRepository } from '@/application/repositories/SupabaseAssinaturaRepository';
 
 export interface CancelSubscriptionInput {
@@ -15,20 +13,8 @@ export class CancelSubscriptionUseCase {
             throw new Error('Nenhuma assinatura ativa encontrada para esta organização.');
         }
 
-        // 2. Cancelar na EFI
-        if (assinatura.metodo === 'CARTAO_RECORRENTE') {
-            if (assinatura.subscriptionEfiId) {
-                await efiCardRecorrente.cancelarAssinatura(assinatura.subscriptionEfiId);
-            }
-        } else if (assinatura.metodo === 'PIX_AUTOMATICO') {
-            if (assinatura.acordoEfiId) {
-                await efiPixAutomatico.cancelarAcordo(assinatura.acordoEfiId);
-            }
-        }
-
-        // 3. Atualizar no banco de dados local
-        await SupabaseAssinaturaRepository.updateStatus(assinatura.id, 'INATIVO');
-
-        return { success: true };
+        // 2. Cancelar no Gateway
+        // Com a Kiwify, os cancelamentos devem ser feitos pelo Portal do Cliente da Kiwify
+        throw new Error('Para cancelar sua assinatura, por favor acesse o Portal do Cliente Kiwify.');
     }
 }

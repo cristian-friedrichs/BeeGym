@@ -2,7 +2,8 @@
  * Mocks Temporários para permitir a compilação dos Casos de Uso da V2
  * Substituir pelas implementações reais do Prisma/Supabase na Fase de Integração com BD.
  */
-import { AssinaturaStatus, MetodoPagamento } from '@/payments/efi/efi.types';
+
+import { MetodoPagamento, AssinaturaStatus } from './SupabaseAssinaturaRepository';
 
 export interface Assinatura {
     id: string;
@@ -10,8 +11,6 @@ export interface Assinatura {
     planoId: string;
     metodo: MetodoPagamento;
     status: AssinaturaStatus;
-    acordoEfiId?: string;
-    subscriptionEfiId?: number;
     diaVencimento: number;
     valorMensal: number;
     proximoVencimento?: Date;
@@ -33,8 +32,6 @@ export const planoRepository = {
 
 export const assinaturaRepository = {
     create: async (data: Partial<Assinatura>) => ({ id: "mock-sub-123", ...data } as Assinatura),
-    findByAcordoId: async (acordoId: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", planoId: "plan-123", metodo: "PIX_AUTOMATICO" as MetodoPagamento, status: "pending" as AssinaturaStatus, diaVencimento: 10, valorMensal: 100 } as Assinatura),
-    findByReferenceId: async (refId: string, metodo: string) => ({ id: "mock-sub-123", contratanteId: "cont-123", planoId: "plan-123", metodo: "PIX_AUTOMATICO" as MetodoPagamento, status: "trial" as AssinaturaStatus, diaVencimento: 10, valorMensal: 100 } as Assinatura),
     updateStatus: async (id: string, status: AssinaturaStatus) => true,
     renovar: async (id: string, proximoVencimento: Date) => true,
     setInicioCarencia: async (id: string, data: Date) => true,
