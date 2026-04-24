@@ -12,12 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:efi:auth": "node scripts/efi/test-efi-auth.mjs",
-    "test:efi:pix": "node scripts/efi/test-efi-pix.mjs",
-    "test:efi:boleto": "node scripts/efi/test-efi-boleto.mjs",
-    "test:efi:webhook": "node scripts/efi/test-efi-webhook-mock.mjs",
-    "test:efi:cron": "node scripts/efi/test-efi-cron.mjs"
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.20.0",
@@ -63,7 +58,6 @@
     "lru-cache": "^11.2.6",
     "lucide-react": "^0.475.0",
     "next": "15.5.9",
-    "payment-token-efi": "^3.2.1",
     "pg": "^8.20.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.1",

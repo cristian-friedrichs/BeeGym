@@ -37,6 +37,7 @@ export interface BeeGymPlan {
     featuresList: string[]
     allowedFeatures: PlanFeature[]
     icon: typeof User
+    kiwify_link?: string
 }
 
 export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
@@ -57,6 +58,7 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         ],
         allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes'],
         icon: User,
+        kiwify_link: 'https://pay.kiwify.com.br/nDh67eT',
     },
     plan_plus: {
         id: 'plan_plus',
@@ -73,6 +75,7 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         ],
         allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes'],
         icon: Zap,
+        kiwify_link: 'https://pay.kiwify.com.br/l0J7aBG',
     },
     plan_studio: {
         id: 'plan_studio',
@@ -91,6 +94,7 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         ],
         allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas', 'multiplos_usuarios'],
         icon: Dumbbell,
+        kiwify_link: 'https://pay.kiwify.com.br/6N4RjAj',
     },
     plan_pro: {
         id: 'plan_pro',
@@ -110,6 +114,7 @@ export const BEEGYM_PLANS: Record<string, BeeGymPlan> = {
         ],
         allowedFeatures: ['painel', 'agenda', 'treinos', 'alunos', 'pagamentos', 'exercicios', 'frequencia', 'configuracoes', 'app_aluno', 'conversas', 'aulas', 'multiplos_agendamentos', 'salas', 'multiplos_usuarios', 'automacao_cobranca', 'crm', 'relatorios'],
         icon: Building2,
+        kiwify_link: 'https://pay.kiwify.com.br/7snTI43',
     },
     plan_enterprise: {
         id: 'plan_enterprise',

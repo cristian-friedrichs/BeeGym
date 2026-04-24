@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+        webhook_logs: {
+          Row: {
+            id: string
+            email: string | null
+            event_type: string | null
+            payload: Json | null
+            created_at: string | null
+          }
+          Insert: {
+            id?: string
+            email?: string | null
+            event_type?: string | null
+            payload?: Json | null
+            created_at?: string | null
+          }
+          Update: {
+            id?: string
+            email?: string | null
+            event_type?: string | null
+            payload?: Json | null
+            created_at?: string | null
+          }
+          Relationships: []
+        }
       app_roles: {
         Row: {
           created_at: string | null
@@ -847,7 +871,9 @@ export type Database = {
           subscription_status: string | null
           updated_at: string | null
           website: string | null
-        }
+                  limit_students: number | null
+          plan_type: string | null
+}
         Insert: {
           address?: string | null
           address_city?: string | null
@@ -894,7 +920,9 @@ export type Database = {
           subscription_status?: string | null
           updated_at?: string | null
           website?: string | null
-        }
+                  limit_students?: number | null
+          plan_type?: string | null
+}
         Update: {
           address?: string | null
           address_city?: string | null
@@ -941,7 +969,9 @@ export type Database = {
           subscription_status?: string | null
           updated_at?: string | null
           website?: string | null
-        }
+                  limit_students?: number | null
+          plan_type?: string | null
+}
         Relationships: [
           {
             foreignKeyName: "organizations_plan_id_fkey"

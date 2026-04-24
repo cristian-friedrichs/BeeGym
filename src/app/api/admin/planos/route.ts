@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { BEEGYM_PLANS } from '@/config/plans';
-import { efiPlansService } from '@/payments/efi/efi.plans';
-import { efiConfig } from '@/payments/efi/efi.config';
 import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
 
@@ -49,8 +47,6 @@ export async function GET(request: NextRequest) {
                 intervalo: p.interval || 'Mensal',
                 assinantes_ativos: activeCountByPlan[p.id] || 0,
                 max_alunos: p.max_students || configPlan?.max_students || null,
-                efi_plan_id_hml: p.efi_plan_id_hml,
-                efi_plan_id_prd: p.efi_plan_id_prd,
                 ativo: p.active,
                 promo_price: p.promo_price ? Number(p.promo_price) : null,
                 promo_months: p.promo_months || 0,
@@ -84,20 +80,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const supabase = supabaseAdmin;
 
-        // 1. Cria o Plano na Efí primeiro
-        const isPrd = efiConfig.ambiente === 'producao';
-        let newEfiId = null;
-
-        try {
-            newEfiId = await efiPlansService.criarPlano({
-                name: `BeeGym ${body.nome}`,
-                interval: 1, // mensal forçado por padrão na EFI
-                repeats: body.repeticoes === 0 ? null : body.repeticoes
-            });
-        } catch (efiError: any) {
-            console.error('[Admin Planos POST] Erro ao criar na EFI:', efiError.message);
-            return NextResponse.json({ error: 'Falha ao criar plano no gateway de pagamento (EFI).' }, { status: 400 });
-        }
+        // 1. A criação no gateway legou para a Kiwify que já está com os planos criados no painel.
 
         // 2. Insere novo plano do SaaS com a ID da EFI preenchida
         const { data: novoPlano, error } = await supabase
@@ -108,8 +91,6 @@ export async function POST(request: NextRequest) {
                 tier: body.tier,
                 price: body.valor_mensal,
                 interval: body.intervalo || 'Mensal',
-                efi_plan_id_hml: isPrd ? null : newEfiId,
-                efi_plan_id_prd: isPrd ? newEfiId : null,
                 promo_price: body.promo_price || null,
                 promo_months: body.promo_months || null,
                 allowed_features: body.allowed_features || [],
@@ -130,8 +111,6 @@ export async function POST(request: NextRequest) {
             valor_mensal: Number(novoPlano.price),
             intervalo: novoPlano.interval,
             assinantes_ativos: 0,
-            efi_plan_id_hml: novoPlano.efi_plan_id_hml,
-            efi_plan_id_prd: novoPlano.efi_plan_id_prd,
             ativo: novoPlano.active,
         }, { status: 201 });
 
@@ -160,18 +139,7 @@ export async function PUT(request: NextRequest) {
 
         const { id, ...updates } = body;
 
-        // No PUT, verificamos se o gateway service suporta atualizarPlano. 
-        // Como o lint avisou que não existia, vamos remover a chamada por enquanto 
-        // para não quebrar o build, até termos certeza da API da EFI.
-        /*
-        if (updates.nome) {
-            const isPrd = efiConfig.ambiente === 'producao';
-            const efiPlanId = isPrd ? updates.efi_plan_id_prd : updates.efi_plan_id_hml;
-            if (efiPlanId && efiPlansService.atualizarPlano) {
-                 await efiPlansService.atualizarPlano({ ... });
-            }
-        }
-        */
+        // Sem atualizações no Gateway, são tratadas pelo painel da Kiwify.
 
         const { data: planoAtualizado, error } = await supabase
             .from('saas_plans')
@@ -203,8 +171,6 @@ export async function PUT(request: NextRequest) {
             valor_mensal: Number(planoAtualizado.price),
             intervalo: planoAtualizado.interval,
             assinantes_ativos: body.assinantes_ativos,
-            efi_plan_id_hml: planoAtualizado.efi_plan_id_hml,
-            efi_plan_id_prd: planoAtualizado.efi_plan_id_prd,
             ativo: planoAtualizado.active,
         });
 

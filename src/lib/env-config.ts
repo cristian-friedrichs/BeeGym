@@ -23,15 +23,4 @@ export const SUPABASE_ANON_KEY =
 export const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-// ── EFI ─────────────────────────────────────────────────
-export const EFI_AMBIENTE =
-  process.env.EFI_AMBIENTE ||
-  process.env.NEXT_PUBLIC_EFI_AMBIENTE ||
-  'homologacao';
-
-export const EFI_PAYEE_CODE =
-  process.env.EFI_PAYEE_CODE ||
-  process.env.NEXT_PUBLIC_EFI_PAYEE_CODE ||
-  '';
-
-export const IS_EFI_PRODUCTION = EFI_AMBIENTE === 'producao';
+// Fim das variáveis de ambiente
