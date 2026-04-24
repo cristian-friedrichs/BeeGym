@@ -24,7 +24,7 @@ export default function WebhooksAdminPage() {
     const [simEvent, setSimEvent] = useState('subscription_renewed');
     const [simToken, setSimToken] = useState('dczv229jm85');
     const [isSimulating, setIsSimulating] = useState(false);
-    const [validEmails, setValidEmails] = useState<{email: string, full_name: string}[]>([]);
+    const [validEmails, setValidEmails] = useState<{email: string | null, full_name: string | null}[]>([]);
     const [loadingEmails, setLoadingEmails] = useState(false);
 
     const fetchLogs = async () => {
