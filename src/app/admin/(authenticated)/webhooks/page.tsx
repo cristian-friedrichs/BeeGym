@@ -160,17 +160,17 @@ export default function WebhooksAdminPage() {
                                     <div className="flex flex-wrap gap-2">
                                         {validEmails.slice(0, 5).map((acc) => (
                                             <button
-                                                key={acc.email}
-                                                onClick={() => setSimEmail(acc.email)}
+                                                key={acc.email ?? ''}
+                                                onClick={() => setSimEmail(acc.email ?? '')}
                                                 className={cn(
                                                     "text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95",
                                                     simEmail === acc.email 
                                                         ? "bg-bee-amber border-bee-amber text-bee-midnight" 
                                                         : "bg-white border-slate-200 text-slate-500 hover:border-bee-amber/30"
                                                 )}
-                                                title={acc.full_name}
+                                                title={acc.full_name ?? ''}
                                             >
-                                                {acc.email.split('@')[0]}
+                                                {(acc.email ?? '').split('@')[0]}
                                             </button>
                                         ))}
                                     </div>

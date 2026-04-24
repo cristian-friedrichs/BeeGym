@@ -181,16 +181,21 @@ export async function POST(req: NextRequest) {
                 updated_at: new Date().toISOString(),
             };
 
-            const { error: subError } = await supabaseAdmin
+            // Busca o ID real da subscription (após upsert, garante que SIGNUP também tenha subId)
+            const { data: freshSub, error: subError } = await supabaseAdmin
                 .from('saas_subscriptions')
-                .upsert(upsertPayload, { onConflict: 'organization_id' });
+                .upsert(upsertPayload, { onConflict: 'organization_id' })
+                .select('id')
+                .single();
             if (subError) throw subError;
 
-            // Registra a cobrança (saas_charges)
-            if (subId && amount !== null) {
+            const resolvedSubId = freshSub?.id ?? subId;
+
+            // Registra a cobrança (saas_charges) — sempre, inclusive no SIGNUP
+            if (resolvedSubId && amount !== null) {
                 await supabaseAdmin.from('saas_charges').insert({
                     organization_id:        orgId,
-                    saas_subscription_id:   subId,
+                    saas_subscription_id:   resolvedSubId,
                     amount:                 amount ?? newPlan.price,
                     status:                 'paid',
                     payment_method:         'KIWIFY',
