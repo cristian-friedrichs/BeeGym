@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 
-// Token estático exigido pela especificação
-const EXPECTED_TOKEN = 'dczv229jm85';
+// Token de segurança (deve estar no .env)
+const EXPECTED_TOKEN = process.env.KIWIFY_WEBHOOK_TOKEN;
 
 // Mapeamento de Planos (UUIDs vindos do banco saas_plans)
 const PLAN_MAPPING: Record<string, { id: string, tier: string, limit: number, price: number }> = {
@@ -40,11 +40,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'E-mail é obrigatório para identificação.' }, { status: 400 });
         }
 
-        // 3. Localizar o usuário via tabela profiles
+        // 3. Localizar o usuário via tabela profiles (Busca automática pelo e-mail)
+        // Usamos ilike para garantir que a busca seja case-insensitive
         const { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('organization_id')
-            .eq('email', email)
+            .ilike('email', email.trim())
             .single();
 
         if (!profile || !profile.organization_id) {
@@ -142,4 +143,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
     }
 }
-
