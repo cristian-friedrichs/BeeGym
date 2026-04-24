@@ -21,3 +21,23 @@ export async function getWebhookLogs() {
         return { success: false, data: [] };
     }
 }
+
+export async function getValidWebhookEmails() {
+    try {
+        const { data, error } = await supabaseAdmin
+            .from('profiles')
+            .select('email, full_name')
+            .not('email', 'is', null)
+            .order('email');
+
+        if (error) {
+            console.error('[Admin] Erro ao buscar emails válidos:', error);
+            return { success: false, data: [] };
+        }
+
+        return { success: true, data: data || [] };
+    } catch (err: any) {
+        console.error('[Admin] Erro fatal ao buscar emails:', err.message);
+        return { success: false, data: [] };
+    }
+}

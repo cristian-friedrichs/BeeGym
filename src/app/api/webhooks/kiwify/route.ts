@@ -4,6 +4,15 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 // Token estático exigido pela especificação
 const EXPECTED_TOKEN = 'dczv229jm85';
 
+// Mapeamento de Planos (UUIDs vindos do banco saas_plans)
+const PLAN_MAPPING: Record<string, { id: string, tier: string, limit: number, price: number }> = {
+    'starter': { id: '12532d9c-ace2-400d-81a7-4daf951966f8', tier: 'STARTER', limit: 20, price: 19.90 },
+    'plus': { id: '03f4ca44-ec71-4321-b425-634ab7c85791', tier: 'PLUS', limit: 40, price: 29.90 },
+    'studio': { id: 'd37dadee-1f91-4a2c-ae7e-00f94392bda0', tier: 'STUDIO', limit: 100, price: 49.90 },
+    'pro': { id: '20a6a4a6-6b9d-4880-b6d3-bdc3693be00d', tier: 'PRO', limit: 500, price: 79.90 },
+    'enterprise': { id: '5dd1476d-23f7-4c05-8fa7-cc2da8f99baa', tier: 'ENTERPRISE', limit: 999999, price: 149.90 },
+};
+
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
@@ -47,57 +56,58 @@ export async function POST(req: NextRequest) {
         const productName = (body.product_name || '').toLowerCase();
 
         // 4. Lógica de Atualização Baseada no Evento
-        let newPlanType = 'free';
-        let newLimitStudents = 0;
-        let newSubscriptionStatus = 'pending';
-
-        // Determinar os privilégios baseados no produto (apenas para eventos de ativação)
-        if (productName.includes('starter')) {
-            newPlanType = 'starter';
-            newLimitStudents = 20;
-        } else if (productName.includes('plus')) {
-            newPlanType = 'plus';
-            newLimitStudents = 40;
-        } else if (productName.includes('studio')) {
-            newPlanType = 'studio';
-            newLimitStudents = 100;
-        } else if (productName.includes('pro')) {
-            newPlanType = 'pro';
-            newLimitStudents = 500;
-        } else if (productName.includes('enterprise')) {
-            newPlanType = 'enterprise';
-            newLimitStudents = 999999;
-        } else if (productName) {
-            // Fallback caso o nome seja um pouco diferente, ex: BeeGym Pro
-            newPlanType = 'custom';
-            newLimitStudents = 10;
-        }
+        let planInfo = PLAN_MAPPING.starter; // Fallback
+        
+        if (productName.includes('starter')) planInfo = PLAN_MAPPING.starter;
+        else if (productName.includes('plus')) planInfo = PLAN_MAPPING.plus;
+        else if (productName.includes('studio')) planInfo = PLAN_MAPPING.studio;
+        else if (productName.includes('pro')) planInfo = PLAN_MAPPING.pro;
+        else if (productName.includes('enterprise')) planInfo = PLAN_MAPPING.enterprise;
 
         const isActivationEvent = ['payment_approved', 'subscription_renewed', 'approved', 'paid'].includes(eventType);
         const isCancellationEvent = ['subscription_canceled', 'subscription_late', 'refunded', 'chargeback'].includes(eventType);
 
         if (isActivationEvent) {
-            newSubscriptionStatus = 'active';
+            const newSubscriptionStatus = 'active';
             
-            await supabaseAdmin
+            // Atualizar Organização
+            const { error: orgError } = await supabaseAdmin
                 .from('organizations')
                 .update({
                     subscription_status: newSubscriptionStatus,
-                    plan_type: newPlanType,
-                    limit_students: newLimitStudents,
-                    onboarding_completed: true, // Já ativou
+                    plan_type: planInfo.tier.toLowerCase(),
+                    limit_students: planInfo.limit,
+                    onboarding_completed: true,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', orgId);
 
-            console.log(`[Kiwify Webhook] Ativação concluída para ${email} (Org: ${orgId}) - Plano: ${newPlanType}`);
+            if (orgError) throw orgError;
+
+            // Sincronizar saas_subscriptions
+            const { error: subError } = await supabaseAdmin
+                .from('saas_subscriptions')
+                .upsert({
+                    organization_id: orgId,
+                    saas_plan_id: planInfo.id,
+                    status: newSubscriptionStatus,
+                    metodo: 'KIWIFY',
+                    plan_tier: planInfo.tier,
+                    valor_mensal: planInfo.price,
+                    updated_at: new Date().toISOString(),
+                    dia_vencimento: new Date().getDate() || 10
+                }, { onConflict: 'organization_id' });
+
+            if (subError) throw subError;
+
+            console.log(`[Kiwify Webhook] Ativação concluída para ${email} (Org: ${orgId}) - Plano: ${planInfo.tier}`);
             return NextResponse.json({ success: true, message: 'Conta ativada/renovada com sucesso.' });
 
         } else if (isCancellationEvent) {
-            // Em caso de subscription_late podemos definir como past_due
-            newSubscriptionStatus = eventType === 'subscription_late' ? 'past_due' : 'canceled';
+            const newSubscriptionStatus = eventType === 'subscription_late' ? 'past_due' : 'canceled';
 
-            await supabaseAdmin
+            // Atualizar Organização (reverte para free)
+            const { error: orgError } = await supabaseAdmin
                 .from('organizations')
                 .update({
                     subscription_status: newSubscriptionStatus,
@@ -107,11 +117,23 @@ export async function POST(req: NextRequest) {
                 })
                 .eq('id', orgId);
 
+            if (orgError) throw orgError;
+
+            // Atualizar saas_subscriptions
+            const { error: subError } = await supabaseAdmin
+                .from('saas_subscriptions')
+                .update({
+                    status: newSubscriptionStatus,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('organization_id', orgId);
+
+            if (subError) throw subError;
+
             console.log(`[Kiwify Webhook] Suspensão/Cancelamento para ${email} (Org: ${orgId}) - Motivo: ${eventType}`);
             return NextResponse.json({ success: true, message: 'Acesso suspendido/cancelado com sucesso.' });
         }
 
-        // Caso seja outro evento irrelevante (ex: boleto_impresso)
         console.log(`[Kiwify Webhook] Evento ignorado: ${eventType} para ${email}`);
         return NextResponse.json({ success: true, message: 'Evento ignorado.' });
 
@@ -120,3 +142,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Erro interno no servidor' }, { status: 500 });
     }
 }
+

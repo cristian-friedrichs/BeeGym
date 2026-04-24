@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SectionHeader } from '@/components/ui/section-header';
-import { getWebhookLogs } from '@/actions/admin-webhooks';
+import { getWebhookLogs, getValidWebhookEmails } from '@/actions/admin-webhooks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +24,8 @@ export default function WebhooksAdminPage() {
     const [simEvent, setSimEvent] = useState('subscription_renewed');
     const [simToken, setSimToken] = useState('dczv229jm85');
     const [isSimulating, setIsSimulating] = useState(false);
+    const [validEmails, setValidEmails] = useState<{email: string, full_name: string}[]>([]);
+    const [loadingEmails, setLoadingEmails] = useState(false);
 
     const fetchLogs = async () => {
         setLoadingLogs(true);
@@ -40,8 +42,18 @@ export default function WebhooksAdminPage() {
         setLoadingLogs(false);
     };
 
+    const fetchValidEmails = async () => {
+        setLoadingEmails(true);
+        const res = await getValidWebhookEmails();
+        if (res.success) {
+            setValidEmails(res.data || []);
+        }
+        setLoadingEmails(false);
+    };
+
     useEffect(() => {
         fetchLogs();
+        fetchValidEmails();
     }, []);
 
     const handleSimulate = async () => {
@@ -141,6 +153,29 @@ export default function WebhooksAdminPage() {
                                 onChange={e => setSimEmail(e.target.value)}
                                 className="h-12 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/10 focus-visible:border-bee-amber shadow-sm font-medium"
                             />
+                            
+                            {validEmails.length > 0 && (
+                                <div className="mt-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Contas Disponíveis (Profiles)</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {validEmails.slice(0, 5).map((acc) => (
+                                            <button
+                                                key={acc.email}
+                                                onClick={() => setSimEmail(acc.email)}
+                                                className={cn(
+                                                    "text-[10px] font-bold px-3 py-1.5 rounded-xl border transition-all active:scale-95",
+                                                    simEmail === acc.email 
+                                                        ? "bg-bee-amber border-bee-amber text-bee-midnight" 
+                                                        : "bg-white border-slate-200 text-slate-500 hover:border-bee-amber/30"
+                                                )}
+                                                title={acc.full_name}
+                                            >
+                                                {acc.email.split('@')[0]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">
