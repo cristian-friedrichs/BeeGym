@@ -11,6 +11,7 @@ import {
     ShieldCheck,
     Ticket,
     LifeBuoy,
+    Webhook,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ const navGroups = [
             { icon: Ticket, label: 'Ofertas', href: '/admin/ofertas' },
             { icon: LifeBuoy, label: 'Suporte', href: '/admin/suporte' },
             { icon: FileBarChart, label: 'Relatórios', href: '/admin/relatorios' },
+            { icon: Webhook, label: 'Webhooks', href: '/admin/webhooks' },
         ],
     },
 ];

@@ -13,6 +13,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
     '/admin/planos': { title: 'Planos', subtitle: 'Configure planos de assinatura' },
     '/admin/cupons': { title: 'Ofertas', subtitle: 'Gerencie descontos e promoções' },
     '/admin/relatorios': { title: 'Relatórios', subtitle: 'Análises e exportações' },
+    '/admin/webhooks': { title: 'Webhooks', subtitle: 'Monitoramento de integrações' },
 };
 
 function getGreeting() {
