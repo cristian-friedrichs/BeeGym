@@ -302,13 +302,13 @@ export default function WebhooksAdminPage() {
                                                         </span>
                                                     </TableCell>
                                                     <TableCell className="px-6 text-right">
-                                                        {log.payload?.token === 'dczv229jm85' ? (
-                                                            <div className="inline-flex items-center text-emerald-500 bg-emerald-50/50 px-3 py-1.5 rounded-xl border border-emerald-100/50 gap-1.5 font-black text-[9px] uppercase tracking-widest">
-                                                                <CheckCircle2 className="w-3 h-3" /> OK
-                                                            </div>
-                                                        ) : (
+                                                        {log.event_type === 'auth_failed' ? (
                                                             <div className="inline-flex items-center text-red-500 bg-red-50/50 px-3 py-1.5 rounded-xl border border-red-100/50 gap-1.5 font-black text-[9px] uppercase tracking-widest">
                                                                 <ShieldAlert className="w-3 h-3" /> FALHOU
+                                                            </div>
+                                                        ) : (
+                                                            <div className="inline-flex items-center text-emerald-500 bg-emerald-50/50 px-3 py-1.5 rounded-xl border border-emerald-100/50 gap-1.5 font-black text-[9px] uppercase tracking-widest">
+                                                                <CheckCircle2 className="w-3 h-3" /> OK
                                                             </div>
                                                         )}
                                                     </TableCell>

@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 
+const ACTIVE_STATUSES = ['active', 'pago', 'ativo', 'trial']
+
 export async function verifyPaymentStatusAction() {
     try {
         const supabase = await createClient()
@@ -19,14 +21,28 @@ export async function verifyPaymentStatusAction() {
             return { success: false }
         }
 
+        const orgId = profile.organization_id
+
+        // Primary check: saas_subscriptions.status (updated by webhook)
         const { data: subscription } = await supabase
             .from('saas_subscriptions')
             .select('status')
-            .eq('organization_id', profile.organization_id)
-            .eq('status', 'active')
+            .eq('organization_id', orgId)
             .maybeSingle()
 
-        if (subscription) {
+        if (subscription && ACTIVE_STATUSES.includes(subscription.status)) {
+            return { success: true, status: 'CONCLUIDA' }
+        }
+
+        // Fallback: organizations.subscription_status (also updated by webhook)
+        // Handles the race-condition window before saas_subscriptions is written
+        const { data: org } = await supabase
+            .from('organizations')
+            .select('subscription_status')
+            .eq('id', orgId)
+            .single()
+
+        if (org && ACTIVE_STATUSES.includes((org.subscription_status || '').toLowerCase())) {
             return { success: true, status: 'CONCLUIDA' }
         }
 

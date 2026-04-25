@@ -7,12 +7,13 @@ import { User, Building2, Zap, Check, LogOut, Phone, CreditCard, Users, Loader2 
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { BeeGymLogo } from '@/components/ui/beegym-logo'
 import { BEEGYM_PLANS, BeeGymPlan } from '@/config/plans'
+import { completeOnboardingAction } from '@/actions/onboarding'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useToast } from '@/hooks/use-toast'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/lib/auth/AuthContext'
 
 const onboardingSchema = z.object({
     establishment_name: z.string().min(3, 'Nome do estabelecimento deve ter pelo menos 3 caracteres'),
@@ -32,7 +33,7 @@ const RANGES = [
 
 export default function OnboardingPage() {
     const router = useRouter()
-    const { data: cachedData, updateData } = useOnboarding()
+    const { data: cachedData, updateData, resetData } = useOnboarding()
     const { user } = useAuth()
     const supabase = createClient()
     const { toast } = useToast()
@@ -71,8 +72,8 @@ export default function OnboardingPage() {
                     .from('profiles')
                     .select('establishment_name, phone, document_id, student_range')
                     .eq('id', currentUser.id)
-                    .single()
-                
+                    .single() as { data: any }
+
                 if (profile) {
                     if (profile.establishment_name) setValue('establishment_name', profile.establishment_name)
                     if (profile.phone) setValue('phone', profile.phone)
@@ -141,7 +142,6 @@ export default function OnboardingPage() {
             return
         }
 
-        // 2. Save to DB
         setLoading(true)
         try {
             const formData = getValues()
@@ -149,17 +149,21 @@ export default function OnboardingPage() {
             const currentUser = session?.user
             if (!currentUser) throw new Error('Usuário não autenticado')
 
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .update({
-                    establishment_name: formData.establishment_name,
-                    phone: formData.phone,
-                    document_id: formData.document_id,
-                    student_range: formData.student_range,
-                })
-                .eq('id', currentUser.id)
+            // 2. Create/update organization and saas_subscription in DB so the webhook
+            //    can find the organization when Kiwify fires the payment event.
+            const planTier = plan.id.replace('plan_', '').toUpperCase()
+            const result = await completeOnboardingAction({
+                organizationName: formData.establishment_name,
+                businessType: 'gym',
+                phone: formData.phone,
+                email: currentUser.email!,
+                document: formData.document_id,
+                studentRange: formData.student_range,
+                planTier,
+                hasPhysicalLocation: false,
+            })
 
-            if (profileError) throw profileError
+            if (result.error) throw new Error(result.error)
 
             updateData({
                 organizationName: formData.establishment_name,
@@ -168,22 +172,15 @@ export default function OnboardingPage() {
                 studentRange: formData.student_range,
             })
 
-            // 3. Redirect to Kiwify
+            // 3. Redirect to Kiwify checkout with pre-filled data
             if (plan.kiwify_link) {
                 const kiwifyUrl = new URL(plan.kiwify_link)
-                
-                // Prefill user info in checkout
                 if (user?.email) kiwifyUrl.searchParams.append('email', user.email)
-                
                 const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name
                 if (fullName) kiwifyUrl.searchParams.append('name', fullName)
-                
-                // Add phone number to checkout if possible
                 if (formData.phone) {
-                    const cleanPhone = formData.phone.replace(/\D/g, '')
-                    kiwifyUrl.searchParams.append('phone', cleanPhone)
+                    kiwifyUrl.searchParams.append('phone', formData.phone.replace(/\D/g, ''))
                 }
-
                 window.location.href = kiwifyUrl.toString()
             }
         } catch (error: any) {

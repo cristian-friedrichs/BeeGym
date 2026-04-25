@@ -189,9 +189,14 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // 🔵 Ativo tentando entrar no Onboarding 
+        // 🔵 Ativo tentando entrar no Onboarding ou Pending-Activation
         // Nota: Permitimos que admins (especialmente o master) acessem o onboarding para testes e suporte
         if (isAccountActive && isOnboardingPath) {
+            url.pathname = '/app/painel'
+            return NextResponse.redirect(url)
+        }
+
+        if (isAccountActive && url.pathname.startsWith('/app/pending-activation')) {
             url.pathname = '/app/painel'
             return NextResponse.redirect(url)
         }

@@ -13,7 +13,7 @@ interface CompleteOnboardingData {
     phone: string
     email: string
     document?: string
-    studentRange: '0-20' | '21-40' | '41-60' | '61-300' | '301-500' | '500+'
+    studentRange: string
     addressLine1?: string
     addressNumber?: string
     addressComplement?: string
@@ -21,7 +21,8 @@ interface CompleteOnboardingData {
     addressCity?: string
     addressState?: string
     addressZip?: string
-    planId: string
+    planId?: string
+    planTier?: string
     hasPhysicalLocation: boolean
     subscriptionStatus?: string
 }
@@ -145,20 +146,25 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
 
     // 4. Upsert saas_subscriptions with pending status
     // Reads price/promo from saas_plans to ensure charges use admin-configured values
-    if (data.planId) {
+    if (data.planId || data.planTier) {
         // Fetch plan pricing from saas_plans (source of truth)
-        const { data: planData } = await supabaseAdmin
+        // Accept either a UUID (planId) or a tier string like 'STARTER' (planTier)
+        const planQuery = supabaseAdmin
             .from('saas_plans')
-            .select('price, promo_price, promo_months, tier')
-            .eq('id', data.planId)
-            .single()
+            .select('id, price, promo_price, promo_months, tier')
+
+        const { data: planData } = data.planId
+            ? await planQuery.eq('id', data.planId).single()
+            : await planQuery.eq('tier', data.planTier!).maybeSingle()
+
+        const resolvedPlanId = planData?.id ?? data.planId
 
         const { error: subError } = await supabaseAdmin
             .from('saas_subscriptions')
             .upsert({
                 organization_id: orgData.id,
-                saas_plan_id: data.planId,
-                plan_paid_id: data.planId,
+                saas_plan_id: resolvedPlanId ?? null,
+                plan_paid_id: resolvedPlanId ?? null,
                 plan_tier: planData?.tier || null,
                 status: 'pending',
                 metodo: 'pending',
