@@ -40,27 +40,28 @@ export default function OnboardingStep2() {
         addressState: '',
     })
 
-    // Sincronizar com o contexto após a hidratação
+    // Sincronizar com o contexto apenas uma vez após a hidratação
     useEffect(() => {
         if (isHydrated) {
-            setFormData({
-                organizationName: data.organizationName || '',
-                documentType: data.documentType || 'CNPJ',
-                document: data.document || '',
-                phone: data.phone || '',
-                email: data.email || '',
-                studentRange: data.studentRange || '',
-                hasPhysicalLocation: data.businessType === 'Personal' ? false : (data.hasPhysicalLocation ?? true),
-                addressZip: data.addressZip || '',
-                addressLine1: data.addressLine1 || '',
-                addressNumber: data.addressNumber || '',
-                addressComplement: data.addressComplement || '',
-                addressNeighborhood: data.addressNeighborhood || '',
-                addressCity: data.addressCity || '',
-                addressState: data.addressState || '',
-            })
+            setFormData(prev => ({
+                ...prev,
+                organizationName: data.organizationName || prev.organizationName,
+                documentType: data.documentType || prev.documentType,
+                document: data.document || prev.document,
+                phone: data.phone || prev.phone,
+                email: data.email || prev.email,
+                studentRange: data.studentRange || prev.studentRange,
+                hasPhysicalLocation: data.businessType === 'Personal' ? false : (data.hasPhysicalLocation ?? prev.hasPhysicalLocation),
+                addressZip: data.addressZip || prev.addressZip,
+                addressLine1: data.addressLine1 || prev.addressLine1,
+                addressNumber: data.addressNumber || prev.addressNumber,
+                addressComplement: data.addressComplement || prev.addressComplement,
+                addressNeighborhood: data.addressNeighborhood || prev.addressNeighborhood,
+                addressCity: data.addressCity || prev.addressCity,
+                addressState: data.addressState || prev.addressState,
+            }))
         }
-    }, [isHydrated, data])
+    }, [isHydrated]) // Removido 'data' para não resetar enquanto o usuário digita
 
     // Load cities for mobile/no physical location
     useEffect(() => {
@@ -177,19 +178,44 @@ export default function OnboardingStep2() {
     }
 
     const validateForm = () => {
-        if (!formData.organizationName || !formData.document || !formData.phone || !formData.email || !formData.studentRange) {
-            toast({ variant: 'destructive', title: 'Campos obrigatórios', description: 'Preencha todos os campos obrigatórios.' })
-            return false
+        const requiredFields = [
+            { key: 'organizationName', label: 'Nome do Estabelecimento' },
+            { key: 'document', label: 'CPF/CNPJ' },
+            { key: 'phone', label: 'Telefone' },
+            { key: 'email', label: 'E-mail Comercial' },
+            { key: 'studentRange', label: 'Número de Alunos' }
+        ]
+
+        for (const field of requiredFields) {
+            const value = formData[field.key as keyof typeof formData]
+            if (!value || (typeof value === 'string' && value.trim() === '')) {
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Campo obrigatório', 
+                    description: `O campo ${field.label} é obrigatório.` 
+                })
+                return false
+            }
         }
 
-        if (formData.hasPhysicalLocation && !formData.addressZip) {
-            toast({ variant: 'destructive', title: 'Endereço obrigatório', description: 'Informe o CEP do estabelecimento.' })
-            return false
-        }
-
-        if (!formData.hasPhysicalLocation && (!formData.addressCity || !formData.addressState)) {
-            toast({ variant: 'destructive', title: 'Local de atuação', description: 'Informe sua cidade principal e estado (UF).' })
-            return false
+        if (formData.hasPhysicalLocation) {
+            if (!formData.addressZip || formData.addressZip.length < 8) {
+                toast({ variant: 'destructive', title: 'Endereço incompleto', description: 'O CEP é obrigatório para localização física.' })
+                return false
+            }
+            if (!formData.addressNumber) {
+                toast({ variant: 'destructive', title: 'Endereço incompleto', description: 'O número do endereço é obrigatório.' })
+                return false
+            }
+            if (!formData.addressCity || !formData.addressState) {
+                toast({ variant: 'destructive', title: 'Endereço incompleto', description: 'Cidade e UF são obrigatórios.' })
+                return false
+            }
+        } else {
+            if (!formData.addressState || !formData.addressCity) {
+                toast({ variant: 'destructive', title: 'Local de atuação', description: 'Informe sua cidade principal e estado (UF).' })
+                return false
+            }
         }
 
         return true
@@ -197,7 +223,6 @@ export default function OnboardingStep2() {
 
     const handleNext = () => {
         if (!validateForm()) return
-
         updateData(formData)
         router.push('/app/onboarding/step-3')
     }
@@ -224,6 +249,7 @@ export default function OnboardingStep2() {
                                     <div className="space-y-2">
                                         <Label className="text-xs font-bold text-slate-400 ml-1">Nome do Estabelecimento *</Label>
                                         <Input
+                                            id="organizationName"
                                             name="organizationName"
                                             value={formData.organizationName}
                                             onChange={handleChange}
@@ -248,6 +274,7 @@ export default function OnboardingStep2() {
                                         <div className="sm:col-span-2 space-y-2">
                                             <Label className="text-xs font-bold text-slate-400 ml-1">{formData.documentType} *</Label>
                                             <Input
+                                                id="document"
                                                 name="document"
                                                 value={formData.document}
                                                 onChange={handleChange}
@@ -262,6 +289,7 @@ export default function OnboardingStep2() {
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold text-slate-400 ml-1">Telefone *</Label>
                                             <Input
+                                                id="phone"
                                                 name="phone"
                                                 value={formData.phone}
                                                 onChange={handleChange}
@@ -273,6 +301,7 @@ export default function OnboardingStep2() {
                                         <div className="space-y-2">
                                             <Label className="text-xs font-bold text-slate-400 ml-1">E-mail Comercial *</Label>
                                             <Input
+                                                id="email"
                                                 name="email"
                                                 type="email"
                                                 value={formData.email}
@@ -334,6 +363,7 @@ export default function OnboardingStep2() {
                                                 <Label className="text-xs font-bold text-slate-400 ml-1">CEP *</Label>
                                                 <div className="relative">
                                                     <Input
+                                                        id="addressZip"
                                                         name="addressZip"
                                                         value={formData.addressZip}
                                                         onChange={handleChange}
@@ -353,18 +383,39 @@ export default function OnboardingStep2() {
                                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                                 <div className="sm:col-span-3 space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Endereço</Label>
-                                                    <Input name="addressLine1" value={formData.addressLine1} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" placeholder="Preenchido via CEP" />
+                                                    <Input 
+                                                        id="addressLine1"
+                                                        name="addressLine1" 
+                                                        value={formData.addressLine1} 
+                                                        onChange={handleChange}
+                                                        className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all" 
+                                                        placeholder="Rua, Avenida..." 
+                                                    />
                                                 </div>
                                                 <div className="sm:col-span-1 space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Nº *</Label>
-                                                    <Input name="addressNumber" value={formData.addressNumber} onChange={handleChange} className="h-12 border-white/10 bg-white/5 text-white" placeholder="00" />
+                                                    <Input 
+                                                        id="addressNumber"
+                                                        name="addressNumber" 
+                                                        value={formData.addressNumber} 
+                                                        onChange={handleChange} 
+                                                        className="h-12 border-white/10 bg-white/5 text-white" 
+                                                        placeholder="00" 
+                                                    />
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Bairro</Label>
-                                                    <Input name="addressNeighborhood" value={formData.addressNeighborhood} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" />
+                                                    <Input 
+                                                        id="addressNeighborhood"
+                                                        name="addressNeighborhood" 
+                                                        value={formData.addressNeighborhood} 
+                                                        onChange={handleChange}
+                                                        className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all" 
+                                                        placeholder="Bairro"
+                                                    />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Complemento</Label>
@@ -375,11 +426,26 @@ export default function OnboardingStep2() {
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Cidade</Label>
-                                                    <Input name="addressCity" value={formData.addressCity} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic" />
+                                                    <Input 
+                                                        id="addressCity"
+                                                        name="addressCity" 
+                                                        value={formData.addressCity} 
+                                                        onChange={handleChange}
+                                                        className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all" 
+                                                        placeholder="Cidade"
+                                                    />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">UF</Label>
-                                                    <Input name="addressState" value={formData.addressState} readOnly className="h-12 bg-white/5 text-slate-500 border-white/10 italic uppercase" />
+                                                    <Input 
+                                                        id="addressState"
+                                                        name="addressState" 
+                                                        value={formData.addressState} 
+                                                        onChange={handleChange}
+                                                        className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all uppercase" 
+                                                        placeholder="UF"
+                                                        maxLength={2}
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
@@ -433,7 +499,6 @@ export default function OnboardingStep2() {
                         </Button>
                         <Button
                             onClick={handleNext}
-                            disabled={!formData.organizationName || !formData.document || !formData.phone || !formData.email || !formData.studentRange || (formData.hasPhysicalLocation && (!formData.addressZip || !formData.addressNumber)) || (!formData.hasPhysicalLocation && (!formData.addressState || !formData.addressCity))}
                             className="h-14 px-12 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full shadow-xl shadow-bee-amber/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-display text-sm uppercase tracking-wider"
                         >
                             Próximo Passo <ArrowRight className="w-5 h-5 ml-2" />

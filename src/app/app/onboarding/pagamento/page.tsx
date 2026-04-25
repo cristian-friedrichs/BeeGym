@@ -19,6 +19,7 @@ export default function PagamentoPage() {
     const [userEmail, setUserEmail] = useState('');
     const [userName, setUserName] = useState('');
     const [orgId, setOrgId] = useState('');
+    const [isUserLoaded, setIsUserLoaded] = useState(false);
     const [plano, setPlano] = useState<PlanoInfo | null>(null);
     const [kiwifyLink, setKiwifyLink] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -47,47 +48,63 @@ export default function PagamentoPage() {
             if (profile?.organization_id) {
                 setOrgId(profile.organization_id);
             }
+            setIsUserLoaded(true);
         }
 
         init();
     }, [router]);
 
-    // Carregar plano do BD
+    // Carregar plano do BD (ou recuperar do banco se localStorage perdeu o planId)
     useEffect(() => {
         const fetchPlan = async () => {
-            if (isHydrated) {
-                const planId = onboardingData.planId;
-                if (!planId) {
-                    router.replace('/app/onboarding/step-3');
-                    return;
-                }
-                const supabase = createClient();
-                const { data: dbPlan } = await supabase.from('saas_plans').select('*').eq('id', planId).single() as { data: any };
-                if (dbPlan) {
-                    setPlano({
-                        id: dbPlan.id,
-                        name: dbPlan.name,
-                        tier: dbPlan.tier,
-                        price: dbPlan.price,
-                        description: dbPlan.description || '',
-                        features: dbPlan.features || [],
-                        promo_price: dbPlan.promo_price,
-                        promo_months: dbPlan.promo_months
-                    });
+            if (!isHydrated || !isUserLoaded) return;
 
-                    // Buscar o link correspondente no config
-                    // Mapeia o id do plano no banco (ex: plan_pro) para o config
-                    const configPlan = Object.values(BEEGYM_PLANS).find(p => p.id === dbPlan.id || p.name.toUpperCase() === dbPlan.tier.toUpperCase());
-                    if (configPlan && configPlan.kiwify_link) {
-                        setKiwifyLink(configPlan.kiwify_link);
-                    }
-                } else {
-                    router.replace('/app/onboarding/step-3');
+            let planId = onboardingData.planId;
+
+            // Se não tem planId no localStorage, tentar recuperar do banco
+            if (!planId && orgId) {
+                const supabase = createClient();
+                const { data: sub } = await supabase
+                    .from('saas_subscriptions')
+                    .select('saas_plan_id')
+                    .eq('organization_id', orgId)
+                    .maybeSingle();
+
+                if (sub?.saas_plan_id) {
+                    planId = sub.saas_plan_id;
                 }
+            }
+
+            if (!planId) {
+                router.replace('/app/onboarding/step-3');
+                return;
+            }
+
+            const supabase = createClient();
+            const { data: dbPlan } = await supabase.from('saas_plans').select('*').eq('id', planId).single() as { data: any };
+            if (dbPlan) {
+                setPlano({
+                    id: dbPlan.id,
+                    name: dbPlan.name,
+                    tier: dbPlan.tier,
+                    price: dbPlan.price,
+                    description: dbPlan.description || '',
+                    features: dbPlan.features || [],
+                    promo_price: dbPlan.promo_price,
+                    promo_months: dbPlan.promo_months
+                });
+
+                // Buscar o link correspondente no config
+                const configPlan = Object.values(BEEGYM_PLANS).find(p => p.id === dbPlan.id || p.name.toUpperCase() === dbPlan.tier.toUpperCase());
+                if (configPlan && configPlan.kiwify_link) {
+                    setKiwifyLink(configPlan.kiwify_link);
+                }
+            } else {
+                router.replace('/app/onboarding/step-3');
             }
         };
         fetchPlan();
-    }, [isHydrated, onboardingData.planId, router]);
+    }, [isHydrated, isUserLoaded, onboardingData.planId, orgId, router]);
 
 
     const handleCheckoutKiwify = () => {

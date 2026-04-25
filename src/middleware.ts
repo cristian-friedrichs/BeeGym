@@ -189,8 +189,9 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // 🔵 Ativo tentando entrar no Onboarding (Admins também voltam pro painel se tentarem entrar no onboarding)
-        if ((isAccountActive || isAdminUser) && isOnboardingPath) {
+        // 🔵 Ativo tentando entrar no Onboarding 
+        // Nota: Permitimos que admins (especialmente o master) acessem o onboarding para testes e suporte
+        if (isAccountActive && isOnboardingPath) {
             url.pathname = '/app/painel'
             return NextResponse.redirect(url)
         }

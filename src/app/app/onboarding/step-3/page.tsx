@@ -47,12 +47,59 @@ export default function OnboardingStep3() {
         }
     }, [isHydrated, data.planId])
 
-    // Redirect if no data
+    // Redirecionar se dados essenciais não foram preenchidos
+    // MAS primeiro verificar se já existe organização no banco (caso localStorage esteja vazio)
     useEffect(() => {
-        if (isHydrated && !isSuccess && (!data.businessType || !data.organizationName)) {
-            router.replace('/app/onboarding')
+        if (!isHydrated || isSuccess) return
+        if (data.businessType && data.organizationName) return // Dados já presentes no contexto
+
+        // Tenta recuperar do banco antes de redirecionar
+        const recoverFromDB = async () => {
+            try {
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) { router.replace('/app/onboarding'); return }
+
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('organization_id')
+                    .eq('id', user.id)
+                    .single()
+
+                if (!profile?.organization_id) { router.replace('/app/onboarding'); return }
+
+                const { data: org } = await supabase
+                    .from('organizations')
+                    .select('name, business_type, phone, email, cpf_cnpj, student_range, has_physical_location, address_line1, address_number, address_complement, address_neighborhood, address_city, address_state, address_zip')
+                    .eq('id', profile.organization_id)
+                    .single()
+
+                if (!org?.name || !org?.business_type) { router.replace('/app/onboarding'); return }
+
+                // Recuperar dados do banco para o contexto local
+                updateData({
+                    businessType: org.business_type,
+                    organizationName: org.name,
+                    phone: org.phone || '',
+                    email: org.email || '',
+                    document: org.cpf_cnpj || '',
+                    studentRange: org.student_range || '',
+                    hasPhysicalLocation: org.has_physical_location ?? false,
+                    addressLine1: org.address_line1 || '',
+                    addressNumber: org.address_number || '',
+                    addressComplement: org.address_complement || '',
+                    addressNeighborhood: org.address_neighborhood || '',
+                    addressCity: org.address_city || '',
+                    addressState: org.address_state || '',
+                    addressZip: org.address_zip || '',
+                })
+            } catch {
+                router.replace('/app/onboarding')
+            }
         }
-    }, [data, isHydrated, isSuccess, router])
+
+        recoverFromDB()
+    }, [data.businessType, data.organizationName, isHydrated, isSuccess, router, updateData])
 
     // Parse student range to determine minimum students for filtering
     const getMinStudents = (range: string): number => {
