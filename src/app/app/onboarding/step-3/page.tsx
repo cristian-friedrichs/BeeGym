@@ -51,9 +51,11 @@ export default function OnboardingStep3() {
     // MAS primeiro verificar se já existe organização no banco (caso localStorage esteja vazio)
     useEffect(() => {
         if (!isHydrated || isSuccess) return
-        if (data.businessType && data.organizationName) return // Dados já presentes no contexto
 
-        // Tenta recuperar do banco antes de redirecionar
+        // Se JÁ TEMOS os dados no contexto (acabamos de vir do Step 2), não faz nada
+        if (data.businessType && data.organizationName) return
+
+        // Se NÃO temos no contexto, tenta recuperar do banco antes de qualquer redirect
         const recoverFromDB = async () => {
             try {
                 const supabase = createClient()
@@ -66,15 +68,30 @@ export default function OnboardingStep3() {
                     .eq('id', user.id)
                     .single()
 
-                if (!profile?.organization_id) { router.replace('/app/onboarding'); return }
+                // Se não tem organização no perfil E não tem no contexto, volta pro início
+                if (!profile?.organization_id) {
+                    if (!data.businessType) router.replace('/app/onboarding')
+                    return
+                }
 
+                // Buscar organização
                 const { data: org } = await supabase
                     .from('organizations')
-                    .select('name, business_type, phone, email, cpf_cnpj, student_range, has_physical_location, address_line1, address_number, address_complement, address_neighborhood, address_city, address_state, address_zip')
+                    .select('*')
                     .eq('id', profile.organization_id)
                     .single()
 
-                if (!org?.name || !org?.business_type) { router.replace('/app/onboarding'); return }
+                if (!org?.name || !org?.business_type) {
+                    if (!data.businessType) router.replace('/app/onboarding')
+                    return
+                }
+
+                // Buscar plano se existir assinatura pendente
+                const { data: sub } = await supabase
+                    .from('saas_subscriptions')
+                    .select('saas_plan_id')
+                    .eq('organization_id', profile.organization_id)
+                    .maybeSingle()
 
                 // Recuperar dados do banco para o contexto local
                 updateData({
@@ -92,14 +109,21 @@ export default function OnboardingStep3() {
                     addressCity: org.address_city || '',
                     addressState: org.address_state || '',
                     addressZip: org.address_zip || '',
+                    planId: sub?.saas_plan_id || data.planId // Preservar se já existir no contexto
                 })
-            } catch {
-                router.replace('/app/onboarding')
+
+                if (sub?.saas_plan_id) {
+                    setSelectedPlanId(sub.saas_plan_id)
+                }
+            } catch (err) {
+                console.error('Erro ao recuperar dados:', err)
+                // Se falhou e não temos dados, volta pro início
+                if (!data.businessType) router.replace('/app/onboarding')
             }
         }
 
         recoverFromDB()
-    }, [data.businessType, data.organizationName, isHydrated, isSuccess, router, updateData])
+    }, [data.businessType, data.organizationName, data.planId, isHydrated, isSuccess, router, updateData])
 
     // Parse student range to determine minimum students for filtering
     const getMinStudents = (range: string): number => {
@@ -162,7 +186,7 @@ export default function OnboardingStep3() {
         }
 
         fetchPlans()
-    }, [toast]) // Supabase é estável agora
+    }, [toast, isHydrated])
 
     const isPlanCompatible = (plan: Plan): boolean => {
         if (plan.max_students === null || plan.max_students === undefined) return true // Unlimited
@@ -205,11 +229,16 @@ export default function OnboardingStep3() {
             // Salvar plano selecionado no contexto (unificado)
             updateData({ planId: selectedPlanId })
 
+            // Forçar refresh para garantir que o middleware e o client vejam o organization_id no app_metadata
+            router.refresh()
+
             if (!isEnterprise) {
                 toast({ title: 'Plano selecionado!', description: 'Agora vamos configurar o seu pagamento.' })
                 setIsSuccess(true)
-                // REMOVIDO: resetData() - deve ser chamado apenas após sucesso no pagamento
-                router.push('/app/onboarding/pagamento')
+                // Pequeno delay para o refresh propagar antes da navegação
+                setTimeout(() => {
+                    router.push('/app/onboarding/pagamento')
+                }, 500)
             } else {
                 toast({ title: 'Perfil recebido!', description: 'Iremos analisar sua solicitação Enterprise.' })
                 setIsSuccess(true)

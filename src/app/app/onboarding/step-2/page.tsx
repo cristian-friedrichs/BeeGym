@@ -40,7 +40,7 @@ export default function OnboardingStep2() {
         addressState: '',
     })
 
-    // Sincronizar com o contexto apenas uma vez após a hidratação
+    // Sincronizar dados do contexto para o formulário local (preservar ao voltar passos)
     useEffect(() => {
         if (isHydrated) {
             setFormData(prev => ({
@@ -51,7 +51,7 @@ export default function OnboardingStep2() {
                 phone: data.phone || prev.phone,
                 email: data.email || prev.email,
                 studentRange: data.studentRange || prev.studentRange,
-                hasPhysicalLocation: data.businessType === 'Personal' ? false : (data.hasPhysicalLocation ?? prev.hasPhysicalLocation),
+                hasPhysicalLocation: data.hasPhysicalLocation !== undefined ? data.hasPhysicalLocation : (data.businessType === 'Personal' ? false : true),
                 addressZip: data.addressZip || prev.addressZip,
                 addressLine1: data.addressLine1 || prev.addressLine1,
                 addressNumber: data.addressNumber || prev.addressNumber,
@@ -61,7 +61,7 @@ export default function OnboardingStep2() {
                 addressState: data.addressState || prev.addressState,
             }))
         }
-    }, [isHydrated]) // Removido 'data' para não resetar enquanto o usuário digita
+    }, [isHydrated]) // Executa apenas uma vez na hidratação
 
     // Load cities for mobile/no physical location
     useEffect(() => {
@@ -254,6 +254,7 @@ export default function OnboardingStep2() {
                                             value={formData.organizationName}
                                             onChange={handleChange}
                                             placeholder="Ex: BeeGym Studio"
+                                            autoComplete="off"
                                             className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                         />
                                     </div>
@@ -280,6 +281,7 @@ export default function OnboardingStep2() {
                                                 onChange={handleChange}
                                                 placeholder={formData.documentType === 'CPF' ? '000.000.000-00' : '00.000.000/0001-00'}
                                                 maxLength={formData.documentType === 'CPF' ? 14 : 18}
+                                                autoComplete="off"
                                                 className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
@@ -295,6 +297,7 @@ export default function OnboardingStep2() {
                                                 onChange={handleChange}
                                                 placeholder="(00) 00000-0000"
                                                 maxLength={15}
+                                                autoComplete="off"
                                                 className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
@@ -307,6 +310,7 @@ export default function OnboardingStep2() {
                                                 value={formData.email}
                                                 onChange={handleChange}
                                                 placeholder="contato@exemplo.com"
+                                                autoComplete="off"
                                                 className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all"
                                             />
                                         </div>
@@ -370,6 +374,7 @@ export default function OnboardingStep2() {
                                                         onBlur={handleCepBlur}
                                                         placeholder="00000-000"
                                                         maxLength={9}
+                                                        autoComplete="off"
                                                         className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 transition-all focus:ring-bee-amber/20"
                                                     />
                                                     {isCepLoading && (
@@ -399,7 +404,8 @@ export default function OnboardingStep2() {
                                                         name="addressNumber" 
                                                         value={formData.addressNumber} 
                                                         onChange={handleChange} 
-                                                        className="h-12 border-white/10 bg-white/5 text-white" 
+                                                        autoComplete="off"
+                                                        className="h-12 border-white/10 bg-white/5 text-white"
                                                         placeholder="00" 
                                                     />
                                                 </div>
@@ -413,13 +419,14 @@ export default function OnboardingStep2() {
                                                         name="addressNeighborhood" 
                                                         value={formData.addressNeighborhood} 
                                                         onChange={handleChange}
+                                                        autoComplete="off"
                                                         className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all" 
                                                         placeholder="Bairro"
                                                     />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-xs font-bold text-slate-400 ml-1">Complemento</Label>
-                                                    <Input name="addressComplement" value={formData.addressComplement} onChange={handleChange} className="h-12 border-white/10 bg-white/5 text-white" placeholder="Sala, Apto..." />
+                                                    <Input autoComplete="off" name="addressComplement" value={formData.addressComplement} onChange={handleChange} className="h-12 border-white/10 bg-white/5 text-white" placeholder="Sala, Apto..." />
                                                 </div>
                                             </div>
 
@@ -431,6 +438,7 @@ export default function OnboardingStep2() {
                                                         name="addressCity" 
                                                         value={formData.addressCity} 
                                                         onChange={handleChange}
+                                                        autoComplete="off"
                                                         className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all" 
                                                         placeholder="Cidade"
                                                     />
@@ -442,6 +450,7 @@ export default function OnboardingStep2() {
                                                         name="addressState" 
                                                         value={formData.addressState} 
                                                         onChange={handleChange}
+                                                        autoComplete="off"
                                                         className="h-12 border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:bg-white/10 transition-all uppercase" 
                                                         placeholder="UF"
                                                         maxLength={2}
@@ -474,7 +483,8 @@ export default function OnboardingStep2() {
                                                         placeholder="Ex: São Paulo"
                                                         list="cities-list"
                                                         disabled={!formData.addressState || isCitiesLoading}
-                                                        className="h-12 border-white/10 bg-white/5 text-white"
+                                                        autoComplete="off"
+                                                        className="h-12 border-white/10 bg-white/5 text-white pr-10"
                                                     />
                                                     {isCitiesLoading && <Loader2 className="absolute right-3 top-4 h-4 w-4 animate-spin text-orange-500" />}
                                                 </div>

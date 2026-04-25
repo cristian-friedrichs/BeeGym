@@ -23,12 +23,15 @@ export default function PagamentoPage() {
     const [plano, setPlano] = useState<PlanoInfo | null>(null);
     const [kiwifyLink, setKiwifyLink] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const { data: onboardingData, isHydrated } = useOnboarding();
+    const { data: onboardingData, updateData, isHydrated } = useOnboarding();
 
     useEffect(() => {
         const supabase = createClient();
 
         async function init() {
+            // Tentar atualizar a sessão para garantir que o JWT tem os metadados novos (organization_id)
+            await supabase.auth.refreshSession();
+            
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 router.replace('/app/onboarding');
@@ -72,12 +75,19 @@ export default function PagamentoPage() {
 
                 if (sub?.saas_plan_id) {
                     planId = sub.saas_plan_id;
+                    // Atualizar contexto para sincronizar
+                    updateData({ planId });
                 }
             }
 
             if (!planId) {
-                router.replace('/app/onboarding/step-3');
-                return;
+                // Se ainda não carregou o plano após 2 segundos, aí sim redireciona
+                const timer = setTimeout(() => {
+                    if (!onboardingData.planId) {
+                        router.replace('/app/onboarding/step-3');
+                    }
+                }, 2000);
+                return () => clearTimeout(timer);
             }
 
             const supabase = createClient();
@@ -104,7 +114,7 @@ export default function PagamentoPage() {
             }
         };
         fetchPlan();
-    }, [isHydrated, isUserLoaded, onboardingData.planId, orgId, router]);
+    }, [isHydrated, isUserLoaded, onboardingData, orgId, router]);
 
 
     const handleCheckoutKiwify = () => {

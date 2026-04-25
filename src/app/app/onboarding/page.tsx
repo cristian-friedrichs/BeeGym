@@ -43,7 +43,7 @@ const businessTypes = [
 
 export default function OnboardingStep1() {
     const router = useRouter()
-    const { updateData } = useOnboarding()
+    const { updateData, resetData } = useOnboarding()
     const supabase = createClient()
 
     const handleLogout = async () => {
@@ -72,6 +72,7 @@ export default function OnboardingStep1() {
     */
 
     const handleSelect = (typeId: string) => {
+        resetData() // Limpar rascunhos anteriores ao iniciar nova escolha
         updateData({ businessType: typeId })
         router.push('/app/onboarding/step-2')
     }
