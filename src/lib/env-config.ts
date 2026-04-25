@@ -23,4 +23,7 @@ export const SUPABASE_ANON_KEY =
 export const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// ── Kiwify ─────────────────────────────────────────────
+export const KIWIFY_TOKEN = process.env.KIWIFY_TOKEN || 'dczv229jm85';
+
 // Fim das variáveis de ambiente

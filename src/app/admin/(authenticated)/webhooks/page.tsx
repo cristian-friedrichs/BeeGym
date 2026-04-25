@@ -68,14 +68,19 @@ export default function WebhooksAdminPage() {
 
         setIsSimulating(true);
         try {
-            const res = await fetch('/api/webhooks/kiwify', {
+            // A Kiwify agora espera o token na URL e payload aninhado
+            const res = await fetch(`/api/webhooks/kiwify?token=${simToken}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: simEmail,
-                    product_name: simProduct,
-                    webhook_event: simEvent,
-                    token: simToken,
+                    Customer: {
+                        email: simEmail
+                    },
+                    Product: {
+                        product_name: simProduct
+                    },
+                    webhook_event_type: simEvent,
+                    order_status: simEvent === 'subscription_canceled' ? 'refused' : 'paid',
                     status: 'simulated'
                 })
             });
