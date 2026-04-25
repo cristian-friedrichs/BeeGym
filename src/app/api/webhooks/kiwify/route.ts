@@ -48,18 +48,21 @@ function calcProximoVencimento(diaVencimento: number): Date {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
+        const { searchParams } = new URL(req.url);
+        const token = searchParams.get('token');
 
-        // Campos padrão do payload Kiwify
-        const receivedToken       = body.token;
-        const email               = body.email          as string | undefined;
-        const eventType           = (body.webhook_event || body.event_type || body.order_status) as string;
-        const productName         = (body.product_name  || '')  as string;
+        // ── 1. Extração robusta conforme estrutura real da Kiwify ──────────
+        const email               = (body.Customer?.email || body.customer?.email || body.email) as string | undefined;
+        const productName         = (body.Product?.product_name || body.product_name || '') as string;
+        const orderStatus         = body.order_status as string | undefined; // paid, waiting_payment, refused, refunded
+        const eventType           = (body.webhook_event || body.event_type || orderStatus) as string;
+        
         const kiwifyOrderId       = (body.order_id      || body.id || null) as string | null;
         const kiwifySubscriptionId = (body.subscription_id || null) as string | null;
         const amountRaw           = body.order_amount   || body.amount || null;
-        const amount              = amountRaw ? parseFloat(String(amountRaw)) / 100 : null; // Kiwify envia em centavos
+        const amount              = amountRaw ? parseFloat(String(amountRaw)) / 100 : null;
 
-        // ── 1. Log bruto sempre (auditoria, mesmo com token errado) ──────────
+        // ── 2. Log bruto para auditoria (com e-mail real) ────────────────────
         await supabaseAdmin.from('webhook_logs').insert({
             email:      email || 'unknown@email.com',
             event_type: eventType || 'unknown',
@@ -67,10 +70,11 @@ export async function POST(req: NextRequest) {
             created_at: new Date().toISOString(),
         });
 
-        // ── 2. Validação de segurança ─────────────────────────────────────────
-        if (!EXPECTED_TOKEN || receivedToken !== EXPECTED_TOKEN) {
-            console.error('[Kiwify] Token inválido ou ausente.');
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        // ── 3. Validação de segurança via URL Token ──────────────────────────
+        // Token configurado no painel da Kiwify: dczv229jm85
+        if (token !== "dczv229jm85") {
+            console.error('[Kiwify] Token inválido ou ausente na URL.');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 
         if (!email) {
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'E-mail é obrigatório.' }, { status: 400 });
         }
 
-        // ── 3. Idempotência: evitar re-processar o mesmo pedido ───────────────
+        // ── 4. Idempotência: evitar re-processar o mesmo pedido ───────────────
         if (kiwifyOrderId) {
             const { data: existingCharge } = await supabaseAdmin
                 .from('saas_charges')
@@ -92,7 +96,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // ── 4. Localizar organização pelo e-mail (case-insensitive) ───────────
+        // ── 5. Localizar organização pelo e-mail (case-insensitive) ───────────
         const { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('organization_id')
@@ -106,7 +110,7 @@ export async function POST(req: NextRequest) {
 
         const orgId = profile.organization_id;
 
-        // ── 5. Ler estado atual da assinatura ────────────────────────────────
+        // ── 6. Ler estado atual da assinatura ────────────────────────────────
         const { data: currentSub } = await supabaseAdmin
             .from('saas_subscriptions')
             .select('id, plan_tier, valor_mensal, pending_plan_tier, pending_plan_id, pending_limit_students, dia_vencimento')
@@ -117,11 +121,11 @@ export async function POST(req: NextRequest) {
         const currentOrder  = TIER_ORDER[currentTier] ?? 0;
         const subId         = currentSub?.id ?? null;
 
-        // ── 6. Classificar o evento ──────────────────────────────────────────
-        const isPaymentEvent     = ['payment_approved', 'approved', 'paid'].includes(eventType);
-        const isRenewalEvent     = eventType === 'subscription_renewed';
-        const isCancellationEvent = ['subscription_canceled', 'refunded', 'chargeback'].includes(eventType);
-        const isLateEvent        = eventType === 'subscription_late';
+        // ── 7. Classificar o evento conforme order_status e webhook_event ─────
+        const isPaymentEvent      = ['payment_approved', 'approved', 'paid'].includes(eventType);
+        const isRenewalEvent      = eventType === 'subscription_renewed';
+        const isCancellationEvent = ['subscription_canceled', 'refunded', 'refused', 'chargeback'].includes(eventType);
+        const isLateEvent         = eventType === 'subscription_late';
 
         // ════════════════════════════════════════════════════════════════════
         // PAGAMENTO APROVADO  →  primeiro pagamento OU upgrade imediato
