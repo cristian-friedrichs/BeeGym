@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 const onboardingSchema = z.object({
     establishment_name: z.string().min(3, 'Nome do estabelecimento deve ter pelo menos 3 caracteres'),
@@ -32,18 +33,19 @@ const RANGES = [
 export default function OnboardingPage() {
     const router = useRouter()
     const { data: cachedData, updateData } = useOnboarding()
+    const { user } = useAuth()
     const supabase = createClient()
     const { toast } = useToast()
 
     const [loading, setLoading] = useState(false)
-    const [user, setUser] = useState<any>(null)
     const [mounted, setMounted] = useState(false)
 
     const {
         register,
-        handleSubmit,
         setValue,
         watch,
+        trigger,
+        getValues,
         formState: { errors },
     } = useForm<OnboardingFormValues>({
         resolver: zodResolver(onboardingSchema),
@@ -60,15 +62,15 @@ export default function OnboardingPage() {
 
     useEffect(() => {
         setMounted(true)
-        const getUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
+        const fetchProfile = async () => {
+            const { data: { session } } = await supabase.auth.getSession()
+            const currentUser = session?.user
             
-            if (user) {
+            if (currentUser) {
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('establishment_name, phone, document_id, student_range')
-                    .eq('id', user.id)
+                    .eq('id', currentUser.id)
                     .single()
                 
                 if (profile) {
@@ -79,7 +81,7 @@ export default function OnboardingPage() {
                 }
             }
         }
-        getUserData()
+        fetchProfile()
     }, [supabase, setValue])
 
     const handleLogout = async () => {
@@ -121,15 +123,26 @@ export default function OnboardingPage() {
         setValue('document_id', masked)
     }
 
-    const onSubmit = async (formData: OnboardingFormValues) => {
+    const handleSelectPlan = async (plan: BeeGymPlan) => {
+        // 1. Validate form first
+        const isValid = await trigger()
+        if (!isValid) {
+            toast({
+                title: 'Campos incompletos',
+                description: 'Por favor, preencha todos os dados do estabelecimento antes de prosseguir.',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        // 2. Save to DB
         setLoading(true)
         try {
+            const formData = getValues()
             const { data: { session } } = await supabase.auth.getSession()
             const currentUser = session?.user
             if (!currentUser) throw new Error('Usuário não autenticado')
 
-            // Update Profile in Supabase
-            // We use update().eq() as requested for robustness
             const { error: profileError } = await supabase
                 .from('profiles')
                 .update({
@@ -142,7 +155,6 @@ export default function OnboardingPage() {
 
             if (profileError) throw profileError
 
-            // Save to context for persistence
             updateData({
                 organizationName: formData.establishment_name,
                 phone: formData.phone,
@@ -150,33 +162,33 @@ export default function OnboardingPage() {
                 studentRange: formData.student_range,
             })
 
-            toast({
-                title: 'Sucesso!',
-                description: 'Informações salvas. Escolha seu plano agora.',
-            })
+            // 3. Redirect to Kiwify
+            if (plan.kiwify_link) {
+                const kiwifyUrl = new URL(plan.kiwify_link)
+                
+                // Prefill user info in checkout
+                if (user?.email) kiwifyUrl.searchParams.append('email', user.email)
+                
+                const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name
+                if (fullName) kiwifyUrl.searchParams.append('name', fullName)
+                
+                // Add phone number to checkout if possible
+                if (formData.phone) {
+                    const cleanPhone = formData.phone.replace(/\D/g, '')
+                    kiwifyUrl.searchParams.append('phone', cleanPhone)
+                }
 
+                window.location.href = kiwifyUrl.toString()
+            }
         } catch (error: any) {
-            console.error('Error during onboarding submission:', error)
+            console.error('Error during selection:', error)
             toast({
-                title: 'Erro ao salvar',
-                description: error.message || 'Ocorreu um erro. Por favor, tente novamente.',
+                title: 'Erro ao processar',
+                description: error.message || 'Ocorreu um erro ao salvar seus dados.',
                 variant: 'destructive',
             })
         } finally {
             setLoading(false)
-        }
-    }
-
-    const handleSelectPlan = async (plan: BeeGymPlan) => {
-        // Build Kiwify URL
-        if (plan.kiwify_link) {
-            const kiwifyUrl = new URL(plan.kiwify_link)
-            if (user?.email) kiwifyUrl.searchParams.append('email', user.email)
-            const fullName = user?.user_metadata?.full_name || user?.user_metadata?.name
-            if (fullName) kiwifyUrl.searchParams.append('name', fullName)
-            
-            // Redirect to Kiwify
-            window.location.href = kiwifyUrl.toString()
         }
     }
 
@@ -202,9 +214,7 @@ export default function OnboardingPage() {
                     
                     {/* Left Column: Form */}
                     <div className="space-y-8">
-
-
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl">
+                        <div className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl">
                             {/* Establishment Name */}
                             <div className="space-y-2">
                                 <label className="text-xs font-black uppercase tracking-widest text-bee-amber flex items-center gap-2">
@@ -273,25 +283,7 @@ export default function OnboardingPage() {
                                 </select>
                                 {errors.student_range && <p className="text-red-400 text-xs font-bold">{errors.student_range.message}</p>}
                             </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-bee-amber hover:bg-bee-amber/90 disabled:opacity-50 text-bee-midnight font-black text-lg py-5 rounded-xl flex items-center justify-center gap-3 transition-all transform active:scale-95 shadow-xl shadow-bee-amber/20 group mt-4"
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-6 h-6 animate-spin" />
-                                        Salvando...
-                                    </>
-                                ) : (
-                                    <>
-                                        Salvar Informações
-                                        <Check className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
+                        </div>
                     </div>
 
                     {/* Right Column: Plans */}
@@ -309,7 +301,7 @@ export default function OnboardingPage() {
                                         <Zap className="w-10 h-10 text-bee-amber/20" />
                                     </div>
                                     <h3 className="text-2xl font-bold text-center text-slate-400">
-                                        Selecione a quantidade de alunos para ver nossos planos sugeridos.
+                                        Selecione a quantidade de alunos para habilitar os planos.
                                     </h3>
                                 </motion.div>
                             ) : (
@@ -321,69 +313,66 @@ export default function OnboardingPage() {
                                 >
                                     <div className="text-center lg:text-left space-y-2">
                                         <h2 className="text-3xl font-black font-display">Nossos <span className="text-bee-amber">Planos</span></h2>
-                                        <p className="text-slate-400">Escolha a opção ideal para impulsionar seu negócio.</p>
+                                        <p className="text-slate-400">Selecione o plano desejado para finalizar.</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex flex-col gap-4">
                                         {Object.values(BEEGYM_PLANS)
                                             .filter(p => p.id !== 'plan_enterprise' && currentRange?.planIds.includes(p.id))
                                             .map((plan) => {
-                                                const isStarter = plan.id === 'plan_starter'
                                                 const Icon = plan.icon
                                                 return (
                                                     <div 
                                                         key={plan.id}
-                                                        className={`relative flex flex-col p-6 rounded-2xl border-2 transition-all duration-300 hover:border-bee-amber/50 bg-white/5 border-white/10`}
+                                                        className={`relative flex flex-col md:flex-row items-center gap-6 p-6 rounded-2xl border-2 transition-all duration-300 hover:border-bee-amber/50 bg-white/5 border-white/10`}
                                                     >
-                                                        <div className="mb-4">
-                                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-bee-amber/10 text-bee-amber`}>
-                                                                <Icon className="w-5 h-5" />
+                                                        <div className="flex items-center gap-4 w-full md:w-1/3">
+                                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-bee-amber/10 text-bee-amber shrink-0`}>
+                                                                 <Icon className="w-6 h-6" />
                                                             </div>
-                                                            <h3 className="text-xl font-black font-display tracking-tight">{plan.name}</h3>
-                                                            <p className="text-slate-500 text-xs font-medium mt-1">{plan.description}</p>
+                                                            <div>
+                                                                <h3 className="text-xl font-black font-display tracking-tight">{plan.name}</h3>
+                                                                <p className="text-slate-500 text-[10px] font-medium leading-tight">{plan.description}</p>
+                                                            </div>
                                                         </div>
 
-                                                        <div className="mb-6">
-                                                            <div className="flex items-baseline gap-1">
-                                                                <span className="text-xs font-bold text-slate-500">R$</span>
-                                                                <span className="text-3xl font-black text-white">{plan.promo_price?.toFixed(2).replace('.', ',') || plan.price.toFixed(2).replace('.', ',')}</span>
-                                                                <span className="text-xs font-medium text-slate-500">/mês</span>
-                                                            </div>
-                                                            {plan.promo_price && (
-                                                                <div className="mt-1 flex items-center gap-2">
-                                                                    <span className="text-[10px] text-slate-500 line-through">R$ {plan.price.toFixed(2).replace('.', ',')}</span>
+                                                        <div className="hidden md:flex flex-col gap-1 w-full md:w-1/3">
+                                                            {plan.featuresList.slice(0, 3).map((feature, i) => (
+                                                                <div key={i} className="flex items-center gap-2 text-[11px] text-slate-400">
+                                                                    <Check className={`w-3 h-3 text-bee-amber`} />
+                                                                    <span className="truncate">{feature}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-1/3 gap-4">
+                                                            <div className="text-right">
+                                                                <div className="flex items-baseline gap-1 justify-end">
+                                                                    <span className="text-[10px] font-bold text-slate-500">R$</span>
+                                                                    <span className="text-2xl font-black text-white">{plan.promo_price?.toFixed(2).replace('.', ',') || plan.price.toFixed(2).replace('.', ',')}</span>
+                                                                </div>
+                                                                {plan.promo_price && (
                                                                     <span className="text-[9px] text-bee-amber font-black uppercase tracking-wider bg-bee-amber/10 px-1.5 py-0.5 rounded">
                                                                         Promo
                                                                     </span>
-                                                                </div>
-                                                            )}
+                                                                )}
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => handleSelectPlan(plan)}
+                                                                disabled={loading}
+                                                                className="px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all bg-bee-amber text-bee-midnight hover:scale-105 shadow-lg shadow-bee-amber/10 flex items-center gap-2 disabled:opacity-50"
+                                                            >
+                                                                {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Avançar'}
+                                                            </button>
                                                         </div>
-
-                                                        <ul className="space-y-3 mb-8 flex-grow">
-                                                            {plan.featuresList.slice(0, 4).map((feature, i) => (
-                                                                <li key={i} className="flex items-start gap-2 text-[13px] text-slate-300">
-                                                                    <Check className={`w-3.5 h-3.5 mt-0.5 shrink-0 text-bee-amber`} />
-                                                                    <span>{feature}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-
-                                                        <button
-                                                            onClick={() => handleSelectPlan(plan)}
-                                                            className="w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-bee-amber text-bee-midnight hover:scale-105 shadow-lg shadow-bee-amber/10"
-                                                        >
-                                                            Assinar Agora
-                                                        </button>
                                                     </div>
                                                 )
                                             })}
                                     </div>
 
-                                    <div className="p-6 bg-bee-amber/5 border border-dashed border-bee-amber/20 rounded-2xl text-center">
-                                        <p className="text-sm font-bold text-slate-400">Precisa de suporte personalizado?</p>
-                                        <button className="text-bee-amber text-xs font-black uppercase mt-2 hover:underline tracking-widest">
-                                            Falar com Consultor
-                                        </button>
+                                    <div className="p-4 bg-bee-amber/5 border border-dashed border-bee-amber/20 rounded-2xl text-center">
+                                        <p className="text-xs font-bold text-slate-500 italic">Ao avançar, você será redirecionado para o pagamento seguro.</p>
                                     </div>
                                 </motion.div>
                             )}
