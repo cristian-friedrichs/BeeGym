@@ -29,29 +29,40 @@ export default function PagamentoPage() {
         const supabase = createClient();
 
         async function init() {
-            // Tentar atualizar a sessão para garantir que o JWT tem os metadados novos (organization_id)
-            await supabase.auth.refreshSession();
-            
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.replace('/app/onboarding');
-                return;
-            }
-            setUserEmail(user.email || '');
+            try {
+                // Tentar atualizar a sessão para garantir que o JWT tem os metadados novos (organization_id)
+                await supabase.auth.refreshSession();
+                
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    console.log('[Pagamento] Usuário não encontrado, redirecionando...');
+                    router.replace('/app/onboarding');
+                    return;
+                }
+                setUserEmail(user.email || '');
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, organization_id')
-                .eq('id', user.id)
-                .single() as { data: { full_name: string | null, organization_id: string | null } | null };
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('full_name, organization_id')
+                    .eq('id', user.id)
+                    .single() as { data: { full_name: string | null, organization_id: string | null } | null, error: any };
 
-            if (profile?.full_name) {
-                setUserName(profile.full_name);
+                if (profileError) {
+                    console.error('[Pagamento] Erro ao carregar perfil:', profileError);
+                }
+
+                if (profile?.full_name) {
+                    setUserName(profile.full_name);
+                }
+                if (profile?.organization_id) {
+                    setOrgId(profile.organization_id);
+                }
+                setIsUserLoaded(true);
+            } catch (error) {
+                console.error('[Pagamento] Erro no init:', error);
+                // Mesmo com erro, marcamos como carregado para tentar o fetchPlan
+                setIsUserLoaded(true);
             }
-            if (profile?.organization_id) {
-                setOrgId(profile.organization_id);
-            }
-            setIsUserLoaded(true);
         }
 
         init();
@@ -59,62 +70,92 @@ export default function PagamentoPage() {
 
     // Carregar plano do BD (ou recuperar do banco se localStorage perdeu o planId)
     useEffect(() => {
+        let isMounted = true;
+        let timer: NodeJS.Timeout | null = null;
+
         const fetchPlan = async () => {
             if (!isHydrated || !isUserLoaded) return;
 
-            let planId = onboardingData.planId;
+            try {
+                let planId = onboardingData.planId;
+                console.log('[Pagamento] Iniciando fetchPlan. ID no contexto:', planId);
 
-            // Se não tem planId no localStorage, tentar recuperar do banco
-            if (!planId && orgId) {
-                const supabase = createClient();
-                const { data: sub } = await supabase
-                    .from('saas_subscriptions')
-                    .select('saas_plan_id')
-                    .eq('organization_id', orgId)
-                    .maybeSingle();
+                // Se não tem planId no localStorage, tentar recuperar do banco
+                if (!planId && orgId) {
+                    console.log('[Pagamento] PlanId ausente no contexto, buscando no banco para org:', orgId);
+                    const supabase = createClient();
+                    const { data: sub } = await supabase
+                        .from('saas_subscriptions')
+                        .select('saas_plan_id')
+                        .eq('organization_id', orgId)
+                        .maybeSingle();
 
-                if (sub?.saas_plan_id) {
-                    planId = sub.saas_plan_id;
-                    // Atualizar contexto para sincronizar
-                    updateData({ planId });
-                }
-            }
-
-            if (!planId) {
-                // Se ainda não carregou o plano após 2 segundos, aí sim redireciona
-                const timer = setTimeout(() => {
-                    if (!onboardingData.planId) {
-                        router.replace('/app/onboarding/step-3');
+                    if (sub?.saas_plan_id) {
+                        console.log('[Pagamento] PlanId recuperado do banco:', sub.saas_plan_id);
+                        planId = sub.saas_plan_id;
+                        updateData({ planId });
+                        // O updateData vai disparar um novo ciclo do useEffect
+                        return;
                     }
-                }, 2000);
-                return () => clearTimeout(timer);
-            }
-
-            const supabase = createClient();
-            const { data: dbPlan } = await supabase.from('saas_plans').select('*').eq('id', planId).single() as { data: any };
-            if (dbPlan) {
-                setPlano({
-                    id: dbPlan.id,
-                    name: dbPlan.name,
-                    tier: dbPlan.tier,
-                    price: dbPlan.price,
-                    description: dbPlan.description || '',
-                    features: dbPlan.features || [],
-                    promo_price: dbPlan.promo_price,
-                    promo_months: dbPlan.promo_months
-                });
-
-                // Buscar o link correspondente no config
-                const configPlan = Object.values(BEEGYM_PLANS).find(p => p.id === dbPlan.id || p.name.toUpperCase() === dbPlan.tier.toUpperCase());
-                if (configPlan && configPlan.kiwify_link) {
-                    setKiwifyLink(configPlan.kiwify_link);
                 }
-            } else {
-                router.replace('/app/onboarding/step-3');
+
+                if (!planId) {
+                    console.log('[Pagamento] PlanId ainda ausente, aguardando 2s para redirect...');
+                    timer = setTimeout(() => {
+                        if (isMounted && !onboardingData.planId) {
+                            console.log('[Pagamento] Timeout atingido, redirecionando para step-3');
+                            router.replace('/app/onboarding/step-3');
+                        }
+                    }, 2000);
+                    return;
+                }
+
+                console.log('[Pagamento] Buscando detalhes do plano no banco:', planId);
+                const supabase = createClient();
+                const { data: dbPlan, error: dbPlanError } = await supabase.from('saas_plans').select('*').eq('id', planId).single() as { data: any, error: any };
+                
+                if (dbPlanError || !dbPlan) {
+                    console.error('[Pagamento] Erro ou plano não encontrado:', dbPlanError);
+                    if (isMounted) router.replace('/app/onboarding/step-3');
+                    return;
+                }
+
+                if (isMounted) {
+                    setPlano({
+                        id: dbPlan.id,
+                        name: dbPlan.name,
+                        tier: dbPlan.tier,
+                        price: dbPlan.price,
+                        description: dbPlan.description || '',
+                        features: dbPlan.features || [],
+                        promo_price: dbPlan.promo_price,
+                        promo_months: dbPlan.promo_months
+                    });
+
+                    // Buscar o link correspondente no config
+                    const configPlan = Object.values(BEEGYM_PLANS).find(p => 
+                        p.id === dbPlan.id || 
+                        p.name.toUpperCase() === dbPlan.tier.toUpperCase()
+                    );
+                    
+                    if (configPlan && configPlan.kiwify_link) {
+                        setKiwifyLink(configPlan.kiwify_link);
+                    } else {
+                        console.warn('[Pagamento] Kiwify link não encontrado para o plano:', dbPlan.tier);
+                    }
+                }
+            } catch (error) {
+                console.error('[Pagamento] Erro crítico no fetchPlan:', error);
             }
         };
+
         fetchPlan();
-    }, [isHydrated, isUserLoaded, onboardingData, orgId, router]);
+
+        return () => {
+            isMounted = false;
+            if (timer) clearTimeout(timer);
+        };
+    }, [isHydrated, isUserLoaded, onboardingData.planId, orgId, router, updateData]);
 
 
     const handleCheckoutKiwify = () => {

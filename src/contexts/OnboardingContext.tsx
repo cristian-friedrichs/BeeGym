@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
 
 interface OnboardingData {
     businessType: string
@@ -84,23 +84,30 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         setIsHydrated(true)
     }, [])
 
-    const updateData = (updates: Partial<OnboardingData>) => {
+    const updateData = useCallback((updates: Partial<OnboardingData>) => {
         setData(prev => {
             const next = { ...prev, ...updates }
             saveToStorage(next)
             return next
         })
-    }
+    }, [])
 
-    const resetData = () => {
+    const resetData = useCallback(() => {
         setData(initialData)
         if (typeof window !== 'undefined') {
             localStorage.removeItem(STORAGE_KEY)
         }
-    }
+    }, [])
+
+    const value = useMemo(() => ({
+        data,
+        updateData,
+        resetData,
+        isHydrated
+    }), [data, isHydrated])
 
     return (
-        <OnboardingContext.Provider value={{ data, updateData, resetData, isHydrated }}>
+        <OnboardingContext.Provider value={value}>
             {children}
         </OnboardingContext.Provider>
     )
