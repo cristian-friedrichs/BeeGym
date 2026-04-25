@@ -202,12 +202,7 @@ export default function OnboardingPage() {
                     
                     {/* Left Column: Form */}
                     <div className="space-y-8">
-                        <div className="space-y-4">
-                            <h1 className="text-4xl md:text-5xl font-black tracking-tight font-display leading-tight">
-                                Vamos configurar seu <span className="text-bee-amber">Ecossistema</span>
-                            </h1>
-                            <p className="text-slate-400 text-lg">Conte-nos um pouco sobre o seu negócio para começarmos.</p>
-                        </div>
+
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl">
                             {/* Establishment Name */}
