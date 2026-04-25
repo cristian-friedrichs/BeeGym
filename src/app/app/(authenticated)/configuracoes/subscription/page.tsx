@@ -24,20 +24,22 @@ export default function SubscriptionPage() {
     const isTestPlan = ['TESTE', 'TESTE_MANUAL', 'MANUAL_ADMIN'].includes(metodo || '') || ['teste', 'demo'].includes(status?.toLowerCase() || '');
 
     const handleCancel = async () => {
-        if (!confirm('Tem certeza que deseja cancelar sua assinatura? Você perderá acesso aos recursos premium no próximo ciclo.')) return;
+        if (!confirm('Para cancelar sua assinatura você será redirecionado ao portal Kiwify. Deseja continuar?')) return;
 
         setIsCanceling(true);
         try {
             const res = await fetch('/api/subscription/cancel', { method: 'POST' });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Erro ao cancelar assinatura');
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Erro ao processar cancelamento');
+
+            if (data.action === 'redirect' && data.url) {
+                window.open(data.url, '_blank', 'noopener,noreferrer');
+                toast({
+                    title: "Portal Kiwify aberto",
+                    description: data.message,
+                });
             }
-            toast({
-                title: "Assinatura cancelada",
-                description: "Sua solicitação de cancelamento foi processada.",
-            });
-            window.location.reload();
         } catch (error: any) {
             toast({
                 title: "Erro",
@@ -277,7 +279,6 @@ function PlanSelectionView({
         setIsUpgrading(plan.id);
 
         try {
-            // "plan_plus" -> "PLUS"
             const tierStr = plan.id.replace('plan_', '').toUpperCase();
             const res = await fetch('/api/subscription/upgrade', {
                 method: 'POST',
@@ -285,17 +286,29 @@ function PlanSelectionView({
                 body: JSON.stringify({ tier: tierStr })
             });
 
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || 'Erro ao alterar plano');
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Erro ao alterar plano');
+
+            if (data.action === 'redirect' && data.url) {
+                // Open Kiwify checkout in the same tab so the user can complete payment
+                window.location.href = data.url;
+                return; // navigation happening — keep loading state
             }
 
-            toast({
-                title: "Sucesso",
-                description: `Seu plano foi alterado para ${plan.name}.`,
-            });
+            if (data.action === 'contact') {
+                toast({
+                    title: `Plano ${plan.name}`,
+                    description: data.message,
+                });
+                return;
+            }
 
-            window.location.reload();
+            // Unexpected success response
+            toast({
+                title: "Solicitação enviada",
+                description: data.message || `Solicitação para o plano ${plan.name} recebida.`,
+            });
 
         } catch (error: any) {
             toast({

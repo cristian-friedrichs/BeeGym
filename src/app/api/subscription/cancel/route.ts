@@ -1,28 +1,30 @@
 import { NextResponse } from 'next/server';
-// @ts-ignore
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { CancelSubscriptionUseCase } from '@/application/use-cases/subscription/CancelSubscriptionUseCase';
 
 export async function POST(req: Request) {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
     try {
-        const organizationId = session.user.user_metadata?.organization_id;
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .eq('id', user.id)
+            .single();
+
+        const organizationId = profile?.organization_id || user.user_metadata?.organization_id;
 
         if (!organizationId) {
-            return NextResponse.json({ error: 'Organização não encontrada na sessão' }, { status: 400 });
+            return NextResponse.json({ error: 'Organização não encontrada' }, { status: 400 });
         }
 
         const useCase = new CancelSubscriptionUseCase();
-        const result = await useCase.execute({
-            organizationId
-        });
+        const result = await useCase.execute({ organizationId });
 
         return NextResponse.json(result);
     } catch (error: any) {
