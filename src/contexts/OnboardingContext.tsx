@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode, useMemo, use
 
 interface OnboardingData {
     organizationName: string
+    phone: string
+    documentId: string
     studentRange: string
     planId: string
 }
@@ -19,6 +21,8 @@ const STORAGE_KEY = 'bee_onboarding_draft'
 
 const initialData: OnboardingData = {
     organizationName: '',
+    phone: '',
+    documentId: '',
     studentRange: '',
     planId: '',
 }
