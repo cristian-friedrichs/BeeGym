@@ -168,7 +168,7 @@ export async function middleware(request: NextRequest) {
             }
             // Onboarding incompleto → vai iniciar o onboarding
             if (profile?.organization_id && !org?.onboarding_completed) {
-                return NextResponse.redirect(new URL('/app/onboarding/step-3', request.url))
+                return NextResponse.redirect(new URL('/app/onboarding', request.url))
             }
             // Sem organização → passo 1 do onboarding
             if (!profile?.organization_id) {
@@ -182,7 +182,7 @@ export async function middleware(request: NextRequest) {
             if (org?.subscription_status && !activeStatuses.includes(currentStatus)) {
                 url.pathname = '/app/pending-activation'
             } else if (profile?.organization_id && !org?.onboarding_completed) {
-                url.pathname = '/app/onboarding/step-3'
+                url.pathname = '/app/onboarding'
             } else {
                 url.pathname = '/app/onboarding'
             }

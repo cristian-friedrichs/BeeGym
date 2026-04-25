@@ -85,9 +85,15 @@ export default function OnboardingPage() {
     }, [supabase, setValue])
 
     const handleLogout = async () => {
-        await supabase.auth.signOut()
-        router.push('/login')
-        router.refresh()
+        try {
+            resetData() // Clear local draft
+            await supabase.auth.signOut()
+            // Force a full page reload to clear all states and caches
+            window.location.href = '/login'
+        } catch (error) {
+            console.error('Logout error:', error)
+            window.location.assign('/login')
+        }
     }
 
     const formatPhone = (value: string) => {
@@ -311,11 +317,6 @@ export default function OnboardingPage() {
                                     animate={{ opacity: 1, x: 0 }}
                                     className="space-y-8"
                                 >
-                                    <div className="text-center lg:text-left space-y-2">
-                                        <h2 className="text-3xl font-black font-display">Nossos <span className="text-bee-amber">Planos</span></h2>
-                                        <p className="text-slate-400">Selecione o plano desejado para finalizar.</p>
-                                    </div>
-
                                     <div className="flex flex-col gap-4">
                                         {Object.values(BEEGYM_PLANS)
                                             .filter(p => p.id !== 'plan_enterprise' && currentRange?.planIds.includes(p.id))
