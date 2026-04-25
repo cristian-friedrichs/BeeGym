@@ -4,7 +4,7 @@
 > Foco exclusivo nas regras de negócio, jornadas de usuário e validações do ecossistema BeeGym.
 
 ## 1. Visão Geral da Plataforma
-O **BeeGym** é uma plataforma SaaS B2B2C premium, desenhada para academias, estúdios (Pilates, Yoga, CrossFit) e personal trainers. O sistema resolve toda a esteira operacional: desde a captação e conversão (Landing Page), passando pelo controle de acesso e frequência, gestão de planos e pagamentos (integração nativa PIX EFI), até a prescrição de treinos e acompanhamento de alunos.
+O **BeeGym** é uma plataforma SaaS B2B2C premium, desenhada para academias, estúdios (Pilates, Yoga, CrossFit) e personal trainers. O sistema resolve toda a esteira operacional: desde a captação e conversão (Landing Page), passando pelo controle de acesso e frequência, gestão de planos e pagamentos (checkout externo), até a prescrição de treinos e acompanhamento de alunos.
 
 O foco da aplicação é entregar uma experiência *Black Gym Energy* (alta performance, estética moderna e usabilidade sem atrito).
 
@@ -15,7 +15,7 @@ O acesso aos dados é rigidamente governado por **Row Level Security (RLS)** no 
 
 | Ator | Descrição e Acessos |
 | :--- | :--- |
-| **OWNER** | Criador da organização. Tem privilégios irrestritos sobre todas as unidades, relatórios financeiros e faturamento (assinatura da própria academia na EFI). |
+| **OWNER** | Criador da organização. Tem privilégios irrestritos sobre todas as unidades, relatórios financeiros e faturamento (assinatura da própria academia via Kiwify). |
 | **ADMIN / MANAGER** | Gestores do dia a dia. Acesso total à criação de planos, matrículas e dashboard operacional, podendo ser restritos a unidades específicas (`allowed_unit_ids`). |
 | **INSTRUCTOR** | Foco técnico. Acesso a prescrição de treinos (`Workouts`), lista de exercícios, diário de presença (`AttendanceLog`) e registros de medidas. |
 | **STAFF** | Foco em recepção. Realizam matrículas, recebem pagamentos presenciais e liberam catraca/check-in. |
@@ -28,29 +28,29 @@ O acesso aos dados é rigidamente governado por **Row Level Security (RLS)** no 
 ### 3.1. Autenticação e Onboarding da Academia
 **Objetivo:** Permitir que o gestor conheça a plataforma, crie sua conta e contrate um plano para começar a usar.
 
-* **Rotas e Telas:** `/` (Marketing), `/register`, `/login`, `/app` (Dashboard).
+* **Rotas e Telas:** `/` (Marketing), `/register`, `/login`, `/app/onboarding` (Onboarding e Planos).
 * **Comportamento Esperado:**
-  1. O usuário preenche o cadastro.
-  2. O sistema cria a `Organization`, vincula o usuário como `OWNER` e cria a primeira `Unit` padrão.
-  3. No primeiro login, o sistema intercepta o acesso ao dashboard (`/app`) forçando o fluxo de assinatura (*Onboarding*).
-  4. Somente após a confirmação do webhook do PIX (ou aprovação manual) o tenant é ativado.
+  1. O usuário preenche o cadastro básico (Nome, Email, Senha).
+  2. No primeiro login, o sistema intercepta o acesso ao dashboard (`/app`) forçando o fluxo de Onboarding em página única (`/app/onboarding`).
+  3. O gestor informa o nome do estabelecimento e a quantidade de alunos.
+  4. O sistema sugere o plano ideal e redireciona para o checkout seguro da Kiwify.
 * **Validações Estritas (`authSchema`):**
   * `name`: Obrigatório, mínimo de 3 caracteres.
   * `email`: Formato de e-mail estritamente válido. Impede contas duplicadas (Unique Key).
   * `password`: Mínimo 6 caracteres.
-  * `confirmPassword`: Deve dar *match* exato com a senha digitada.
 
-### 3.2. Motor de Pagamentos e Checkouts (Integração EFI PIX)
-**Objetivo:** Transacionar a assinatura da academia com o BeeGym, e gerenciar faturas dos alunos.
+### 3.2. Checkout e Pagamentos (Integração Kiwify)
+**Objetivo:** Transacionar a assinatura da academia com o BeeGym.
 
-* **Arquitetura:** `src/app/api/webhooks/efi/route.ts`
+* **Arquitetura:** `src/app/api/webhooks/kiwify/route.ts`
 * **Comportamento Esperado:**
-  1. Ao selecionar um plano, a API gera uma cobrança via EFI e devolve um QRCode PIX + Copia e Cola.
-  2. O frontend implementa um *Long Polling* ou aguarda sinais de WebSocket para aprovar a tela automaticamente quando o PIX for pago.
-  3. O Webhook EFI notifica o back-end das liquidações de faturas de forma assíncrona.
+  1. Ao selecionar um plano, o sistema redireciona o usuário para o checkout da Kiwify com dados pré-preenchidos (email, nome).
+  2. A Kiwify gerencia todo o processamento de pagamento (PIX, Cartão, Boleto).
+  3. O Webhook da Kiwify notifica o BeeGym sobre a aprovação do pagamento.
+  4. A confirmação de pagamento atualiza ativamente a tabela de permissões, mudando o status da organização para `ACTIVE`.
 * **Validações Estritas:**
-  * O Webhook só processa requisições que possuam certificado mTLS/credenciais válidas da EFI.
-  * A confirmação de pagamento atualiza ativamente a tabela de permissões, mudando o status da organização/aluno para `ACTIVE`.
+  * O Webhook valida a assinatura (signature) enviada pela Kiwify para garantir a autenticidade da requisição.
+  * A atualização de status é realizada de forma assíncrona garantindo a ativação imediata após o pagamento.
 
 ### 3.3. Configuração de Planos (Catálogo da Academia)
 **Objetivo:** Permitir que a academia crie múltiplas modalidades e preços para venda aos alunos.

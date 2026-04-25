@@ -18,7 +18,6 @@ export default function RegisterPage() {
 
 function RegisterForm() {
     const [fullName, setFullName] = useState('')
-    const [phone, setPhone] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -34,13 +33,7 @@ function RegisterForm() {
         setMounted(true)
     }, [])
 
-    const formatPhone = (v: string) => {
-        let phone = v.replace(/\D/g, '')
-        if (phone.length > 11) phone = phone.slice(0, 11)
-        phone = phone.replace(/^(\d{2})(\d)/g, '($1) $2')
-        phone = phone.replace(/(\d)(\d{4})$/, '$1-$2')
-        return phone
-    }
+
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -54,7 +47,6 @@ function RegisterForm() {
                 options: {
                     data: {
                         full_name: fullName,
-                        phone: phone,
                     },
                 },
             })
@@ -349,21 +341,7 @@ function RegisterForm() {
                                 />
                             </div>
 
-                            {/* Phone */}
-                            <div className="form-field field-4" style={{ marginBottom: '12px' }}>
-                                <label style={{ display: 'block', color: '#475569', fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                                    Telefone
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={phone}
-                                    onChange={(e) => setPhone(formatPhone(e.target.value))}
-                                    placeholder="(11) 99999-9999"
-                                    className="input-field"
-                                    style={{ width: '100%', height: '40px', borderRadius: '6px', padding: '0 12px', fontSize: '14px' }}
-                                    required
-                                />
-                            </div>
+
 
                             {/* Email */}
                             <div className="form-field field-5" style={{ marginBottom: '12px' }}>

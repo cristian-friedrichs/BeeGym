@@ -3,23 +3,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react'
 
 interface OnboardingData {
-    businessType: string
     organizationName: string
-    documentType: 'CPF' | 'CNPJ'
-    document: string
-    phone: string
-    email: string
     studentRange: string
-    hasPhysicalLocation: boolean
-    addressZip: string
-    addressLine1: string
-    addressNumber: string
-    addressComplement: string
-    addressNeighborhood: string
-    addressCity: string
-    addressState: string
     planId: string
-    currentStep: number
 }
 
 interface OnboardingContextType {
@@ -32,23 +18,9 @@ interface OnboardingContextType {
 const STORAGE_KEY = 'bee_onboarding_draft'
 
 const initialData: OnboardingData = {
-    businessType: '',
     organizationName: '',
-    documentType: 'CPF',
-    document: '',
-    phone: '',
-    email: '',
     studentRange: '',
-    hasPhysicalLocation: false,
-    addressZip: '',
-    addressLine1: '',
-    addressNumber: '',
-    addressComplement: '',
-    addressNeighborhood: '',
-    addressCity: '',
-    addressState: '',
     planId: '',
-    currentStep: 1,
 }
 
 function loadFromStorage(): OnboardingData {
