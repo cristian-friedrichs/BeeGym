@@ -32,6 +32,41 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Campos obrigatórios faltando.' }, { status: 400 });
         }
 
+        // Email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return NextResponse.json({ error: 'Formato de e-mail inválido.' }, { status: 400 });
+        }
+
+        // Password minimum length
+        if (password.length < 6) {
+            return NextResponse.json({ error: 'A senha deve ter pelo menos 6 caracteres.' }, { status: 400 });
+        }
+
+        // ── Duplicate email check (organizations table) ──────────────────────
+        const { data: existingOrg } = await supabaseAdmin
+            .from('organizations')
+            .select('id, name')
+            .ilike('email', email)
+            .maybeSingle();
+
+        if (existingOrg) {
+            return NextResponse.json({
+                error: `Já existe um cliente cadastrado com este e-mail (${existingOrg.name}). Cada cliente precisa de um e-mail único.`
+            }, { status: 409 });
+        }
+
+        // ── Duplicate check on Auth as well ──────────────────────────────────
+        const { data: existingAuthList } = await supabaseAdmin.auth.admin.listUsers();
+        const emailAlreadyInAuth = existingAuthList?.users?.some(
+            u => u.email?.toLowerCase() === email.toLowerCase()
+        );
+        if (emailAlreadyInAuth) {
+            return NextResponse.json({
+                error: `Este e-mail já está em uso como login no sistema. Cada cliente precisa de um e-mail único.`
+            }, { status: 409 });
+        }
+
         // 1. Fetch Plan
         const { data: plano, error: planoError } = await supabaseAdmin
             .from('saas_plans').select('*').eq('id', planoId).single();
@@ -120,8 +155,8 @@ export async function POST(req: NextRequest) {
                 organization_id: orgId,
                 saas_plan_id: plano.id,
                 plan_tier: plano.tier,
-                metodo: isTeste ? 'TESTE_MANUAL' : 'MANUAL_ADMIN',
-                status: isTeste ? 'TESTE' : 'ATIVO',
+                metodo: isTeste ? 'MANUAL_TRIAL' : 'MANUAL_ADMIN',
+                status: isTeste ? 'TRIAL' : 'ACTIVE',
                 valor_mensal: isTeste ? 0 : finalPrice,
                 dia_vencimento: new Date().getDate(),
                 manual_discount_amount: discountType === 'FIXED_AMOUNT' ? Number(discountValue) : null,

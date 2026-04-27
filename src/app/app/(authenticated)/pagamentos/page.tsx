@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { formatCurrencyK, formatCurrency } from '@/lib/formatters';
 import { useSubscription } from '@/hooks/useSubscription';
 
 export default function PagamentosPage() {
@@ -101,8 +102,6 @@ export default function PagamentosPage() {
     }
   };
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
   const filteredPayments = payments.filter(p =>
     p.student_name?.toLowerCase().includes(searchTerm.toLowerCase()) || p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -131,34 +130,34 @@ export default function PagamentosPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KpiCard
           title="Receita Mensal"
-          value={formatCurrency(kpis.receitaMes)}
+          value={formatCurrencyK(kpis.receitaMes)}
           icon={<DollarSign className="h-6 w-6" />}
           color="yellow"
-          tooltip={`${kpis.countReceita} pagamentos recebidos`}
+          tooltip={`${kpis.countReceita} pagamentos · ${formatCurrency(kpis.receitaMes)}`}
         />
 
         <KpiCard
           title="A Receber"
-          value={formatCurrency(kpis.pendenteTotal)}
+          value={formatCurrencyK(kpis.pendenteTotal)}
           icon={<CreditCard className="h-6 w-6" />}
           color="yellow"
-          tooltip={`${kpis.countPendente} faturas aguardando pagamento`}
+          tooltip={`${kpis.countPendente} faturas · ${formatCurrency(kpis.pendenteTotal)}`}
         />
 
         <KpiCard
           title="Atrasado"
-          value={formatCurrency(kpis.atrasadoTotal)}
+          value={formatCurrencyK(kpis.atrasadoTotal)}
           icon={<AlertCircle className="h-6 w-6" />}
           color="red"
-          tooltip={`${kpis.countAtrasado} faturas vencidas`}
+          tooltip={`${kpis.countAtrasado} faturas vencidas · ${formatCurrency(kpis.atrasadoTotal)}`}
         />
 
         <KpiCard
           title="Ticket Médio"
-          value={formatCurrency(kpis.ticketMedio)}
+          value={formatCurrencyK(kpis.ticketMedio)}
           icon={<TrendingUp className="h-6 w-6" />}
           color="yellow"
-          tooltip={`Baseado em ${kpis.countReceita} pagamentos este mês`}
+          tooltip={`Baseado em ${kpis.countReceita} pagamentos · ${formatCurrency(kpis.ticketMedio)}`}
         />
       </div>
 

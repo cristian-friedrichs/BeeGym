@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Users, DollarSign, AlertCircle, CalendarCheck, Loader2 } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
 import { KpiCard } from '@/components/ui/kpi-card';
+import { formatK, formatCurrencyK } from '@/lib/formatters';
 
 export function KpiCards() {
     const supabase = createClient();
@@ -113,15 +114,6 @@ export function KpiCards() {
         };
     }, [supabase]);
 
-    // Formatador K (Ex: 15200 -> 15.2K | 456 -> 456)
-    const formatK = (value: number) => {
-        if (value >= 1000) {
-            const formatted = (value / 1000).toFixed(1);
-            return formatted.endsWith('.0') ? formatted.slice(0, -2) + 'K' : formatted + 'K';
-        }
-        return value.toString();
-    };
-
     if (loading) {
         return <div className="flex justify-center items-center h-24 w-full"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;
     }
@@ -136,15 +128,17 @@ export function KpiCards() {
             />
 
             <KpiCard
-                title="Receita Mensal (R$)"
-                value={formatK(metrics.monthlyRevenue)}
+                title="Receita Mensal"
+                value={formatCurrencyK(metrics.monthlyRevenue)}
+                tooltip={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.monthlyRevenue)}
                 icon={<DollarSign className="h-6 w-6" />}
                 color="yellow"
             />
 
             <KpiCard
-                title="Pendentes (R$)"
-                value={formatK(metrics.pendingPayments)}
+                title="Pendentes"
+                value={formatCurrencyK(metrics.pendingPayments)}
+                tooltip={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.pendingPayments)}
                 icon={<AlertCircle className="h-6 w-6" />}
                 color="yellow"
             />

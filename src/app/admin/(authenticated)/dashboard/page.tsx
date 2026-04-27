@@ -28,18 +28,7 @@ interface DashboardData {
     mapaClientes: Array<{ id: string; name: string; position: [number, number]; radius: number; clientes: number }>;
 }
 
-const formatCurrency = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v);
-
-const formatK = (value: number) => {
-    if (value >= 1000000) {
-        return (value / 1000000).toFixed(1).replace('.', ',').replace(',0', '') + 'M';
-    }
-    if (value >= 1000) {
-        return (value / 1000).toFixed(1).replace('.', ',').replace(',0', '') + 'K';
-    }
-    return value.toString();
-};
+import { formatK, formatCurrencyK, formatCurrency } from '@/lib/formatters';
 
 export default function AdminDashboardPage() {
     const [data, setData] = useState<DashboardData | null>(null);
@@ -96,8 +85,8 @@ export default function AdminDashboardPage() {
                 <SectionHeader title="Visão Geral" subtitle="Performance financeira e de clientes do mês atual" />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <KpiCard
-                        title="MRR (R$)"
-                        value={formatK(data.kpis.mrr)}
+                        title="MRR"
+                        value={formatCurrencyK(data.kpis.mrr)}
                         tooltip={formatCurrency(data.kpis.mrr)}
                         variacao={data.kpis.mrrVariacao}
                         variacaoLabel="vs mês anterior"

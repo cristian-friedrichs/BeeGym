@@ -416,8 +416,17 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                         <Button
                             type="button"
                             onClick={() => {
-                                if (step === 1 && (!formData.fullName || !formData.email || !formData.password)) {
-                                    toast({ variant: 'destructive', title: 'Preencha todos os campos do passo 1' }); return;
+                                if (step === 1) {
+                                    if (!formData.fullName.trim() || !formData.email.trim() || !formData.password) {
+                                        toast({ variant: 'destructive', title: 'Preencha todos os campos do passo 1' }); return;
+                                    }
+                                    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim());
+                                    if (!emailOk) {
+                                        toast({ variant: 'destructive', title: 'E-mail inválido', description: 'Informe um endereço de e-mail válido.' }); return;
+                                    }
+                                    if (formData.password.length < 6) {
+                                        toast({ variant: 'destructive', title: 'Senha muito curta', description: 'A senha deve ter pelo menos 6 caracteres.' }); return;
+                                    }
                                 }
                                 if (step === 2 && (!formData.businessType || !formData.empresaName || !formData.document)) {
                                     toast({ variant: 'destructive', title: 'Preencha os campos obrigatórios do negócio' }); return;
