@@ -60,10 +60,12 @@ export async function GET(request: NextRequest) {
         }, {});
 
         let formattedData = (data as any[]).map(org => {
-            // Use the most recent subscription (ordered by created_at desc in DB)
-            const sub = Array.isArray(org.saas_subscriptions) && org.saas_subscriptions.length > 0
-                ? org.saas_subscriptions[0]
-                : null;
+            // Supabase can return saas_subscriptions as array OR single object depending on the
+            // relationship type resolved at query time — normalise to always get the first item.
+            const rawSubs = org.saas_subscriptions;
+            const sub: any = Array.isArray(rawSubs)
+                ? (rawSubs.length > 0 ? rawSubs[0] : null)
+                : (rawSubs ?? null);
 
             // Derive effective status: prefer saas_subscriptions, fall back to org field
             const rawStatus: string = sub?.status || org.subscription_status || SUB_STATUS.PENDING;

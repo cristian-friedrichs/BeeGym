@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { SectionHeader } from '@/components/ui/section-header';
 
 export default function SubscriptionPage() {
-    const { plan, isActive, status, loading: subLoading, metodo, proximoVencimento, displayFeatures } = useSubscription();
+    const { plan, isActive, status, loading: subLoading, metodo, proximoVencimento, displayFeatures, effectivePrice } = useSubscription();
     const { activeCount, maxStudents, isUnlimited, loading: limitLoading } = useStudentLimit();
     const { toast } = useToast();
 
@@ -91,9 +91,12 @@ export default function SubscriptionPage() {
                         </div>
                         <div className="text-right">
                             <span className="text-2xl font-bold text-slate-900 font-display">
-                                R$ {plan.price.toFixed(2).replace('.', ',')}
+                                {effectivePrice > 0
+                                    ? `R$ ${effectivePrice.toFixed(2).replace('.', ',')}`
+                                    : <span className="text-bee-amber">Custom</span>
+                                }
                             </span>
-                            <span className="text-sm text-slate-500 font-sans">/mês</span>
+                            {effectivePrice > 0 && <span className="text-sm text-slate-500 font-sans">/mês</span>}
                         </div>
                     </div>
 
@@ -143,7 +146,8 @@ export default function SubscriptionPage() {
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-bold text-slate-700 font-sans">Próxima cobrança</span>
                                                         <span className="text-xs text-slate-500 font-sans">
-                                                            {new Intl.DateTimeFormat('pt-BR').format(new Date(proximoVencimento))} (R$ {plan.price.toFixed(2).replace('.', ',')})
+                                                            {new Intl.DateTimeFormat('pt-BR').format(new Date(proximoVencimento))}
+                                                            {effectivePrice > 0 && ` · R$ ${effectivePrice.toFixed(2).replace('.', ',')}`}
                                                         </span>
                                                     </div>
                                                 </div>

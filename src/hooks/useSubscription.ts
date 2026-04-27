@@ -17,6 +17,7 @@ export function useSubscription() {
     const [proximoVencimento, setProximoVencimento] = useState<string | null>(null)
     const [dbAllowedFeatures, setDbAllowedFeatures] = useState<import('@/config/plans').PlanFeature[] | null>(null)
     const [dbMaxStudents, setDbMaxStudents] = useState<number | null>(null)
+    const [dbPrice, setDbPrice] = useState<number | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -55,7 +56,7 @@ export function useSubscription() {
                 // 2. Buscar plano via saas_subscriptions (independe do pagamento)
                 const { data: subData, error: subError } = await supabase
                     .from('saas_subscriptions')
-                    .select('status, plan_tier, saas_plans!saas_plan_id ( tier, allowed_features, max_students ), metodo, proximo_vencimento')
+                    .select('status, plan_tier, valor_mensal, saas_plans!saas_plan_id ( tier, allowed_features, max_students, price ), metodo, proximo_vencimento')
                     .eq('organization_id', organizationId)
                     .order('created_at', { ascending: false })
                     .limit(1)
@@ -91,6 +92,13 @@ export function useSubscription() {
 
                     if (sub.saas_plans?.allowed_features) {
                         setDbAllowedFeatures(sub.saas_plans.allowed_features)
+                    }
+
+                    // Use real price from DB: prefer valor_mensal (may have discount applied),
+                    // fall back to the plan's base price.
+                    const realPrice = sub.valor_mensal ?? sub.saas_plans?.price ?? null
+                    if (realPrice !== null) {
+                        setDbPrice(Number(realPrice))
                     }
                 } else {
                     console.log('[useSubscription] Nenhuma assinatura encontrada - usando plano padrão')
@@ -169,6 +177,9 @@ export function useSubscription() {
         return features.map(f => FEATURE_LABELS[f] || (f as string))
     }, [dbAllowedFeatures, plan.allowedFeatures, isMasterAdmin])
 
+    // Effective monthly price: DB value takes precedence over static config
+    const effectivePrice = dbPrice !== null ? dbPrice : plan.price
+
     return {
         plan,
         isActive,
@@ -180,6 +191,7 @@ export function useSubscription() {
         organizationId,
         maxStudents,
         displayFeatures,
-        isAdmin: isMasterAdmin
+        isAdmin: isMasterAdmin,
+        effectivePrice,
     }
 }
