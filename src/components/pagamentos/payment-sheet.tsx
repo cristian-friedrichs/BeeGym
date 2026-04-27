@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Calendar, DollarSign, CheckCircle2 } from 'lucide-react';
+import { Loader2, Calendar, DollarSign, CheckCircle2, QrCode, Copy, Check as CheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import QRCode from 'qrcode';
 
 interface PaymentSheetProps {
     isOpen: boolean;
@@ -22,13 +23,19 @@ export function PaymentSheet({ isOpen, onClose, payment, onSuccess }: PaymentShe
     const { toast } = useToast();
 
     const [loading, setLoading] = useState(false);
-    const [mode, setMode] = useState<'view' | 'pay' | 'edit_date'>('view');
+    const [mode, setMode] = useState<'view' | 'pay' | 'edit_date' | 'pix'>('view');
 
     const [payDate, setPayDate] = useState(format(new Date(), 'yyyy-MM-dd'));
     const [interest, setInterest] = useState(0);
     const [penalty, setPenalty] = useState(0);
     const [payMethod, setPayMethod] = useState('Pix');
     const [newDueDate, setNewDueDate] = useState('');
+
+    // PIX state
+    const [pixCode, setPixCode] = useState('');
+    const [pixQrDataUrl, setPixQrDataUrl] = useState('');
+    const [pixCopied, setPixCopied] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
         if (payment) {
@@ -37,8 +44,34 @@ export function PaymentSheet({ isOpen, onClose, payment, onSuccess }: PaymentShe
             setInterest(payment.interest_amount || 0);
             setPenalty(payment.penalty_amount || 0);
             setPayDate(format(new Date(), 'yyyy-MM-dd'));
+            setPixCode('');
+            setPixQrDataUrl('');
+            setPixCopied(false);
         }
     }, [payment]);
+
+    const generatePixCode = async () => {
+        // Generate a mock PIX copia-e-cola string based on invoice data
+        const amount = Number(payment.amount).toFixed(2).replace('.', '');
+        const mockPixKey = `00020126330014br.gov.bcb.pix0111${payment.id?.slice(0, 11) || '00000000000'}5204000053039865406${amount}5802BR5913BeeGym${payment.student_name?.slice(0, 10).replace(/\s/g, '') || 'Aluno'}6009SAO PAULO62070503***6304`;
+        const checksum = Math.abs(mockPixKey.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 65536).toString(16).toUpperCase().padStart(4, '0');
+        const fullPixCode = mockPixKey + checksum;
+        setPixCode(fullPixCode);
+        try {
+            const dataUrl = await QRCode.toDataURL(fullPixCode, { width: 200, margin: 1 });
+            setPixQrDataUrl(dataUrl);
+        } catch {
+            setPixQrDataUrl('');
+        }
+        setMode('pix');
+    };
+
+    const handleCopyPix = () => {
+        navigator.clipboard.writeText(pixCode).then(() => {
+            setPixCopied(true);
+            setTimeout(() => setPixCopied(false), 2000);
+        });
+    };
 
     if (!payment) return null;
 
@@ -132,9 +165,35 @@ export function PaymentSheet({ isOpen, onClose, payment, onSuccess }: PaymentShe
                                 ) : (
                                     <div className="grid grid-cols-1 gap-3">
                                         <Button onClick={() => setMode('pay')} className="w-full h-10 bg-bee-amber text-bee-midnight font-black rounded-full hover:bg-amber-500 transition shadow-lg shadow-bee-amber/10 uppercase text-[10px] tracking-widest">Confirmar Pagamento</Button>
+                                        <Button onClick={generatePixCode} variant="outline" className="w-full h-10 border-bee-amber/30 text-bee-amber font-black rounded-full hover:bg-bee-amber/5 transition uppercase text-[10px] tracking-widest flex items-center justify-center gap-2"><QrCode className="w-4 h-4" /> Gerar PIX</Button>
                                         <Button variant="ghost" onClick={() => setMode('edit_date')} className="w-full h-10 text-slate-400 font-black hover:text-slate-600 hover:bg-slate-50 transition uppercase text-[10px] tracking-widest items-center gap-2"><Calendar className="w-4 h-4" /> Alterar Vencimento</Button>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {mode === 'pix' && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                                <div className="flex items-center gap-2 text-bee-midnight font-black uppercase text-[11px] tracking-wider">
+                                    <QrCode className="w-5 h-5 text-bee-amber" /> PIX QR Code
+                                </div>
+                                {pixQrDataUrl && (
+                                    <div className="flex justify-center">
+                                        <img src={pixQrDataUrl} alt="PIX QR Code" className="w-48 h-48 rounded-2xl border border-slate-100 shadow-sm" />
+                                    </div>
+                                )}
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Copia e Cola</p>
+                                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 break-all text-xs font-mono text-slate-600 select-all">
+                                        {pixCode}
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button variant="ghost" onClick={() => setMode('view')} className="flex-1 h-10 text-slate-400 font-bold hover:bg-slate-50 rounded-full transition uppercase text-[10px] tracking-widest">Voltar</Button>
+                                    <Button onClick={handleCopyPix} className="flex-[1.5] h-10 bg-bee-amber text-bee-midnight font-black rounded-full hover:bg-amber-500 transition shadow-lg shadow-bee-amber/20 uppercase text-[10px] tracking-widest flex justify-center items-center gap-2">
+                                        {pixCopied ? <><CheckIcon className="w-4 h-4" /> Copiado!</> : <><Copy className="w-4 h-4" /> Copiar Código</>}
+                                    </Button>
+                                </div>
                             </div>
                         )}
 

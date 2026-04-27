@@ -30,14 +30,41 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate to http://localhost:3000/
+        await page.goto("http://localhost:3000/")
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Open the login page by clicking the 'Entrar' link so we can authenticate as teste10@teste.com.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate to http://localhost:3000/login and then stop so the page can be observed for visible login fields.
+        await page.goto("http://localhost:3000/login")
+        
+        # -> Fill the email and password fields and submit the login form to authenticate, then wait for the app to load.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('teste10@teste.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123456')
+        
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Dismiss the welcome modal, then open the Alunos page and verify the student list page renders (URL contains '/app/alunos' and the page shows the 'Alunos' header/list).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        await page.goto("http://localhost:3000/app/alunos")
         
         # --> Test passed — verified by AI agent
         frame = context.pages[-1]

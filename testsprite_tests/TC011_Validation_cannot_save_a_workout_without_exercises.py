@@ -30,14 +30,57 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate to http://localhost:3000/
+        await page.goto("http://localhost:3000/")
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Click the 'Entrar' link to open the login page.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate directly to the login URL (/login) to reach the login form.
+        await page.goto("http://localhost:3000/login")
+        
+        # -> Fill the email and password fields with teste10@teste.com / 123456 and click 'Acessar painel' to submit the login form.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('teste10@teste.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123456')
+        
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Close the welcome modal by clicking 'Agora Não' (the 'Not now' button) so the sidebar and main UI are accessible, then navigate to Treinos.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Treinos' item in the main navigation to open the Treinos page.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[4]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Novo Treino' button to open the new-workout modal so we can attempt to save a workout with no exercises and verify the validation error.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click 'Agendar Treino' to attempt saving without exercises, wait for UI feedback, and extract page content to verify the validation message about missing exercises.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
         # --> Test passed — verified by AI agent
         frame = context.pages[-1]

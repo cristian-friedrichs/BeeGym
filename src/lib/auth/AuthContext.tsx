@@ -56,8 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 return data as UserProfile
             }
 
-            // 🔒 VALIDAÇÃO: Conta deve estar ACTIVE
-            if (data.status !== 'active') {
+            // 🔒 VALIDAÇÃO: Conta deve estar ACTIVE (case-insensitive — DB stores uppercase)
+            const activeStatuses = ['active', 'trial', 'past_due']
+            if (!activeStatuses.includes(data.status?.toLowerCase())) {
                 console.warn('⚠️ Conta não está ativa - o middleware deve gerenciar o acesso')
                 return null
             }

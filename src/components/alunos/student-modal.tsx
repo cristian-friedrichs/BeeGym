@@ -66,6 +66,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    const [cpf, setCpf] = useState('');
     const [planId, setPlanId] = useState('');
     const [objective, setObjective] = useState('');
     const [birthDate, setBirthDate] = useState('');
@@ -73,6 +74,19 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+    // Address
+    const [street, setStreet] = useState('');
+    const [addressNumber, setAddressNumber] = useState('');
+    const [complement, setComplement] = useState('');
+    const [neighborhood, setNeighborhood] = useState('');
+    const [city, setCity] = useState('');
+    const [addressState, setAddressState] = useState('');
+    const [zip, setZip] = useState('');
+
+    // Validation errors
+    const [phoneError, setPhoneError] = useState('');
+    const [streetError, setStreetError] = useState('');
 
     // Plans & Discounts
     const [plans, setPlans] = useState<Plan[]>([]);
@@ -133,6 +147,14 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             setFullName(studentToEdit.full_name || '');
             setEmail(studentToEdit.email || '');
             setPhone(studentToEdit.phone || '');
+            setCpf(studentToEdit.cpf || '');
+            setStreet(studentToEdit.address_street || '');
+            setAddressNumber(studentToEdit.address_number || '');
+            setComplement(studentToEdit.address_complement || '');
+            setNeighborhood(studentToEdit.address_neighborhood || '');
+            setCity(studentToEdit.address_city || '');
+            setAddressState(studentToEdit.address_state || '');
+            setZip(studentToEdit.address_zip || '');
             setPlanId(studentToEdit.plan_id || studentToEdit.plan || '');
             setObjective(studentToEdit.objective || '');
             setBirthDate(studentToEdit.birth_date ? studentToEdit.birth_date.split('T')[0] : '');
@@ -157,8 +179,11 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
         } else if (open && !studentToEdit) {
             console.log('[StudentModal] Resetting for new student');
             // New Student Reset
-            setFullName(''); setEmail(''); setPhone('');
+            setFullName(''); setEmail(''); setPhone(''); setCpf('');
+            setStreet(''); setAddressNumber(''); setComplement('');
+            setNeighborhood(''); setCity(''); setAddressState(''); setZip('');
             setPlanId(''); setObjective(''); setBirthDate(''); setStatus('ACTIVE');
+            setPhoneError(''); setStreetError('');
             setDiscountActive(false);
             setDiscountType('percent');
             setDiscountValue('');
@@ -334,6 +359,21 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             return;
         }
 
+        // Phone validation: require at least 10 digits
+        const phoneDigits = phone.replace(/\D/g, '');
+        if (phone && phoneDigits.length < 10) {
+            setPhoneError('Telefone inválido. Mínimo de 10 dígitos.');
+            return;
+        }
+        setPhoneError('');
+
+        // Street validation
+        if (!street.trim()) {
+            setStreetError('Rua é obrigatório');
+            return;
+        }
+        setStreetError('');
+
         // --- STUDENT LIMIT GUARD ---
         // Block new student creation when limit is reached
         if (!studentToEdit && !canAddStudent) {
@@ -360,6 +400,14 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                 full_name: fullName,
                 email,
                 phone,
+                cpf: cpf || null,
+                address_street: street || null,
+                address_number: addressNumber || null,
+                address_complement: complement || null,
+                address_neighborhood: neighborhood || null,
+                address_city: city || null,
+                address_state: addressState || null,
+                address_zip: zip || null,
                 plan: selectedPlanDetails?.name || '', // Legacy text column
                 plan_id: selectedPlanDetails?.id || null, // FK Relation
                 // Initialize credits if pack plan
@@ -450,6 +498,20 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
         } finally {
             setLoading(false);
         }
+    };
+
+    const formatCPF = (value: string) => {
+        const clean = value.replace(/\D/g, '').slice(0, 11);
+        if (clean.length <= 3) return clean;
+        if (clean.length <= 6) return `${clean.slice(0, 3)}.${clean.slice(3)}`;
+        if (clean.length <= 9) return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6)}`;
+        return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`;
+    };
+
+    const formatZip = (value: string) => {
+        const clean = value.replace(/\D/g, '').slice(0, 8);
+        if (clean.length <= 5) return clean;
+        return `${clean.slice(0, 5)}-${clean.slice(5)}`;
     };
 
     const formatPhoneNumber = (value: string) => {
@@ -578,11 +640,112 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Objetivo (Opcional)</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">CPF</Label>
                                         <Input
-                                            value={objective}
-                                            onChange={e => setObjective(e.target.value)}
-                                            placeholder="Ex: Emagrecimento, Hipertrofia..."
+                                            value={cpf}
+                                            onChange={e => setCpf(formatCPF(e.target.value))}
+                                            placeholder="000.000.000-00"
+                                            maxLength={14}
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Phone error */}
+                                {phoneError && (
+                                    <p className="text-xs font-bold text-red-500 ml-1 flex items-center gap-1">
+                                        <AlertCircle className="h-3 w-3" /> Phone: {phoneError}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        <Separator className="bg-slate-100/80" />
+
+                        {/* Endereço */}
+                        <div className="space-y-6">
+                            <div className="flex items-center gap-3">
+                                <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
+                                    <Hash className="h-4 w-4 text-bee-amber" />
+                                </div>
+                                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Endereço</h3>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-5">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="md:col-span-2 space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Rua *</Label>
+                                        <Input
+                                            value={street}
+                                            onChange={e => { setStreet(e.target.value); if (e.target.value.trim()) setStreetError(''); }}
+                                            placeholder="Nome da rua"
+                                            className={`h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20 ${streetError ? 'border-red-300 focus:ring-red-200' : ''}`}
+                                        />
+                                        {streetError && (
+                                            <p className="text-xs font-bold text-red-500 ml-1 flex items-center gap-1">
+                                                <AlertCircle className="h-3 w-3" /> {streetError}
+                                            </p>
+                                        )}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Número</Label>
+                                        <Input
+                                            value={addressNumber}
+                                            onChange={e => setAddressNumber(e.target.value)}
+                                            placeholder="123"
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Complemento</Label>
+                                        <Input
+                                            value={complement}
+                                            onChange={e => setComplement(e.target.value)}
+                                            placeholder="Apto, Bloco..."
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Bairro</Label>
+                                        <Input
+                                            value={neighborhood}
+                                            onChange={e => setNeighborhood(e.target.value)}
+                                            placeholder="Nome do bairro"
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                                    <div className="md:col-span-1 space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">CEP</Label>
+                                        <Input
+                                            value={zip}
+                                            onChange={e => setZip(formatZip(e.target.value))}
+                                            placeholder="00000-000"
+                                            maxLength={9}
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Cidade</Label>
+                                        <Input
+                                            value={city}
+                                            onChange={e => setCity(e.target.value)}
+                                            placeholder="Cidade"
+                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado</Label>
+                                        <Input
+                                            value={addressState}
+                                            onChange={e => setAddressState(e.target.value.toUpperCase().slice(0, 2))}
+                                            placeholder="UF"
+                                            maxLength={2}
                                             className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
                                         />
                                     </div>

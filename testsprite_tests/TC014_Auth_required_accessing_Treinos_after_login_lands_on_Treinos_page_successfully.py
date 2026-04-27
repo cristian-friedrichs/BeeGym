@@ -30,14 +30,41 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate to http://localhost:3000/
+        await page.goto("http://localhost:3000/")
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Open the login page by clicking the 'Entrar' link in the header.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to http://localhost:9002
-        await page.goto("http://localhost:9002")
+        # -> Navigate to http://localhost:3000/login and then fill the email field with teste10@teste.com
+        await page.goto("http://localhost:3000/login")
+        
+        # -> Fill the email and password fields and click the login button to authenticate (expect redirect to /app).
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('teste10@teste.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123456')
+        
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Close the welcome modal, then open the Treinos page and verify the core controls (student selector and Add Workout). The immediate action is to close the modal by clicking its close/decline button, then navigate to /app/treinos.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        await page.goto("http://localhost:3000/app/treinos")
         
         # --> Test passed — verified by AI agent
         frame = context.pages[-1]
