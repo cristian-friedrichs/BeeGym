@@ -116,6 +116,20 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
             return;
         }
 
+        const parsedAmount = parseAmount(amount);
+        if (parsedAmount <= 0) {
+            toast({ title: 'Valor inválido', description: 'O valor deve ser maior que zero.', variant: 'destructive' });
+            return;
+        }
+        if (parsedAmount > 999999.99) {
+            toast({ title: 'Valor inválido', description: 'O valor não pode exceder R$ 999.999,99.', variant: 'destructive' });
+            return;
+        }
+        if (description.trim().length < 3) {
+            toast({ title: 'Descrição muito curta', description: 'A descrição deve ter ao menos 3 caracteres.', variant: 'destructive' });
+            return;
+        }
+
         setLoading(true);
 
         try {

@@ -55,10 +55,21 @@ export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: Ex
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!formData.name.trim() || formData.name.trim().length < 2) {
+            toast({ title: 'Nome inválido', description: 'O nome deve ter pelo menos 2 caracteres.', variant: 'destructive' });
+            return;
+        }
+        if (!formData.target_muscle.trim()) {
+            toast({ title: 'Grupo muscular obrigatório', description: 'Informe o grupo muscular alvo.', variant: 'destructive' });
+            return;
+        }
+
         setLoading(true);
 
         try {
             const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Usuário não autenticado');
             const { data: profile } = await (supabase.from('profiles') as any).select('organization_id').eq('id', user?.id).single();
 
             const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');

@@ -323,14 +323,22 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
 
     const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setAvatarFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setAvatarPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            toast({ title: "Formato inválido", description: "Use PNG, JPG ou WebP.", variant: "destructive" });
+            e.target.value = '';
+            return;
         }
+        if (file.size > 5 * 1024 * 1024) {
+            toast({ title: "Arquivo muito grande", description: "A foto deve ter no máximo 5MB.", variant: "destructive" });
+            e.target.value = '';
+            return;
+        }
+        setAvatarFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => setAvatarPreview(reader.result as string);
+        reader.readAsDataURL(file);
     };
 
     const uploadAvatar = async (studentId: string) => {
@@ -354,8 +362,18 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     };
 
     const handleSubmit = async () => {
-        if (!fullName || !email) {
-            toast({ title: "Nome e Email são obrigatórios", variant: "destructive" });
+        if (!fullName.trim()) {
+            toast({ title: "Nome é obrigatório", variant: "destructive" });
+            return;
+        }
+        if (!email.trim()) {
+            toast({ title: "Email é obrigatório", variant: "destructive" });
+            return;
+        }
+        // Email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            toast({ title: "Email inválido", description: "Por favor, insira um endereço de e-mail válido.", variant: "destructive" });
             return;
         }
 
@@ -373,6 +391,23 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             return;
         }
         setStreetError('');
+
+        // Discount validation
+        if (discountActive && discountValue) {
+            const dv = parseFloat(discountValue);
+            if (isNaN(dv) || dv <= 0) {
+                toast({ title: "Desconto inválido", description: "O valor do desconto deve ser maior que zero.", variant: "destructive" });
+                return;
+            }
+            if (discountType === 'percent' && dv >= 100) {
+                toast({ title: "Desconto inválido", description: "O desconto percentual deve ser menor que 100%.", variant: "destructive" });
+                return;
+            }
+            if (discountType === 'fixed' && selectedPlanDetails && dv >= selectedPlanDetails.price) {
+                toast({ title: "Desconto inválido", description: "O desconto fixo não pode ser igual ou maior que o valor do plano.", variant: "destructive" });
+                return;
+            }
+        }
 
         // --- STUDENT LIMIT GUARD ---
         // Block new student creation when limit is reached

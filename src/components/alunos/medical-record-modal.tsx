@@ -42,9 +42,24 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
         }
     }, [existingData, open]);
 
+    const MAX_FIELD_LENGTH = 2000;
+
+    const handleTextChange = (field: keyof typeof formData, value: string) => {
+        if (value.length <= MAX_FIELD_LENGTH) {
+            setFormData(prev => ({ ...prev, [field]: value }));
+        }
+    };
+
     const handleSubmit = async () => {
         if (loading) return;
-        
+
+        // Validate lengths
+        const allFields = Object.values(formData);
+        if (allFields.some(v => v.length > MAX_FIELD_LENGTH)) {
+            toast({ title: "Texto muito longo", description: `Cada campo suporta no máximo ${MAX_FIELD_LENGTH} caracteres.`, variant: "destructive" });
+            return;
+        }
+
         setLoading(true);
         try {
             const payload = {
@@ -124,12 +139,16 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
                         </div>
 
                         <div className="space-y-2.5">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Características Físicas</Label>
+                            <div className="flex justify-between items-center ml-1">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Características Físicas</Label>
+                                <span className="text-[10px] text-slate-300 font-medium">{formData.characteristics.length}/{MAX_FIELD_LENGTH}</span>
+                            </div>
                             <Textarea
                                 placeholder="Descreva o biotipo, postura, histórico esportivo e outros dados relevantes..."
                                 className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
                                 value={formData.characteristics}
-                                onChange={(e) => setFormData(prev => ({ ...prev, characteristics: e.target.value }))}
+                                onChange={(e) => handleTextChange('characteristics', e.target.value)}
+                                maxLength={MAX_FIELD_LENGTH}
                             />
                         </div>
                     </div>
@@ -147,22 +166,30 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
 
                         <div className="grid grid-cols-1 gap-6">
                             <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-red-500/70 ml-1">Deficiências ou Patologias</Label>
+                                <div className="flex justify-between items-center ml-1">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-red-500/70">Deficiências ou Patologias</Label>
+                                    <span className="text-[10px] text-slate-300 font-medium">{formData.disabilities.length}/{MAX_FIELD_LENGTH}</span>
+                                </div>
                                 <Textarea
                                     placeholder="Problemas cardíacos, diabetes, asma, deficiências físicas, etc..."
                                     className="min-h-[100px] p-4 bg-red-50/20 border-red-100/50 rounded-2xl focus:ring-4 focus:ring-red-500/5 focus:border-red-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
                                     value={formData.disabilities}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, disabilities: e.target.value }))}
+                                    onChange={(e) => handleTextChange('disabilities', e.target.value)}
+                                    maxLength={MAX_FIELD_LENGTH}
                                 />
                             </div>
 
                             <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Dificuldades ou Lesões</Label>
+                                <div className="flex justify-between items-center ml-1">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Dificuldades ou Lesões</Label>
+                                    <span className="text-[10px] text-slate-300 font-medium">{formData.difficulties.length}/{MAX_FIELD_LENGTH}</span>
+                                </div>
                                 <Textarea
                                     placeholder="Dores crônicas, lesões anteriores, hérnia de disco, falta de mobilidade..."
                                     className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
                                     value={formData.difficulties}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, difficulties: e.target.value }))}
+                                    onChange={(e) => handleTextChange('difficulties', e.target.value)}
+                                    maxLength={MAX_FIELD_LENGTH}
                                 />
                             </div>
                         </div>
@@ -180,12 +207,16 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
                         </div>
 
                         <div className="space-y-2.5">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Outras Observações</Label>
+                            <div className="flex justify-between items-center ml-1">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Outras Observações</Label>
+                                <span className="text-[10px] text-slate-300 font-medium">{formData.other_notes.length}/{MAX_FIELD_LENGTH}</span>
+                            </div>
                             <Textarea
                                 placeholder="Medicamentos em uso, recomendações externas, objetivos específicos..."
                                 className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
                                 value={formData.other_notes}
-                                onChange={(e) => setFormData(prev => ({ ...prev, other_notes: e.target.value }))}
+                                onChange={(e) => handleTextChange('other_notes', e.target.value)}
+                                maxLength={MAX_FIELD_LENGTH}
                             />
                         </div>
                     </div>

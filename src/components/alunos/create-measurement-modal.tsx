@@ -34,11 +34,26 @@ export function CreateMeasurementModal({ open, onOpenChange, studentId, onSucces
             return;
         }
 
+        const weightVal = parseFloat(weight);
+        if (isNaN(weightVal) || weightVal <= 0 || weightVal > 500) {
+            toast({ title: "Peso inválido", description: "O peso deve estar entre 1 e 500 kg.", variant: "destructive" });
+            return;
+        }
+
+        const heightVal = height ? parseFloat(height) : null;
+        if (heightVal !== null && (isNaN(heightVal) || heightVal < 0.3 || heightVal > 3.0)) {
+            toast({ title: "Altura inválida", description: "A altura deve estar entre 0,30 m e 3,00 m.", variant: "destructive" });
+            return;
+        }
+
+        const bodyFatVal = bodyFat ? parseFloat(bodyFat) : null;
+        if (bodyFatVal !== null && (isNaN(bodyFatVal) || bodyFatVal < 0 || bodyFatVal > 100)) {
+            toast({ title: "% Gordura inválida", description: "O percentual de gordura deve estar entre 0 e 100.", variant: "destructive" });
+            return;
+        }
+
         setLoading(true);
         try {
-            const weightVal = parseFloat(weight);
-            const heightVal = height ? parseFloat(height) : null;
-            const bodyFatVal = bodyFat ? parseFloat(bodyFat) : null;
 
             // Calculate BMI
             let bmiVal = null;

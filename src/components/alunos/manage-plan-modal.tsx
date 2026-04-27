@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addMonths } from "date-fns";
+const dateAddMonths = addMonths;
 import { Separator } from '@/components/ui/separator';
 
 interface Plan {
@@ -135,7 +136,27 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
     }, [open, studentId, currentPlanId, organizationId]);
 
     const handleSubmit = async () => {
-        if (!selectedPlanId) return;
+        if (!selectedPlanId) {
+            toast({ title: "Selecione um plano", variant: "destructive" });
+            return;
+        }
+
+        // Discount validation
+        if (discountActive && discountValue) {
+            const dv = parseFloat(discountValue.replace(',', '.'));
+            if (isNaN(dv) || dv <= 0) {
+                toast({ title: "Desconto inválido", description: "O valor do desconto deve ser maior que zero.", variant: "destructive" });
+                return;
+            }
+            if (discountType === 'percent' && dv >= 100) {
+                toast({ title: "Desconto inválido", description: "O desconto percentual deve ser menor que 100%.", variant: "destructive" });
+                return;
+            }
+            if (discountType === 'fixed' && selectedPlanDetails && dv >= selectedPlanDetails.price) {
+                toast({ title: "Desconto inválido", description: "O desconto fixo não pode ser igual ou maior que o valor do plano.", variant: "destructive" });
+                return;
+            }
+        }
 
         setLoading(true);
         try {
@@ -156,8 +177,7 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
             // Calculate Expiration Date
             let expirationDate = null;
             if (selectedPlanDetails?.duration_months) {
-                const { addMonths } = require('date-fns');
-                expirationDate = addMonths(new Date(), selectedPlanDetails.duration_months).toISOString();
+                expirationDate = dateAddMonths(new Date(), selectedPlanDetails.duration_months).toISOString();
             }
             const discountEndDate = calculateDiscountEndDate()?.toISOString() || null;
             const discountVal = discountActive && discountValue ? parseFloat(discountValue.replace(',', '.')) : null;
