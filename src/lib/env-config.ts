@@ -24,6 +24,9 @@ export const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // ── Kiwify ─────────────────────────────────────────────
-export const KIWIFY_TOKEN = process.env.KIWIFY_TOKEN || 'dczv229jm85';
+// No fallback: webhook returns 503 if not set, preventing accidental open auth.
+// Accepts KIWIFY_TOKEN (preferred) or legacy KIWIFY_WEBHOOK_TOKEN.
+export const KIWIFY_TOKEN =
+  process.env.KIWIFY_TOKEN || process.env.KIWIFY_WEBHOOK_TOKEN || '';
 
 // Fim das variáveis de ambiente

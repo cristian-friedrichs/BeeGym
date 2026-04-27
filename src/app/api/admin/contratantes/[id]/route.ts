@@ -124,9 +124,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             cancelar: `Assinatura do contratante ${id} cancelada.`,
         };
 
-        if (action === 'suspender') newStatus = 'INADIMPLENTE';
-        else if (action === 'restaurar') newStatus = 'ATIVO';
-        else if (action === 'cancelar') newStatus = 'INATIVO';
+        if (action === 'suspender') newStatus = 'PAST_DUE';
+        else if (action === 'restaurar') newStatus = 'ACTIVE';
+        else if (action === 'cancelar') newStatus = 'CANCELED';
         else return NextResponse.json({ error: 'Ação inválida' }, { status: 400 });
 
         // Atualiza a assinatura recente

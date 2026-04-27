@@ -12,6 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useSubscription } from "@/hooks/useSubscription";
 import { PlanFeature } from "@/config/plans";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { isSuperAdmin } from "@/lib/auth/role-checks";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -41,15 +42,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         return;
       }
 
-      // 👑 ADMIN BYPASS: Administradores e o e-mail master SEMPRE têm acesso a tudo
-      const masterEmail = 'cristian_friedrichs@live.com';
-      const userEmail = user?.email?.toLowerCase();
-      // Verificamos tanto o profile.role quanto o user.email para garantir o bypass mais rápido possível
-      const isAdminByRole = (profile?.role as string) === 'BEEGYM_ADMIN';
-      const isMasterAdmin = userEmail === masterEmail || isAdminByRole;
+      // 👑 SUPER_ADMIN BYPASS: BeeGym staff sempre tem acesso
+      const isMasterAdmin = isSuperAdmin(profile?.role as string | undefined);
 
       if (isMasterAdmin) {
-        console.log(`[AccessCheck] Admin recognized: ${userEmail} | Role: ${profile?.role}. Bypassing all checks.`);
+        console.log(`[AccessCheck] SUPER_ADMIN recognized: ${user?.email}. Bypassing all checks.`);
         setIsAuthorized(true);
         return;
       }

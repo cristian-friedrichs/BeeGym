@@ -92,18 +92,20 @@ export function SessionManagerModal({
     }
 
     async function fetchWorkoutLogs() {
+        // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+        // Tabela `workout_logs` não existe (audit 2026-04-25).
         if (!eventId) return;
-        try {
-            const { data, error } = await (supabase as any).from('workout_logs').select(`id, exercise_id, sets, reps, notes, exercises ( name )`).eq('event_id', eventId);
-            if (error) throw error;
-            if (data && data.length > 0) {
-                const logs: WorkoutExercise[] = (data as any[]).map(log => ({
-                    id: log.id, exercise_id: log.exercise_id, exercise_name: (log.exercises as any)?.name || 'Exercício',
-                    sets: log.sets || 0, reps: log.reps?.toString() || '', weight_kg: 0, rest_seconds: 0, notes: log.notes || ''
-                }));
-                setWorkoutExercises(logs);
-            }
-        } catch (error) { console.error('Error fetching workout logs:', error); }
+        // try {
+        //     const { data, error } = await (supabase as any).from('workout_logs').select(`id, exercise_id, sets, reps, notes, exercises ( name )`).eq('event_id', eventId);
+        //     if (error) throw error;
+        //     if (data && data.length > 0) {
+        //         const logs: WorkoutExercise[] = (data as any[]).map(log => ({
+        //             id: log.id, exercise_id: log.exercise_id, exercise_name: (log.exercises as any)?.name || 'Exercício',
+        //             sets: log.sets || 0, reps: log.reps?.toString() || '', weight_kg: 0, rest_seconds: 0, notes: log.notes || ''
+        //         }));
+        //         setWorkoutExercises(logs);
+        //     }
+        // } catch (error) { console.error('Error fetching workout logs:', error); }
     }
 
     async function handleCreateExercise() {
@@ -141,11 +143,13 @@ export function SessionManagerModal({
         if (workoutExercises.length === 0) { toast({ title: 'Nenhum exercício', description: 'Adicione pelo menos um exercício antes de salvar.', variant: 'destructive' }); return; }
         setLoading(true);
         try {
-            await (supabase as any).from('workout_logs').delete().eq('event_id', eventId);
-            const logsToInsert = studentIds.flatMap(studentId => workoutExercises.map(exercise => ({ event_id: eventId, student_id: studentId, exercise_id: exercise.exercise_id, sets: exercise.sets, reps: exercise.reps, notes: exercise.notes })));
-            const { error } = await (supabase as any).from('workout_logs').insert(logsToInsert);
-            if (error) throw error;
-            toast({ title: 'Diário salvo!', description: 'O registro de treino foi salvo com sucesso.' });
+            // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+            // Tabela `workout_logs` não existe (audit 2026-04-25).
+            // await (supabase as any).from('workout_logs').delete().eq('event_id', eventId);
+            // const logsToInsert = studentIds.flatMap(studentId => workoutExercises.map(exercise => ({ event_id: eventId, student_id: studentId, exercise_id: exercise.exercise_id, sets: exercise.sets, reps: exercise.reps, notes: exercise.notes })));
+            // const { error } = await (supabase as any).from('workout_logs').insert(logsToInsert);
+            // if (error) throw error;
+            toast({ title: 'Diário salvo!', description: 'Funcionalidade de salvamento desabilitada (aguardando schema do BD).' });
         } catch (error) {
             console.error('Error saving workout log:', error);
             toast({ title: 'Erro ao salvar', description: 'Não foi possível salvar o diário de treino. Tente novamente.', variant: 'destructive' });

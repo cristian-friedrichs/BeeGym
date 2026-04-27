@@ -452,11 +452,12 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                     notes: `RPE: ${rpe}. ${notes}`
                 }));
 
-                const { error: logError } = await (supabase as any)
-                    .from('workout_logs')
-                    .insert(logsToInsert);
-
-                if (logError) throw logError;
+                // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+                // Tabela `workout_logs` não existe (audit 2026-04-25).
+                // const { error: logError } = await (supabase as any)
+                //     .from('workout_logs')
+                //     .insert(logsToInsert);
+                // if (logError) throw logError;
             }
 
             toast({ title: 'Treino concluído com sucesso!' });

@@ -184,7 +184,7 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
                                     <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma atualização enviada ainda.</p>
                                 ) : (
                                     messages.map((msg) => {
-                                        const isAdmin = msg.sender?.role === 'BEEGYM_ADMIN';
+                                        const isAdmin = msg.sender?.role === 'SUPER_ADMIN';
                                         return (
                                             <div key={msg.id} className={cn(
                                                 "flex flex-col space-y-2 max-w-[85%]",

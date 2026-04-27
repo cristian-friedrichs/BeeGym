@@ -186,44 +186,37 @@ export function SchedulingStep() {
       }
 
       // 1. Create student in Supabase
+      // NOTE: address/cpf/scheduling_mode columns don't exist on students table.
+      // They were referencing a schema version that never landed. Removed to
+      // prevent silent INSERT failure. If needed, add them via migration first.
       const { data: student, error: studentError } = await (supabase as any)
         .from('students')
         .insert({
           full_name: formData.name,
           email: formData.email,
           phone: formData.phone,
-          cpf: formData.cpf,
           birth_date: formData.birthDate ? format(formData.birthDate, 'yyyy-MM-dd') : null,
-          address_street: formData.address.street,
-          address_number: formData.address.number,
-          address_complement: formData.address.complement,
-          address_neighborhood: formData.address.neighborhood,
-          address_city: formData.address.city,
-          address_state: formData.address.state,
-          address_zip: formData.address.zip,
           organization_id: userData.organization_id,
-          primary_unit_id: formData.primaryUnitId,
+          unit_id: formData.primaryUnitId,
           plan_id: formData.plan.planId,
           status: 'ACTIVE',
-          credits_remaining: planType === 'PACKAGE' ? totalCredits : null,
-          scheduling_mode: schedulingMode.toUpperCase(),
+          credits_balance: planType === 'PACKAGE' ? totalCredits : null,
         })
         .select()
         .single();
 
       if (studentError) throw studentError;
 
-      // 2. Create subscription record
+      // 2. Create student plan history entry (replaces non-existent 'subscriptions' table)
       const { error: subscriptionError } = await (supabase as any)
-        .from('subscriptions')
+        .from('student_plan_history')
         .insert({
           student_id: student.id,
           plan_id: formData.plan.planId,
-          organization_id: userData.organization_id,
-          due_date: format(formData.plan.dueDate, 'yyyy-MM-dd'),
           discount_type: formData.plan.discount.type,
           discount_value: formData.plan.discount.value,
-          status: 'ACTIVE',
+          started_at: new Date().toISOString(),
+          expiration_date: format(formData.plan.dueDate, 'yyyy-MM-dd'),
         });
 
       if (subscriptionError) throw subscriptionError;

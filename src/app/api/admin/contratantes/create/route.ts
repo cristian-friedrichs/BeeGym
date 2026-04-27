@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
                 address_neighborhood: addressNeighborhood,
                 address_city: addressCity,
                 address_state: addressState,
-                subscription_status: isTeste ? 'teste' : 'active',
+                subscription_status: isTeste ? 'TRIAL' : 'ACTIVE',
                 onboarding_completed: true,
             })
             .select().single();
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
                 full_name: fullName,
                 email,
                 phone,
-                role: 'owner',
+                role: 'OWNER',
                 status: 'ACTIVE'
             });
 

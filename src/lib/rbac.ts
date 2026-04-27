@@ -24,7 +24,7 @@ export async function getUserPermissions(): Promise<Permissions | null> {
     // Se tem role customizado, buscar permissões da tabela roles
     if (profile.role_id) {
         const { data: customRole } = await supabase
-            .from('roles')
+            .from('app_roles')
             .select('permissions')
             .eq('id', profile.role_id)
             .single();
@@ -69,9 +69,9 @@ export async function requirePermission(
  */
 function getDefaultPermissionsForRole(role: string): Permissions {
     switch (role?.toUpperCase()) {
+        case 'SUPER_ADMIN':
         case 'OWNER':
         case 'ADMIN':
-        case 'BEEGYM_ADMIN':
             return FULL_PERMISSIONS;
 
         case 'MANAGER':

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { isSuperAdmin } from '@/lib/auth/role-checks';
 
 export async function getAuthenticatedUser(request: NextRequest) {
     const supabase = await createClient();
@@ -28,9 +29,8 @@ export async function requireAdmin(request: NextRequest): Promise<{ error: NextR
         .eq('id', user.id)
         .single();
 
-    const userRole = (profile?.role || '').toUpperCase().trim();
-    const isMasterEmail = user.email?.toLowerCase() === 'cristian_friedrichs@live.com';
-    const isAdminUser = userRole === 'BEEGYM_ADMIN' || isMasterEmail;
+    const userRole = (profile?.role || '').trim();
+    const isAdminUser = isSuperAdmin(userRole);
 
     if (!isAdminUser) {
         return { error: NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 }) };

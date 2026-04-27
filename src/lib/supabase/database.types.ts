@@ -2289,7 +2289,7 @@ export type Database = {
       PlanScheduleType: "FIXED" | "FLEXIBLE" | "OPEN"
       PlanStatus: "ACTIVE" | "PAUSED" | "ENDED"
       StudentStatus: "ACTIVE" | "INACTIVE" | "CANCELED"
-      UserRole: "OWNER" | "ADMIN" | "MANAGER" | "INSTRUCTOR" | "STAFF"
+      UserRole: "SUPER_ADMIN" | "OWNER" | "ADMIN" | "INSTRUCTOR" | "STAFF"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2432,7 +2432,7 @@ export const Constants = {
       PlanScheduleType: ["FIXED", "FLEXIBLE", "OPEN"],
       PlanStatus: ["ACTIVE", "PAUSED", "ENDED"],
       StudentStatus: ["ACTIVE", "INACTIVE", "CANCELED"],
-      UserRole: ["OWNER", "ADMIN", "MANAGER", "INSTRUCTOR", "STAFF"],
+      UserRole: ["SUPER_ADMIN", "OWNER", "ADMIN", "INSTRUCTOR", "STAFF"],
     },
   },
 } as const

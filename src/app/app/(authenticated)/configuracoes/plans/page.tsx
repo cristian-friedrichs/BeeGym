@@ -3,6 +3,7 @@ import { PlanList } from '@/components/configuracoes/plans/plan-list';
 import { redirect } from 'next/navigation';
 import { getServerPlan } from '@/lib/server-plan';
 import { SectionHeader } from '@/components/ui/section-header';
+import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default async function PlansPage() {
     const supabase = await createClient();
@@ -36,11 +37,7 @@ export default async function PlansPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
-        profile.role === 'ADMIN' ||
-        profile.role === 'BEEGYM_ADMIN';
-
-    if (!isMasterAdmin) {
+    if (!isOrgAdmin(profile.role)) {
         redirect('/app/configuracoes');
     }
 

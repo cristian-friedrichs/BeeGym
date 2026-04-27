@@ -82,7 +82,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             address_state: data.addressState || null,
             address_zip: data.hasPhysicalLocation ? data.addressZip : null,
             has_physical_location: data.hasPhysicalLocation,
-            subscription_status: 'pending',
+            subscription_status: 'PENDING',
             onboarding_completed: false,
             updated_at: new Date().toISOString(),
         })
@@ -103,7 +103,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
             avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             organization_id: orgData.id,
-            status: 'active',
+            status: 'ACTIVE',
             role: 'OWNER',
             is_instructor: true,
         })
@@ -135,7 +135,7 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
         {
             app_metadata: {
                 organization_id: orgData.id,
-                status: 'active'
+                status: 'ACTIVE'
             }
         }
     )
@@ -166,8 +166,8 @@ export async function completeOnboardingAction(data: CompleteOnboardingData) {
                 saas_plan_id: resolvedPlanId ?? null,
                 plan_paid_id: resolvedPlanId ?? null,
                 plan_tier: planData?.tier || null,
-                status: 'pending',
-                metodo: 'pending',
+                status: 'PENDING',
+                metodo: 'PENDING',
                 valor_mensal: planData?.price ?? 0,
                 promo_price: planData?.promo_price ?? null,
                 promo_months_remaining: planData?.promo_months ?? 0,

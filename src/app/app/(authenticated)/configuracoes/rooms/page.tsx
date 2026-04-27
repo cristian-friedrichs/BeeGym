@@ -3,6 +3,7 @@ import { RoomList } from '@/components/configuracoes/rooms/room-list';
 import { SectionHeader } from '@/components/ui/section-header';
 import { redirect } from 'next/navigation';
 import { getServerPlan } from '@/lib/server-plan';
+import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default async function RoomsPage() {
     const supabase = await createClient();
@@ -16,7 +17,7 @@ export default async function RoomsPage() {
     // 2. Organization Check
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('organization_id')
+        .select('organization_id, role')
         .eq('id', user.id)
         .single();
 
@@ -27,11 +28,9 @@ export default async function RoomsPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
-        (profile as any).role === 'ADMIN' ||
-        (profile as any).role === 'BEEGYM_ADMIN';
+    const canManage = isOrgAdmin((profile as any).role);
 
-    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('salas'))) {
+    if (!canManage && (!isActive || !plan.allowedFeatures.includes('salas'))) {
         redirect('/app/configuracoes');
     }
 

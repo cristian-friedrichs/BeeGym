@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth/AuthContext'
 import { PlanFeature, BEEGYM_PLANS, BeeGymPlan, getPlanById } from '@/config/plans'
 import { MODULE_TO_MARKETING } from '@/lib/marketing/plan-utils'
+import { isSuperAdmin } from '@/lib/auth/role-checks'
 
 const ACTIVE_STATUSES = [
     'active', 'trial'
@@ -113,15 +114,9 @@ export function useSubscription() {
     const plan: BeeGymPlan = useMemo(() => getPlanById(planId), [planId])
 
     const isMasterAdmin = useMemo(() => {
-        const masterEmail = 'cristian_friedrichs@live.com'
-        const userEmail = (user?.email || profile?.email || '')?.toLowerCase();
-        const role = (profile?.role as string || '').toUpperCase();
-        
-        // 🚨 CRITICAL: Only the developer email is a TRUE Master Admin
-        // Regular owners/admins are subject to plan limits
-        return userEmail === masterEmail ||
-            role === 'BEEGYM_ADMIN'
-    }, [profile, user])
+        // SUPER_ADMIN bypasses plan limits entirely (BeeGym staff)
+        return isSuperAdmin(profile?.role as string | undefined)
+    }, [profile])
 
     const isActive = useMemo(() => {
         if (isMasterAdmin) return true

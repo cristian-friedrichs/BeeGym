@@ -9,10 +9,10 @@ interface UserProfile {
     id: string
     full_name: string | null
     email: string | null
-    role: 'ADMIN' | 'INSTRUCTOR' | 'MANAGER' | 'STUDENT'
+    role: 'SUPER_ADMIN' | 'OWNER' | 'ADMIN' | 'INSTRUCTOR' | 'STAFF'
     organization_id: string
     avatar_url: string | null
-    status: 'active' | 'pending'
+    status: 'active' | 'pending' | 'trial' | 'past_due' | 'canceled'
 }
 
 interface AuthContextType {

@@ -55,20 +55,23 @@ export function WorkoutExecutionSheet({ workout, isOpen, onClose, onSuccess }: W
         setLoading(true);
         try {
             // 1. Salvar os Exercícios
-            const validExercises = executionList.filter(e => e.name.trim() !== '');
-            if (validExercises.length > 0) {
-                const payloads = validExercises.map(e => ({
-                    workout_id: workout.id,
-                    exercise_id: e.exercise_id, // Store ID if available
-                    exercise_name: e.name,
-                    sets: e.sets,
-                    reps: e.reps,
-                    weight: e.weight,
-                    time_minutes: e.time
-                }));
-                const { error: exError } = await (supabase as any).from('workout_executions').insert(payloads);
-                if (exError) throw exError;
-            }
+            // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+            // A tabela `workout_executions` não existe no schema. Bloco desabilitado para
+            // evitar erro silencioso (audit 2026-04-25). Restaurar quando schema decidido.
+            // const validExercises = executionList.filter(e => e.name.trim() !== '');
+            // if (validExercises.length > 0) {
+            //     const payloads = validExercises.map(e => ({
+            //         workout_id: workout.id,
+            //         exercise_id: e.exercise_id,
+            //         exercise_name: e.name,
+            //         sets: e.sets,
+            //         reps: e.reps,
+            //         weight: e.weight,
+            //         time_minutes: e.time
+            //     }));
+            //     const { error: exError } = await (supabase as any).from('workout_executions').insert(payloads);
+            //     if (exError) throw exError;
+            // }
 
             // 2. Atualizar o Treino (Status e Notas)
             const { error: wkError } = await (supabase as any).from('workouts').update({

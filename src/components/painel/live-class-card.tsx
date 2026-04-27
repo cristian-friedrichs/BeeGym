@@ -173,14 +173,17 @@ export function LiveClassCard() {
         setCheckingInIds(prev => new Set(prev).add(attendanceLogId));
 
         try {
-            const { error } = await (supabase as any)
-                .from('attendance_logs')
-                .update({
-                    status: 'PRESENT',
-                    confirmed_by_user: 'TRUE'
-                })
-                .eq('id', attendanceLogId);
-
+            // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+            // Tabela `attendance_logs` não existe (audit 2026-04-25).
+            // const { error } = await (supabase as any)
+            //     .from('attendance_logs')
+            //     .update({
+            //         status: 'PRESENT',
+            //         confirmed_by_user: 'TRUE'
+            //     })
+            //     .eq('id', attendanceLogId);
+            // if (error) throw error;
+            const error: any = null;
             if (error) throw error;
 
             // Optimistic UI update

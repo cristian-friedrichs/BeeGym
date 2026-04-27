@@ -3,6 +3,7 @@ import { TeamList } from '@/components/configuracoes/team/team-list';
 import { redirect } from 'next/navigation';
 import { getServerPlan } from '@/lib/server-plan';
 import { SectionHeader } from '@/components/ui/section-header';
+import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default async function TeamPage() {
     const supabase = await createClient();
@@ -27,11 +28,9 @@ export default async function TeamPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
-    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
-        (profile as any).role === 'ADMIN' ||
-        (profile as any).role === 'BEEGYM_ADMIN';
+    const canManage = isOrgAdmin((profile as any).role);
 
-    if (!isMasterAdmin && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
+    if (!canManage && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
         redirect('/app/configuracoes');
     }
 

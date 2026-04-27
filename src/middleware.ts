@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/lib/env-config'
+import { isSuperAdmin } from '@/lib/auth/role-checks'
 
 export async function middleware(request: NextRequest) {
     let response = NextResponse.next({
@@ -37,10 +38,11 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // 🔒 Verificar sessão
+    // 🔒 Verificar usuário (getUser revalida com Auth server, ao contrário de getSession)
     const {
-        data: { session },
-    } = await supabase.auth.getSession()
+        data: { user },
+    } = await supabase.auth.getUser()
+    const session = user ? { user } : null
 
     const url = request.nextUrl.clone()
 
@@ -106,10 +108,9 @@ export async function middleware(request: NextRequest) {
         org = orgData
     }
 
-    // 👑 SEGREGAÇÃO DE SISTEMAS: ADMIN VS SAAS
-    const isMasterEmail = session.user.email?.toLowerCase() === 'cristian_friedrichs@live.com'
-    const userRole = (profile?.role || '').toUpperCase().trim();
-    const isAdminUser = userRole === 'BEEGYM_ADMIN' || isMasterEmail;
+    // 👑 SEGREGAÇÃO DE SISTEMAS: SUPER_ADMIN (BeeGym) VS SAAS (orgs)
+    const userRole = (profile?.role || '').trim();
+    const isAdminUser = isSuperAdmin(userRole);
 
     // LÓGICA PARA ADMINS
     if (isAdminUser) {

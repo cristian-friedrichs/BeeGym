@@ -40,7 +40,7 @@ export const SupabaseContratanteRepository = {
         const { error } = await supabaseAdmin
             .from('organizations')
             .update({
-                subscription_status: status.toLowerCase(),
+                subscription_status: status.toUpperCase(),
                 updated_at: new Date().toISOString()
             })
             .eq('id', id);
@@ -61,7 +61,7 @@ export const SupabaseContratanteRepository = {
         const { error: orgError } = await supabaseAdmin
             .from('organizations')
             .update({
-                subscription_status: 'active',
+                subscription_status: 'ACTIVE',
                 onboarding_completed: true,
                 updated_at: new Date().toISOString()
             })
@@ -74,7 +74,7 @@ export const SupabaseContratanteRepository = {
         // 2. Ativar todos os profiles associados
         const { error: profError } = await supabaseAdmin
             .from('profiles')
-            .update({ status: 'active' })
+            .update({ status: 'ACTIVE' })
             .eq('organization_id', organizationId);
 
         if (profError) {

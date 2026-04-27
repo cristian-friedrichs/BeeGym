@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { isSuperAdmin } from '@/lib/auth/role-checks';
 
 /**
  * Updates ONLY the financial fields of a SaaS plan.
@@ -26,11 +27,7 @@ export async function updateSaasPlanPricingAction(planId: string, data: {
         .eq('id', user.id)
         .single();
 
-    const isMasterAdmin = user.email?.toLowerCase() === 'cristian_friedrichs@live.com' ||
-        (profile as any)?.role === 'BEEGYM_ADMIN' ||
-        (profile as any)?.role === 'ADMIN';
-
-    if (!isMasterAdmin) {
+    if (!isSuperAdmin((profile as any)?.role)) {
         return { success: false, error: 'Sem permissão para alterar planos SaaS' };
     }
 

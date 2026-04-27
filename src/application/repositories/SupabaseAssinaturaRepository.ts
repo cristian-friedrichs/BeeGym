@@ -86,7 +86,7 @@ export const SupabaseAssinaturaRepository = {
         const { data: sub } = await supabaseAdmin.from('saas_subscriptions').select('organization_id').eq('id', id).single();
         if (sub?.organization_id) {
             await supabaseAdmin.from('organizations').update({
-                subscription_status: status.toLowerCase(),
+                subscription_status: status.toUpperCase(),
                 updated_at: new Date().toISOString()
             }).eq('id', sub.organization_id);
         }
@@ -99,7 +99,7 @@ export const SupabaseAssinaturaRepository = {
             .from('saas_subscriptions')
             .update({
                 proximo_vencimento: proximoVencimento.toISOString(),
-                status: 'active',
+                status: 'ACTIVE',
                 updated_at: new Date().toISOString()
             })
             .eq('id', id);

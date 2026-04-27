@@ -21,6 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { NovoTicketModal } from '@/components/app/configuracoes/NovoTicketModal';
 import { TicketDetailsSheet } from '@/components/app/configuracoes/TicketDetailsSheet';
 import { cn } from '@/lib/utils';
+import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default function SupportPage() {
     const [tickets, setTickets] = useState<any[]>([]);
@@ -59,8 +60,6 @@ export default function SupportPage() {
             console.log('SupportPage: Authenticated as:', user.email);
             setLoadingMessage('Carregando perfil e permissões...');
 
-            const isMasterAdmin = user.email === 'cristian_friedrichs@live.com';
-
             // Query profile
             const { data: profile, error: profileError } = await (supabase as any)
                 .from('profiles')
@@ -76,8 +75,8 @@ export default function SupportPage() {
             const role = (profile as any)?.role || null;
             setUserRole(role);
 
-            const hasAccess = role === 'OWNER' || role === 'BEEGYM_ADMIN' || role === 'ADMIN' || isMasterAdmin;
-            console.log('SupportPage: Access check:', { role, isMasterAdmin, hasAccess });
+            const hasAccess = isOrgAdmin(role);
+            console.log('SupportPage: Access check:', { role, hasAccess });
 
             if (!hasAccess) {
                 console.warn('SupportPage: Restricted access for role:', role);
@@ -156,7 +155,7 @@ export default function SupportPage() {
         );
     }
 
-    if (userRole !== 'OWNER' && userRole !== 'BEEGYM_ADMIN' && userRole !== 'ADMIN') {
+    if (!isOrgAdmin(userRole)) {
         return (
             <Card className="rounded-[2.5rem] border-dashed border-2">
                 <CardContent className="pt-12 flex flex-col items-center justify-center text-center space-y-4">

@@ -102,7 +102,9 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
                         weight: e.weight
                     }));
                 if (executionPayload.length > 0) {
-                    await (supabase as any).from('workout_executions').insert(executionPayload);
+                    // TODO: Aguardando definição de design do BD para execução de treinos/presença.
+                    // Tabela `workout_executions` não existe (audit 2026-04-25).
+                    // await (supabase as any).from('workout_executions').insert(executionPayload);
                 }
             }
 

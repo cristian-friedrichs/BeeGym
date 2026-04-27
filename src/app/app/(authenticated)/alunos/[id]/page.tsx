@@ -72,11 +72,11 @@ export default function StudentDetailsPage() {
 
             // 2.1 Fetch Unit (if exists)
             let unitData = null;
-            if (student.primary_unit_id) {
+            if (student.unit_id) {
                 const { data: uData } = await supabase
                     .from('units')
                     .select('name')
-                    .eq('id', student.primary_unit_id)
+                    .eq('id', student.unit_id)
                     .single();
                 if (uData) unitData = (uData as any).name;
             }
