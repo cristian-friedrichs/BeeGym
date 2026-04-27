@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
+import { SUB_STATUS, CHURN_STATUSES } from '@/lib/admin/subscription-status';
 
 export type ReportType =
     | 'receita_por_plano'
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
                         status,
                         saas_plans!saas_plan_id ( name, tier )
                     `)
-                    .in('status', ['ATIVO', 'TRIAL']);
+                    .in('status', [SUB_STATUS.ACTIVE, SUB_STATUS.TRIAL]);
 
                 if (error) throw error;
 
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
                         organizations ( name, email, address_city, address_state ),
                         saas_plans!saas_plan_id ( tier )
                     `)
-                    .in('status', ['ATIVO', 'TRIAL']);
+                    .in('status', [SUB_STATUS.ACTIVE, SUB_STATUS.TRIAL]);
 
                 if (de) query = query.gte('created_at', de);
                 if (ate) query = query.lte('created_at', ate);
@@ -125,6 +126,7 @@ export async function GET(request: NextRequest) {
             }
 
             case 'churn_mensal': {
+                // PAST_DUE = inadimplente, CANCELED = cancelado
                 const { data, error } = await supabase
                     .from('saas_subscriptions')
                     .select(`
@@ -134,16 +136,21 @@ export async function GET(request: NextRequest) {
                         organizations ( name ),
                         saas_plans!saas_plan_id ( tier )
                     `)
-                    .in('status', ['INATIVO', 'INADIMPLENTE']);
+                    .in('status', [SUB_STATUS.CANCELED, SUB_STATUS.PAST_DUE]);
 
                 if (error) throw error;
+
+                const statusLabel: Record<string, string> = {
+                    [SUB_STATUS.CANCELED]: 'Cancelado',
+                    [SUB_STATUS.PAST_DUE]: 'Inadimplente',
+                };
 
                 const rows = (data as any[]).map(s => [
                     s.organizations?.name || '-',
                     s.saas_plans?.tier || '-',
-                    s.status,
+                    statusLabel[s.status] || s.status,
                     Number(s.valor_mensal).toFixed(2),
-                    new Date(s.updated_at).toLocaleDateString('pt-BR'),
+                    s.updated_at ? new Date(s.updated_at).toLocaleDateString('pt-BR') : '-',
                 ]);
 
                 return NextResponse.json({
@@ -160,7 +167,7 @@ export async function GET(request: NextRequest) {
                         organizations ( address_city, address_state ),
                         saas_plans!saas_plan_id ( tier )
                     `)
-                    .in('status', ['ATIVO', 'TRIAL']);
+                    .in('status', [SUB_STATUS.ACTIVE, SUB_STATUS.TRIAL]);
 
                 if (error) throw error;
 

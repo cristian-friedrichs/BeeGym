@@ -47,9 +47,10 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
         const res = await fetch(`/api/admin/contratantes/${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action }),
         });
         const data = await res.json();
-        toast({ title: data.message });
+        toast({ title: data.message || (data.error ? `Erro: ${data.error}` : 'Ação executada') });
         load();
     };
 
@@ -216,7 +217,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                 {/* Footer Actions */}
                 {detail && (
                     <div className="p-4 border-t flex flex-wrap gap-2">
-                        {detail.assinatura.status === 'ATIVA' && (
+                        {(detail.assinatura.status === 'ACTIVE' || detail.assinatura.status === 'TRIAL') && (
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="outline" size="sm" className="h-10 px-4 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 font-bold gap-2 transition-all">
@@ -260,7 +261,7 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                 </AlertDialogContent>
                             </AlertDialog>
                         )}
-                        {detail.assinatura.status === 'SUSPENSA' && (
+                        {detail.assinatura.status === 'PAST_DUE' && (
                             <Button
                                 size="sm"
                                 className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-2 shadow-lg shadow-emerald-500/20 transition-all"

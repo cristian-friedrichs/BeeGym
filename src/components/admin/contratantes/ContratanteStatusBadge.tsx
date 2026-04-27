@@ -1,49 +1,38 @@
 import { cn } from '@/lib/utils';
-import { Clock, AlertTriangle, XCircle, CheckCircle, Ban } from 'lucide-react';
+import { Clock, AlertTriangle, XCircle, CheckCircle, Ban, Timer } from 'lucide-react';
 
-type Status = 'PENDENTE' | 'AGUARDANDO_PAGAMENTO' | 'TRIAL' | 'ATIVO' | 'INADIMPLENTE' | 'INATIVO' | 'TESTE' | 'DEMO';
-
-const statusConfig: Record<Status, { label: string; className: string; Icon: any }> = {
-    PENDENTE: {
-        label: 'Pendente',
-        className: 'bg-orange-50 text-orange-600 border-orange-200',
-        Icon: Clock,
-    },
-    AGUARDANDO_PAGAMENTO: {
-        label: 'Aguardando Pgto',
-        className: 'bg-amber-50 text-amber-700 border-amber-200',
-        Icon: Clock,
-    },
-    TRIAL: {
-        label: 'Trial',
-        className: 'bg-blue-50 text-blue-600 border-blue-200',
-        Icon: Clock,
-    },
-    ATIVO: {
+// Maps the exact status values written by the Kiwify webhook + isInTrial logic
+const statusConfig: Record<string, { label: string; className: string; Icon: any }> = {
+    // Active paying subscriber
+    ACTIVE: {
         label: 'Ativo',
         className: 'bg-green-50 text-green-700 border-green-200',
         Icon: CheckCircle,
     },
-    TESTE: {
-        label: 'Teste',
-        className: 'bg-purple-50 text-purple-600 border-purple-200',
-        Icon: CheckCircle,
+    // Within 7-day trial window (displayed by contratantes/route.ts)
+    TRIAL: {
+        label: 'Trial',
+        className: 'bg-blue-50 text-blue-600 border-blue-200',
+        Icon: Timer,
     },
-    DEMO: {
-        label: 'Demo',
-        className: 'bg-cyan-50 text-cyan-600 border-cyan-200',
-        Icon: CheckCircle,
+    // Payment pending / waiting
+    PENDING: {
+        label: 'Pendente',
+        className: 'bg-orange-50 text-orange-600 border-orange-200',
+        Icon: Clock,
     },
-    INADIMPLENTE: {
+    // Overdue / failed payment
+    PAST_DUE: {
         label: 'Inadimplente',
         className: 'bg-red-50 text-red-700 border-red-200',
         Icon: AlertTriangle,
     },
-    INATIVO: {
-        label: 'Inativo',
+    // Cancelled subscription
+    CANCELED: {
+        label: 'Cancelado',
         className: 'bg-slate-800 text-white border-slate-700',
         Icon: Ban,
-    }
+    },
 };
 
 interface ContratanteStatusBadgeProps {
@@ -51,10 +40,10 @@ interface ContratanteStatusBadgeProps {
 }
 
 export function ContratanteStatusBadge({ status }: ContratanteStatusBadgeProps) {
-    const config = statusConfig[status as Status] ?? {
-        label: status,
+    const config = statusConfig[status] ?? {
+        label: status || 'Desconhecido',
         className: 'bg-slate-50 text-slate-500 border-slate-200',
-        Icon: null,
+        Icon: XCircle,
     };
     const { label, className, Icon } = config;
 

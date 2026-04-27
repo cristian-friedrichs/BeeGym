@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { requireAdmin } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
+import { SUB_STATUS, isInTrial } from '@/lib/admin/subscription-status';
 
 export async function GET(request: NextRequest) {
     const rateLimitResponse = await withRateLimit(request, 30);
@@ -15,14 +16,14 @@ export async function GET(request: NextRequest) {
         const page = Number(searchParams.get('page') ?? 1);
         const limit = Number(searchParams.get('limit') ?? 20);
         const search = searchParams.get('search')?.toLowerCase() ?? '';
-        const status = searchParams.get('status') ?? 'TODOS';
-        // Note: The new saas_plans might not be fully linked.
+        const statusFilter = searchParams.get('status') ?? 'TODOS';
         const planoStr = searchParams.get('plano') ?? 'TODOS';
 
         const supabase = supabaseAdmin;
 
-        // Faz a query baseada em organizations para trazer todos os registrados!
-        let query = supabase
+        // Fetch ALL orgs with their latest subscription (status filtering done in JS
+        // so we can apply the 7-day Trial window logic correctly)
+        const { data, count, error } = await supabase
             .from('organizations')
             .select(`
                 id,
@@ -35,42 +36,41 @@ export async function GET(request: NextRequest) {
                 created_at,
                 subscription_status,
                 saas_subscriptions (
+                    id,
                     status,
                     metodo,
                     valor_mensal,
+                    created_at,
                     saas_plans!saas_plan_id ( name, tier )
                 )
-            `, { count: 'exact' });
-
-        if (status !== 'TODOS') {
-            query = query.eq('subscription_status', status.toLowerCase()); // organizations use basic strings or we map
-        }
-
-        const from = (page - 1) * limit;
-        const to = from + limit - 1;
-        query = query.range(from, to).order('created_at', { ascending: false });
-
-        const { data, count, error } = await query;
+            `, { count: 'exact' })
+            .order('created_at', { ascending: false });
 
         if (error) throw error;
 
         // Count active students per organization
-        const { data: activeStudents, error: studentsErr } = await supabase
+        const { data: activeStudents } = await supabase
             .from('students')
             .select('organization_id')
             .in('status', ['ACTIVE', 'TRIALING']);
 
-        const studentCountMap = (activeStudents || []).reduce((acc: any, s: any) => {
-            if (s.organization_id) {
-                acc[s.organization_id] = (acc[s.organization_id] || 0) + 1;
-            }
+        const studentCountMap = (activeStudents || []).reduce((acc: Record<string, number>, s: any) => {
+            if (s.organization_id) acc[s.organization_id] = (acc[s.organization_id] || 0) + 1;
             return acc;
         }, {});
 
-        let formatedData = (data as any[]).map(org => {
-            // Se houver uma saas_subscription real (V2), nós pegamos. Se não, pegamos o base da org.
-            // Para garantir fallback:
-            const sub = org.saas_subscriptions && org.saas_subscriptions.length > 0 ? org.saas_subscriptions[0] : null;
+        let formattedData = (data as any[]).map(org => {
+            // Use the most recent subscription (ordered by created_at desc in DB)
+            const sub = Array.isArray(org.saas_subscriptions) && org.saas_subscriptions.length > 0
+                ? org.saas_subscriptions[0]
+                : null;
+
+            // Derive effective status: prefer saas_subscriptions, fall back to org field
+            const rawStatus: string = sub?.status || org.subscription_status || SUB_STATUS.PENDING;
+
+            // Apply 7-day trial window: any ACTIVE/PENDING within 7 days is displayed as TRIAL
+            const subCreatedAt: string = sub?.created_at || org.created_at;
+            const effectiveStatus = isInTrial(rawStatus, subCreatedAt) ? SUB_STATUS.TRIAL : rawStatus;
 
             return {
                 id: org.id,
@@ -79,11 +79,10 @@ export async function GET(request: NextRequest) {
                 telefone: org.contact_phone || '-',
                 cidade: org.address_city || '-',
                 uf: org.address_state || '-',
-                // Se não tem saas_subscription, mostra 'Sem Plano'
                 plano: sub?.saas_plans?.name || sub?.saas_plans?.tier || 'Sem Plano',
+                plano_tier: sub?.saas_plans?.tier || null,
                 metodo: sub?.metodo || '-',
-                // Utiliza o status da assinatura se existir, caso não usa da base
-                status: sub?.status || org.subscription_status?.toUpperCase() || 'PENDENTE',
+                status: effectiveStatus,
                 valor_mensal: sub?.valor_mensal || 0,
                 desde: org.created_at,
                 cpf_cnpj: org.cpf_cnpj || '***.***.***-**',
@@ -91,18 +90,32 @@ export async function GET(request: NextRequest) {
             };
         });
 
+        // Apply in-memory filters (search + status + plano)
         if (search) {
-            formatedData = formatedData.filter(c => c.nome.toLowerCase().includes(search) || c.email.toLowerCase().includes(search));
-        }
-        if (planoStr !== 'TODOS') {
-            // In memory filter
-            formatedData = formatedData.filter(c => c.plano === planoStr);
+            formattedData = formattedData.filter(c =>
+                c.nome.toLowerCase().includes(search) ||
+                c.email.toLowerCase().includes(search) ||
+                (c.cpf_cnpj && c.cpf_cnpj.includes(search))
+            );
         }
 
+        if (statusFilter !== 'TODOS') {
+            formattedData = formattedData.filter(c => c.status === statusFilter);
+        }
+
+        if (planoStr !== 'TODOS') {
+            formattedData = formattedData.filter(c => c.plano_tier === planoStr || c.plano === planoStr);
+        }
+
+        // Manual pagination after in-memory filter
+        const totalFiltered = formattedData.length;
+        const from = (page - 1) * limit;
+        const paginated = formattedData.slice(from, from + limit);
+
         return NextResponse.json({
-            data: formatedData,
-            total: count || formatedData.length,
-            page
+            data: paginated,
+            total: totalFiltered,
+            page,
         });
 
     } catch (err: any) {
@@ -110,5 +123,3 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Erro ao buscar clientes' }, { status: 500 });
     }
 }
-
-

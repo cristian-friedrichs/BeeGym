@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin';
 import { BEEGYM_PLANS } from '@/config/plans';
 import { requireAdmin, logSecurityEvent } from '@/lib/auth-utils';
 import { withRateLimit } from '@/lib/rate-limit/limiter';
+import { SUB_STATUS } from '@/lib/admin/subscription-status';
 
 export async function GET(request: NextRequest) {
     const rateLimitResponse = await withRateLimit(request, 30);
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
         const { data: subs, error: subsError } = await supabase
             .from('saas_subscriptions')
             .select('saas_plan_id, status')
-            .in('status', ['ATIVO', 'TRIAL', 'PENDENTE']);
+            .in('status', [SUB_STATUS.ACTIVE, SUB_STATUS.TRIAL, SUB_STATUS.PENDING]);
 
         if (subsError) throw subsError;
 

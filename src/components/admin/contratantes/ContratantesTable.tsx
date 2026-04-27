@@ -25,6 +25,18 @@ const tierBadge: Record<string, string> = {
 const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+function timeAgo(iso: string): string {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    if (days === 0) return 'Hoje';
+    if (days === 1) return 'Ontem';
+    if (days < 30) return `Há ${days} dia${days > 1 ? 's' : ''}`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `Há ${months} mês${months > 1 ? 'es' : ''}`;
+    const years = Math.floor(months / 12);
+    return `Há ${years} ano${years > 1 ? 's' : ''}`;
+}
+
 export function ContratantesTable({ externalOpenNew, onExternalOpenHandled }: { externalOpenNew?: boolean; onExternalOpenHandled?: () => void } = {}) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -99,11 +111,11 @@ export function ContratantesTable({ externalOpenNew, onExternalOpenHandled }: { 
                         </SelectTrigger>
                         <SelectContent className="rounded-2xl border-slate-100 shadow-2xl p-2">
                             <SelectItem value="TODOS" className="rounded-xl font-bold py-3">Todos os status</SelectItem>
-                            <SelectItem value="PENDENTE" className="rounded-xl font-bold py-3">Pendente</SelectItem>
-                            <SelectItem value="TRIAL" className="rounded-xl font-bold py-3 text-emerald-600">Trial</SelectItem>
-                            <SelectItem value="ATIVO" className="rounded-xl font-bold py-3 text-blue-600">Ativo</SelectItem>
-                            <SelectItem value="INADIMPLENTE" className="rounded-xl font-bold py-3 text-red-600">Inadimplente</SelectItem>
-                            <SelectItem value="INATIVO" className="rounded-xl font-bold py-3 text-slate-400">Inativo</SelectItem>
+                            <SelectItem value="ACTIVE" className="rounded-xl font-bold py-3 text-green-700">Ativo</SelectItem>
+                            <SelectItem value="TRIAL" className="rounded-xl font-bold py-3 text-blue-600">Trial</SelectItem>
+                            <SelectItem value="PENDING" className="rounded-xl font-bold py-3 text-orange-600">Pendente</SelectItem>
+                            <SelectItem value="PAST_DUE" className="rounded-xl font-bold py-3 text-red-600">Inadimplente</SelectItem>
+                            <SelectItem value="CANCELED" className="rounded-xl font-bold py-3 text-slate-500">Cancelado</SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={plano} onValueChange={v => { setPlano(v); setPage(1); }}>
@@ -205,7 +217,7 @@ export function ContratantesTable({ externalOpenNew, onExternalOpenHandled }: { 
                                 <TableCell>
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-500">{formatDate(c.desde)}</span>
-                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Há 2 meses</span>
+                                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">{timeAgo(c.desde)}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="px-6">
