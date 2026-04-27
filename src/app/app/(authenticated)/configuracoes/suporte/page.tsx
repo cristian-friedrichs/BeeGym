@@ -1,126 +1,87 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
     Plus,
-    Search,
     MessageSquare,
     Clock,
     AlertCircle,
-    CheckCircle2,
     Loader2,
-    LifeBuoy
+    LifeBuoy,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/ui/section-header';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { NovoTicketModal } from '@/components/app/configuracoes/NovoTicketModal';
 import { TicketDetailsSheet } from '@/components/app/configuracoes/TicketDetailsSheet';
-import { cn } from '@/lib/utils';
 import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default function SupportPage() {
+    const supabase = createClient();
     const [tickets, setTickets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState<any>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [loadingMessage, setLoadingMessage] = useState('Iniciando...');
+    const [orgId, setOrgId] = useState<string | null>(null);
 
-    const fetchTickets = async () => {
-        console.log('SupportPage: fetchTickets initiated');
-        setLoading(true);
-        setLoadingMessage('Verificando sua sessão...');
+    const fetchTickets = async (organizationId: string) => {
+        const { data, error } = await (supabase as any)
+            .from('support_tickets')
+            .select('*')
+            .eq('organization_id', organizationId)
+            .order('updated_at', { ascending: false });
 
-        // Safety timeout to prevent indefinite loading state
-        const timeoutId = setTimeout(() => {
-            if (loading) {
-                console.warn('SupportPage: fetchTickets taking too long, forcing load finish');
-                setLoadingMessage('O carregamento está demorando mais que o esperado. Tentando recuperar...');
-            }
-        }, 8000);
-
-        try {
-            // Use the singleton client if possible, or ensure we don't recreate excessively
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-            if (userError || !user) {
-                console.error('SupportPage: Auth error or no user:', userError);
-                setLoadingMessage('Sessão não encontrada ou expirada. Por favor, faça login novamente.');
-                setLoading(false);
-                clearTimeout(timeoutId);
-                return;
-            }
-
-            console.log('SupportPage: Authenticated as:', user.email);
-            setLoadingMessage('Carregando perfil e permissões...');
-
-            // Query profile
-            const { data: profile, error: profileError } = await (supabase as any)
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-
-            if (profileError) {
-                console.error('SupportPage: Profile fetch error:', profileError);
-                // Continue if master admin, otherwise we might have issues
-            }
-
-            const role = (profile as any)?.role || null;
-            setUserRole(role);
-
-            const hasAccess = isOrgAdmin(role);
-            console.log('SupportPage: Access check:', { role, hasAccess });
-
-            if (!hasAccess) {
-                console.warn('SupportPage: Restricted access for role:', role);
-                setLoading(false);
-                clearTimeout(timeoutId);
-                return;
-            }
-
-            setLoadingMessage('Buscando seus tickets...');
-            const { data, error } = await supabase
-                .from('support_tickets')
-                .select('*')
-                .order('updated_at', { ascending: false });
-
-            if (error) {
-                console.error('SupportPage: Database error:', error);
-                throw error;
-            }
-
-            console.log(`SupportPage: Successfully loaded ${data?.length || 0} tickets`);
-            setTickets(data || []);
-        } catch (error: any) {
-            console.error('SupportPage: Critical fetch error:', error);
-            setLoadingMessage(`Erro na conexão: ${error.message || 'Verifique sua internet'}`);
-        } finally {
-            clearTimeout(timeoutId);
-            setLoading(false);
-            console.log('SupportPage: fetchTickets completed');
+        if (error) {
+            console.error('[Suporte] Erro ao buscar tickets:', error.message);
+            return;
         }
+        setTickets(data || []);
     };
 
     useEffect(() => {
-        let isMounted = true;
+        let mounted = true;
 
-        const load = async () => {
-            if (isMounted) await fetchTickets();
-        };
+        async function init() {
+            setLoading(true);
+            try {
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError || !user || !mounted) return;
 
-        load();
+                const { data: profile, error: profileError } = await (supabase as any)
+                    .from('profiles')
+                    .select('role, organization_id')
+                    .eq('id', user.id)
+                    .single();
 
-        return () => {
-            isMounted = false;
-        };
+                if (profileError || !mounted) return;
+
+                setUserRole(profile?.role ?? null);
+
+                if (!isOrgAdmin(profile?.role)) return;
+
+                const organization_id = profile?.organization_id;
+                if (!organization_id) return;
+
+                setOrgId(organization_id);
+                await fetchTickets(organization_id);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        }
+
+        init();
+        return () => { mounted = false; };
     }, []);
+
+    const handleRefresh = () => {
+        if (orgId) fetchTickets(orgId);
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -136,21 +97,17 @@ export default function SupportPage() {
     };
 
     const getPriorityIcon = (priority: string) => {
-        switch (priority) {
-            case 'high':
-                return <AlertCircle className="h-4 w-4 text-red-500" />;
-            case 'medium':
-                return <AlertCircle className="h-4 w-4 text-bee-amber" />;
-            default:
-                return <AlertCircle className="h-4 w-4 text-blue-500" />;
-        }
+        if (priority === 'high') return <AlertCircle className="h-4 w-4 text-red-500" />;
+        if (priority === 'medium') return <AlertCircle className="h-4 w-4 text-bee-amber" />;
+        return <AlertCircle className="h-4 w-4 text-blue-400" />;
     };
+
+    const priorityLabel = (p: string) => p === 'high' ? 'Alta' : p === 'medium' ? 'Média' : 'Baixa';
 
     if (loading) {
         return (
-            <div className="flex flex-col h-96 items-center justify-center gap-4">
+            <div className="flex h-96 items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-bee-amber" />
-                <p className="text-sm text-slate-500 animate-pulse">{loadingMessage}</p>
             </div>
         );
     }
@@ -158,15 +115,14 @@ export default function SupportPage() {
     if (!isOrgAdmin(userRole)) {
         return (
             <Card className="rounded-[2.5rem] border-dashed border-2">
-                <CardContent className="pt-12 flex flex-col items-center justify-center text-center space-y-4">
+                <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center text-center space-y-4">
                     <div className="p-4 bg-slate-50 rounded-full">
                         <LifeBuoy className="h-12 w-12 text-slate-300" />
                     </div>
                     <div className="space-y-2">
                         <h3 className="text-lg font-bold text-deep-midnight">Acesso Restrito</h3>
                         <p className="text-slate-500 max-w-sm">
-                            Sua função atual ({userRole || 'nenhuma'}) não permite gerenciar tickets de suporte.
-                            Apenas proprietários da conta têm este acesso.
+                            Apenas proprietários e administradores da conta podem acessar o suporte.
                         </p>
                     </div>
                 </CardContent>
@@ -178,14 +134,14 @@ export default function SupportPage() {
         <div className="space-y-8 animate-in fade-in duration-500">
             <SectionHeader
                 title="Central de Suporte"
-                subtitle="Acompanhe suas solicitações e histórico de suporte"
+                subtitle="Acompanhe suas solicitações e histórico de atendimento"
                 action={
                     <Button
                         onClick={() => setIsModalOpen(true)}
                         className="bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold rounded-full gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-bee-amber/10 h-11 px-8 uppercase text-xs tracking-widest"
                     >
                         <Plus className="h-4 w-4" />
-                        Novo Suporte
+                        Novo Chamado
                     </Button>
                 }
             />
@@ -198,9 +154,9 @@ export default function SupportPage() {
                                 <MessageSquare className="h-10 w-10 text-bee-amber opacity-60" />
                             </div>
                             <div className="space-y-1">
-                                <p className="text-lg font-bold text-deep-midnight">Nenhum ticket encontrado</p>
+                                <p className="text-lg font-bold text-deep-midnight">Nenhum chamado encontrado</p>
                                 <p className="text-sm text-slate-500 max-w-xs">
-                                    Você ainda não abriu nenhum ticket de suporte. Clique no botão acima para começar.
+                                    Você ainda não abriu nenhum chamado. Clique em "Novo Chamado" para começar.
                                 </p>
                             </div>
                         </CardContent>
@@ -210,38 +166,39 @@ export default function SupportPage() {
                         <Card
                             key={ticket.id}
                             className="rounded-[2rem] group hover:border-bee-amber/30 transition-all cursor-pointer shadow-sm hover:shadow-md border-slate-100"
-                            onClick={() => {
-                                setSelectedTicket(ticket);
-                                setIsSheetOpen(true);
-                            }}
+                            onClick={() => { setSelectedTicket(ticket); setIsSheetOpen(true); }}
                         >
                             <CardContent className="p-6">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="space-y-3 flex-1">
-                                        <div className="flex items-center gap-2">
+                                    <div className="space-y-2 flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
                                             {getStatusBadge(ticket.status)}
-                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">• Ticket #{ticket.id.slice(0, 8)}</span>
+                                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                Ticket #{ticket.id.slice(0, 8)}
+                                            </span>
                                         </div>
-                                        <div className="space-y-1">
-                                            <h3 className="text-lg font-bold text-deep-midnight group-hover:text-bee-amber transition-colors">
+                                        <div className="space-y-0.5">
+                                            <h3 className="text-base font-bold text-deep-midnight group-hover:text-bee-amber transition-colors">
                                                 {ticket.subject}
                                             </h3>
-                                            <p className="text-sm text-slate-500 line-clamp-1">
-                                                {ticket.description}
-                                            </p>
+                                            <p className="text-sm text-slate-500 line-clamp-1">{ticket.description}</p>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-6 text-sm text-slate-400 font-medium whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-5 text-sm text-slate-400 font-medium whitespace-nowrap shrink-0">
+                                        <div className="flex items-center gap-1.5">
                                             {getPriorityIcon(ticket.priority)}
-                                            <span className="capitalize text-xs font-bold text-slate-500">{ticket.priority === 'high' ? 'Alta' : ticket.priority === 'medium' ? 'Média' : 'Baixa'}</span>
+                                            <span className="text-xs font-bold text-slate-500">{priorityLabel(ticket.priority)}</span>
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
                                             <Clock className="h-3 w-3" />
                                             {format(new Date(ticket.created_at), "dd 'de' MMM", { locale: ptBR })}
                                         </div>
-                                        <Button variant="ghost" size="sm" className="rounded-full font-bold uppercase text-[10px] tracking-wider group-hover:bg-bee-amber/10 group-hover:text-bee-amber">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="rounded-full font-bold uppercase text-[10px] tracking-wider group-hover:bg-bee-amber/10 group-hover:text-bee-amber pointer-events-none"
+                                        >
                                             Ver Detalhes
                                         </Button>
                                     </div>
@@ -255,17 +212,14 @@ export default function SupportPage() {
             <NovoTicketModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={fetchTickets}
+                onSuccess={handleRefresh}
             />
 
             <TicketDetailsSheet
                 isOpen={isSheetOpen}
                 ticket={selectedTicket}
-                onClose={() => {
-                    setIsSheetOpen(false);
-                    setSelectedTicket(null);
-                }}
-                onUpdate={fetchTickets}
+                onClose={() => { setIsSheetOpen(false); setSelectedTicket(null); }}
+                onUpdate={handleRefresh}
             />
         </div>
     );
