@@ -12,6 +12,7 @@ import {
     Ticket,
     LifeBuoy,
     Webhook,
+    Banknote,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ const navGroups = [
             { icon: Package, label: 'Planos', href: '/admin/planos' },
             { icon: Ticket, label: 'Ofertas', href: '/admin/ofertas' },
             { icon: LifeBuoy, label: 'Suporte', href: '/admin/suporte' },
+            { icon: Banknote, label: 'Financeiro', href: '/admin/financeiro' },
             { icon: FileBarChart, label: 'Relatórios', href: '/admin/relatorios' },
             { icon: Webhook, label: 'Webhooks', href: '/admin/webhooks' },
         ],

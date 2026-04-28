@@ -8,12 +8,13 @@ import { PlanosChart } from '@/components/admin/dashboard/PlanosChart';
 import { TipoClienteChart } from '@/components/admin/dashboard/TipoClienteChart';
 import { FaixaAlunosChart } from '@/components/admin/dashboard/FaixaAlunosChart';
 import { ClientesMapDynamic } from '@/components/admin/dashboard/ClientesMapDynamic';
-import { DollarSign, Users, AlertTriangle, XCircle } from 'lucide-react';
+import { DollarSign, Users, AlertTriangle, XCircle, TrendingUp } from 'lucide-react';
 import { SectionHeader } from '@/components/ui/section-header';
 
 interface DashboardData {
     kpis: {
         mrr: number;
+        iet: number;
         mrrVariacao: number;
         ativos: number;
         ativosVariacao: number;
@@ -83,15 +84,22 @@ export default function AdminDashboardPage() {
             {/* KPIs */}
             <section className="space-y-4">
                 <SectionHeader title="Visão Geral" subtitle="Performance financeira e de clientes do mês atual" />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <KpiCard
                         title="MRR"
                         value={formatCurrencyK(data.kpis.mrr)}
-                        tooltip={formatCurrency(data.kpis.mrr)}
+                        tooltip={`Receita recorrente (2º ciclo+): ${formatCurrency(data.kpis.mrr)}`}
                         variacao={data.kpis.mrrVariacao}
                         variacaoLabel="vs mês anterior"
                         color="amber"
                         icon={<DollarSign className="h-6 w-6" />}
+                    />
+                    <KpiCard
+                        title="IET"
+                        value={formatCurrencyK(data.kpis.iet)}
+                        tooltip={`Ingresso de Entrada (1º ciclo): ${formatCurrency(data.kpis.iet)}`}
+                        color="amber"
+                        icon={<TrendingUp className="h-6 w-6" />}
                     />
                     <KpiCard
                         title="Assinantes Ativos"

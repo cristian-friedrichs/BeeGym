@@ -54,6 +54,10 @@ export async function GET(request: NextRequest) {
                 organization_id,
                 status,
                 valor_mensal,
+                cobrancas_pagas,
+                promo_price,
+                promo_months_remaining,
+                manual_price_override,
                 created_at,
                 updated_at,
                 saas_plans!saas_plan_id ( name, tier, price )
@@ -65,8 +69,21 @@ export async function GET(request: NextRequest) {
         const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
+        // Helper: effective monthly price (honors manual override, promo price, or valor_mensal)
+        function effectivePrice(s: any): number {
+            if (s.manual_price_override != null) return Number(s.manual_price_override);
+            if (s.promo_price != null && (s.promo_months_remaining ?? 0) > 0) return Number(s.promo_price);
+            return Number(s.valor_mensal ?? 0);
+        }
+
+        // Helper: is this subscription in its first billing cycle (IET)?
+        function isFirstCycle(s: any): boolean {
+            return (s.cobrancas_pagas ?? 0) <= 1;
+        }
+
         // == KPIs ==
-        let currentMRR = 0;
+        let currentMRR = 0;   // Recurring revenue — 2nd cycle onwards, effective price
+        let currentIET = 0;   // Ingresso de Entrada — first cycle, effective price
         let prevMRR = 0;
         let ativos = 0;
         let prevAtivos = 0;
@@ -78,26 +95,23 @@ export async function GET(request: NextRequest) {
             const dateObj = new Date(s.created_at);
             const mKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}`;
             const trial = isInTrial(s.status, s.created_at);
+            const price = effectivePrice(s);
 
-            // ACTIVE + TRIAL count as billable assinantes
             if (s.status === SUB_STATUS.ACTIVE || s.status === SUB_STATUS.TRIAL) {
-                currentMRR += Number(s.valor_mensal);
                 ativos++;
+                if (isFirstCycle(s)) {
+                    currentIET += price;
+                } else {
+                    currentMRR += price;
+                }
                 if (mKey <= prevMonthKey) {
-                    prevMRR += Number(s.valor_mensal);
+                    prevMRR += price;
                     prevAtivos++;
                 }
             }
 
-            // Trial: stored as TRIAL OR within 7-day window and ACTIVE/PENDING
-            if (trial) {
-                emTrial++;
-            }
-
-            // Churn: CANCELED or PAST_DUE
-            if (CHURN_STATUSES.includes(s.status as any)) {
-                churn++;
-            }
+            if (trial) emTrial++;
+            if (CHURN_STATUSES.includes(s.status as any)) churn++;
         });
 
         const mrrVariacao = prevMRR > 0 ? ((currentMRR - prevMRR) / prevMRR) * 100 : (currentMRR > 0 ? 100 : 0);
@@ -105,6 +119,7 @@ export async function GET(request: NextRequest) {
 
         const kpis = {
             mrr: currentMRR,
+            iet: currentIET,
             mrrVariacao: Number(mrrVariacao.toFixed(1)),
             ativos,
             ativosVariacao: Number(ativosVariacao.toFixed(1)),
@@ -141,7 +156,7 @@ export async function GET(request: NextRequest) {
                 const d = new Date(s.created_at);
                 const mKeyInner = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
                 return (s.status === SUB_STATUS.ACTIVE || s.status === SUB_STATUS.TRIAL) && mKeyInner <= m.monthKey;
-            }).reduce((acc, s) => acc + Number(s.valor_mensal), 0);
+            }).reduce((acc, s) => acc + effectivePrice(s), 0);
 
             return { mes: m.label, valor: mrrNoMes };
         });
@@ -153,7 +168,7 @@ export async function GET(request: NextRequest) {
             .forEach(s => {
                 const t = (s as any).saas_plans?.tier || 'N/A';
                 if (!planMap[t]) planMap[t] = { name: t, receita: 0, clientes: 0 };
-                planMap[t].receita += Number(s.valor_mensal);
+                planMap[t].receita += effectivePrice(s);
                 planMap[t].clientes++;
             });
         const planosRateio = Object.values(planMap);
