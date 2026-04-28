@@ -54,7 +54,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             status: sub.status,
             valor_mensal: sub.valor_mensal,
             proximo_vencimento: sub.proximo_vencimento,
-
+            cobrancas_pagas: sub.cobrancas_pagas ?? 0,
+            promo_price: sub.promo_price ?? null,
+            promo_months_remaining: sub.promo_months_remaining ?? 0,
+            manual_price_override: sub.manual_price_override ?? null,
             manual_discount_amount: sub.manual_discount_amount,
             manual_discount_percentage: sub.manual_discount_percentage,
         } : {

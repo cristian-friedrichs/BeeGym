@@ -311,18 +311,21 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <p className="text-[11px] text-slate-400 font-bold ml-1">Cidade e estado são obrigatórios para fins de estatística regional.</p>
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
-                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado (UF) *</Label>
+                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado (UF) <span className="text-red-400">*</span></Label>
                                                 <Select value={formData.addressState} onValueChange={(v) => setFormData(p => ({ ...p, addressState: v, addressCity: '' }))}>
-                                                    <SelectTrigger className="h-11 rounded-2xl border-slate-200 focus:ring-bee-amber/20 focus:border-bee-amber shadow-sm px-5"><SelectValue placeholder="..." /></SelectTrigger>
+                                                    <SelectTrigger className={cn("h-11 rounded-2xl border-slate-200 focus:ring-bee-amber/20 focus:border-bee-amber shadow-sm px-5", !formData.addressState && "border-amber-200")}><SelectValue placeholder="..." /></SelectTrigger>
                                                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">{UF_LIST.map(uf => <SelectItem key={uf} value={uf} className="rounded-lg">{uf}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Cidade *</Label>
-                                                <Input name="addressCity" value={formData.addressCity} onChange={handleChange} placeholder="Ex: São Paulo" className="h-11 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm px-5" />
+                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Cidade <span className="text-red-400">*</span></Label>
+                                                <Input name="addressCity" value={formData.addressCity} onChange={handleChange} placeholder="Ex: São Paulo" className={cn("h-11 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm px-5", !formData.addressCity && "border-amber-200")} />
                                             </div>
+                                        </div>
                                         </div>
                                     )}
                                 </div>
@@ -428,8 +431,16 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                                         toast({ variant: 'destructive', title: 'Senha muito curta', description: 'A senha deve ter pelo menos 6 caracteres.' }); return;
                                     }
                                 }
-                                if (step === 2 && (!formData.businessType || !formData.empresaName || !formData.document)) {
-                                    toast({ variant: 'destructive', title: 'Preencha os campos obrigatórios do negócio' }); return;
+                                if (step === 2) {
+                                    if (!formData.businessType || !formData.empresaName || !formData.document) {
+                                        toast({ variant: 'destructive', title: 'Preencha os campos obrigatórios do negócio' }); return;
+                                    }
+                                    if (!formData.addressCity.trim()) {
+                                        toast({ variant: 'destructive', title: 'Cidade é obrigatória', description: 'Informe a cidade para fins de estatística.' }); return;
+                                    }
+                                    if (!formData.addressState.trim()) {
+                                        toast({ variant: 'destructive', title: 'Estado (UF) é obrigatório', description: 'Informe o estado para fins de estatística.' }); return;
+                                    }
                                 }
                                 setStep(s => s + 1);
                             }}

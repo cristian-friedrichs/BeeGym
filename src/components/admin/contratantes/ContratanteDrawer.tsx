@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { CreditCard, QrCode, CheckCircle, XCircle } from 'lucide-react';
+import { CreditCard, QrCode, CheckCircle, XCircle, TrendingUp, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ContratanteEditDialog } from './ContratanteEditDialog';
 import { ContratanteBillingDialog } from './ContratanteBillingDialog';
@@ -134,6 +134,29 @@ export function ContratanteDrawer({ id, onClose }: ContratanteDrawerProps) {
                                         <ContratanteBillingDialog contratanteId={id as string} assinatura={detail.assinatura} onUpdated={load} />
                                     </div>
                                 </div>
+                                {/* IET / MRR pill indicators */}
+                                {(() => {
+                                    const a = detail.assinatura;
+                                    const effectiveVal = a.manual_price_override != null
+                                        ? Number(a.manual_price_override)
+                                        : (a.promo_price != null && (a.promo_months_remaining ?? 0) > 0)
+                                            ? Number(a.promo_price)
+                                            : Number(a.valor_mensal ?? 0);
+                                    const isIET = (a.cobrancas_pagas ?? 0) <= 1;
+                                    return (
+                                        <div className="flex items-center gap-3 mb-4 relative">
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black border ${isIET ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                                                <TrendingUp className="w-3 h-3" />
+                                                IET {isIET ? formatCurrency(effectiveVal) : 'R$ 0,00'}
+                                            </div>
+                                            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-black border ${!isIET ? 'bg-green-50 border-green-200 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
+                                                <RefreshCw className="w-3 h-3" />
+                                                MRR {!isIET ? formatCurrency(effectiveVal) : 'R$ 0,00'}
+                                            </div>
+                                            <span className="text-[10px] text-slate-400 font-bold">{isIET ? '1º ciclo' : `${a.cobrancas_pagas}º ciclo`}</span>
+                                        </div>
+                                    );
+                                })()}
                                 <dl className="grid grid-cols-2 gap-y-5 gap-x-6 text-sm relative">
                                     <div className="space-y-1">
                                         <dt className="text-slate-400 text-[10px] font-black uppercase tracking-tight">Plano</dt>
