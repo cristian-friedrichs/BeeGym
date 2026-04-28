@@ -30,19 +30,13 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Open the login page by clicking the 'Entrar' link so we can authenticate as teste10@teste.com.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
-        await asyncio.sleep(3); await elem.click()
+        # -> Open the login page (/login) so I can submit credentials and authenticate.
+        await page.goto("http://localhost:9002/login")
         
-        # -> Navigate to http://localhost:3000/login and then stop so the page can be observed for visible login fields.
-        await page.goto("http://localhost:3000/login")
-        
-        # -> Fill the email and password fields and submit the login form to authenticate, then wait for the app to load.
+        # -> Fill the email and password fields and submit the login form to authenticate.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -58,13 +52,26 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Dismiss the welcome modal, then open the Alunos page and verify the student list page renders (URL contains '/app/alunos' and the page shows the 'Alunos' header/list).
+        # -> Dismiss the welcome modal, then click the 'Alunos' link in the sidebar to open the students list page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        await page.goto("http://localhost:3000/app/alunos")
+        # -> Click the 'Alunos' link in the sidebar to open the students list page and then wait for the page to render.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Alunos' link in the sidebar (index 2928) to open the students list page, then wait for the page to render so we can verify the list area.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the students list page using a different approach (navigate directly to /app/alunos), wait for the page to render, then verify the list area is present.
+        await page.goto("http://localhost:9002/app/alunos")
         
         # --> Test passed — verified by AI agent
         frame = context.pages[-1]

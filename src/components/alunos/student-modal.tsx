@@ -385,9 +385,17 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
         }
         setPhoneError('');
 
-        // Street validation
-        if (!street.trim()) {
-            setStreetError('Rua é obrigatório');
+        // ZIP validation: require 8 digits when filled
+        const zipDigits = zip.replace(/\D/g, '');
+        if (zip && zipDigits.length < 8) {
+            toast({ title: "CEP inválido", description: "O CEP deve ter 8 dígitos.", variant: "destructive" });
+            return;
+        }
+
+        // Street validation: required when any address field is filled
+        if (!street.trim() && (city.trim() || neighborhood.trim() || zip.trim())) {
+            setStreetError('Endereço (Rua) é obrigatório.');
+            toast({ title: "Endereço incompleto", description: "Preencha o campo Rua.", variant: "destructive" });
             return;
         }
         setStreetError('');
@@ -657,10 +665,23 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                         <Input
                                             value={phone}
                                             onChange={handlePhoneChange}
+                                            onBlur={() => {
+                                                const digits = phone.replace(/\D/g, '');
+                                                if (phone && digits.length < 10) {
+                                                    setPhoneError('Telefone inválido. Mínimo de 10 dígitos.');
+                                                } else {
+                                                    setPhoneError('');
+                                                }
+                                            }}
                                             placeholder="(00) 00000-0000"
                                             maxLength={15}
-                                            className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                            className={`h-11 border-slate-100 bg-slate-50/50 rounded-2xl transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20 ${phoneError ? 'border-red-300 focus:ring-red-200' : ''}`}
                                         />
+                                        {phoneError && (
+                                            <p className="text-xs font-bold text-red-500 ml-1 flex items-center gap-1">
+                                                <AlertCircle className="h-3 w-3" /> {phoneError}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 
@@ -686,12 +707,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                     </div>
                                 </div>
 
-                                {/* Phone error */}
-                                {phoneError && (
-                                    <p className="text-xs font-bold text-red-500 ml-1 flex items-center gap-1">
-                                        <AlertCircle className="h-3 w-3" /> Phone: {phoneError}
-                                    </p>
-                                )}
+
                             </div>
                         </div>
 

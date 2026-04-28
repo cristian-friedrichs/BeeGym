@@ -2,19 +2,19 @@
   "status": "init",
   "type": "frontend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3000/",
+  "localEndpoint": "http://localhost:9002/",
   "loginUser": "teste10@teste.com",
   "loginPassword": "123456",
   "executionArgs": {
     "projectName": "BeeGym",
     "projectPath": "c:\\Projetos\\BeeGym",
     "testIds": [],
-    "additionalInstruction": "Run all generated tests on the local dev server at http://localhost:3000. The server is already up and responding. Use the credentials teste10@test.com / 123456 for any login flows. Ensure that all core features like student management and workout prescription are validated.",
+    "additionalInstruction": "Run a COMPLETE test of ALL app features using login teste10@teste.com / 123456 at http://localhost:9002. Test every major functionality: (1) Login flow, (2) Dashboard KPIs, (3) Student list and management, (4) Student enrollment (create new student with full data - name, email, CPF, phone, address), (5) Workout plan creation and assignment, (6) Payment management and invoice list, (7) Body measurements, (8) Configuration pages - profile settings, subscription details, support tickets. Ensure every pass/fail is clearly reported. Pay special attention to the fixed phone validation and the newly optional street field in the student modal.",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-q3acgxG9hKeabGjpd0aS7szPb4P6iQ3DrxTtpf4_H04CS_6m7wE0Pa6uubkoijSbABrVYmiFpNhpDv-w9V5Kx9IxRD5x6wAweFQuVqOMpu6kLW80OCFRRIAqMyjrw9rbIrs"
     }
   },
-  "serverPort": 57236,
+  "serverPort": 56933,
   "proxy": "http://823c3432-3baa-4ffa-b170-030b552516a1:ejtdlATrvsU2WyncTMU9DjIXAOJLApMi@tun.testsprite.com:8080"
 }

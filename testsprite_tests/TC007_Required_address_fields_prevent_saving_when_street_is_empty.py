@@ -30,19 +30,25 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Click the 'Entrar' (login) link to open the login page.
+        # -> Click the 'Entrar' link to open the login page so I can sign in with teste10@teste.com.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to /login and wait for the login form to appear so I can observe the form fields before filling credentials (email: teste10@test.com, password: 123456).
-        await page.goto("http://localhost:3000/login")
+        # -> Click the 'Entrar' link on the registration page to open the login form so I can sign in with teste10@teste.com.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the login form with teste10@teste.com / 123456 and submit to access the app dashboard.
+        # -> Navigate to the login page at /login so I can sign in with teste10@teste.com / 123456.
+        await page.goto("http://localhost:9002/login")
+        
+        # -> Fill the email and password fields with teste10@teste.com / 123456, submit the login form, then wait for the app to navigate to the dashboard.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -58,21 +64,27 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Dismiss the welcome modal, then open the Alunos page so I can create a new student.
+        # -> Click the 'Alunos' entry in the left navigation to open the students list page
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Dismiss the welcome modal so the UI is interactive, then navigate to the students list (/app/alunos).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        await page.goto("http://localhost:3000/app/alunos")
+        await page.goto("http://localhost:9002/app/alunos")
         
-        # -> Click the 'Novo Aluno' button to open the new-student form so I can observe the form fields before filling them.
+        # -> Click the 'Novo Aluno' button to open the new-student modal so I can fill the form and leave the street field blank.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill minimal required personal fields (name, email, phone) and click 'Concluir Matrícula' to attempt save and observe whether an address-related validation error appears when street is missing.
+        # -> Fill the student form fields (leave the street field blank) and click 'Concluir Matrícula' to trigger validation.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
@@ -80,15 +92,38 @@ async def run_test():
         
         frame = context.pages[-1]
         # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123.456.789-10')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('55')
+        
+        # -> Click the 'Concluir Matrícula' button to submit the form and then wait for validation feedback about the missing address (Rua).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the missing email field in the student form and re-submit the form to see whether an address-related (Rua) validation appears.
+        frame = context.pages[-1]
+        # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
         await asyncio.sleep(3); await elem.fill('aluno.sem.rua@example.com')
         
         frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('(11) 98765-4321')
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Concluir Matrícula' button to attempt to save the student (with street left empty) and observe whether an address-related validation error appears.
+        # -> Open the 'Novo Aluno' modal, fill required fields (including email) but leave the 'Rua' (street) field empty, click 'Concluir Matrícula', then check the page for a validation message referring to the address (text containing 'Endereço' or 'Rua').
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click 'Concluir Matrícula' to submit the form (while Rua is empty), then wait for the UI validation response and check for a validation message referring to 'Endereço' or 'Rua'.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
@@ -99,9 +134,9 @@ async def run_test():
         current_url = await frame.evaluate("() => window.location.href")
         assert '/app' in current_url, "The page should have navigated to /app after login."
         current_url = await frame.evaluate("() => window.location.href")
-        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after opening the Alunos page."
-        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')]").nth(0).is_visible(), "The new student form title Novo aluno should be visible after clicking the Add new student button."
-        assert await frame.locator("xpath=//*[contains(., 'Endereço')]").nth(0).is_visible(), "The form should display Endereço after attempting to save a student without the street field to indicate an address-related validation."]}
+        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after opening the students list."
+        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')]").nth(0).is_visible(), "The page should show 'Novo aluno' when opening the new student modal."
+        assert await frame.locator("xpath=//*[contains(., 'Endereço')]").nth(0).is_visible(), "The form should show 'Endereço' validation when the street field is missing."
         await asyncio.sleep(5)
 
     finally:

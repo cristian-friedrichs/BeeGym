@@ -30,16 +30,22 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Click the 'Entrar' link/button to open the login page.
+        # -> Click the 'Entrar' button to open the login form.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Enter the email in the email field, enter the password in the password field, then click 'Acessar painel' to log in.
+        # -> Click the 'Entrar' button to open the login form so we can fill email and password.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the email and password fields and click 'Acessar painel' to sign in.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,13 +61,13 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal so the sidebar navigation is usable, then open 'Pagamentos' and verify a visible payment status.
+        # -> Dismiss the welcome modal so the left navigation is accessible, then click 'Pagamentos' and verify the 'Status' label and an organization's payment status (PENDING/PAID).
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click 'Pagamentos' in the left navigation, wait for the Payments page to load, and extract any visible payment status text (e.g., 'Status', 'Pendente', 'Pendentes', 'Pago', 'PAID').
+        # -> Click 'Pagamentos' in the left navigation to open the Payments page, then verify the page shows a 'Status' label and an organization's payment status (PENDING or PAID).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)

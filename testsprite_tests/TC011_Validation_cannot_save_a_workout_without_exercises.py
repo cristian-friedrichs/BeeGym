@@ -30,19 +30,16 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Click the 'Entrar' link to open the login page.
+        # -> Open the login page by clicking 'Entrar'.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate directly to the login URL (/login) to reach the login form.
-        await page.goto("http://localhost:3000/login")
-        
-        # -> Fill the email and password fields with teste10@teste.com / 123456 and click 'Acessar painel' to submit the login form.
+        # -> Fill the email and password fields and click 'Acessar painel' to log in.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -58,25 +55,48 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal by clicking 'Agora Não' (the 'Not now' button) so the sidebar and main UI are accessible, then navigate to Treinos.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Click the 'Treinos' item in the main navigation to open the Treinos page.
+        # -> Click the 'Treinos' navigation item to open the Workouts page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[4]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Novo Treino' button to open the new-workout modal so we can attempt to save a workout with no exercises and verify the validation error.
+        # -> Close the welcome dialog, navigate to the Treinos page, then select a student and start the Add Workout flow.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        await page.goto("http://localhost:9002/app/treinos")
+        
+        # -> Reload the /app/treinos page to recover from the spinner state so the UI becomes interactive, then re-attempt closing the welcome dialog and proceed to the Add Workout flow.
+        await page.goto("http://localhost:9002/app/treinos")
+        
+        # -> Navigate to the dashboard (/app/painel) to recover the app UI, wait for it to render, then re-open Treinos and continue to the Add Workout flow.
+        await page.goto("http://localhost:9002/app/painel")
+        
+        # -> Reload the application by navigating to the home page so the SPA can reinitialize, wait for it to render, then re-open Treinos and continue to the Add Workout flow to attempt saving without exercises.
+        await page.goto("http://localhost:9002/")
+        
+        # -> Click 'Entrar' on the homepage to open the login page so I can (re)start the Treinos -> Add Workout flow.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the 'Treinos' page from the left navigation so I can select a student and start the Add Workout flow.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[4]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Novo Treino' button to open the Add Workout flow so we can attempt to save without adding exercises and verify the validation message.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click 'Agendar Treino' to attempt saving without exercises, wait for UI feedback, and extract page content to verify the validation message about missing exercises.
+        # -> Click the 'Agendar Treino' (Save workout) button to attempt saving without any exercises and trigger the validation message.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)

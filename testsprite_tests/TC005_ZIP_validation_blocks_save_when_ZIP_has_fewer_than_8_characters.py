@@ -30,16 +30,34 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Open the login page by clicking the 'Entrar' button on the homepage.
+        # -> Click the 'Entrar' link to open the login page so we can authenticate with teste10@teste.com / 123456.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Enter email and password on the login page and submit the form to reach the app dashboard.
+        # -> Open the login page by clicking the 'Entrar' link so we can authenticate with teste10@teste.com / 123456.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Entrar' link on the registration page to open the login page so we can authenticate with teste10@teste.com / 123456.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Entrar' link on the registration page to open the login form so we can authenticate with teste10@teste.com / 123456.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Enter credentials into the login form and submit to access the dashboard (input email into element 2363, password into 2371, then click submit 2379).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,34 +73,116 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal, navigate to the Alunos page, then open the 'Novo aluno' modal to begin the ZIP validation test (fill form with a too-short ZIP and try to save).
+        # -> Close the welcome modal so the sidebar is accessible, then click the 'Alunos' navigation link to open the student list.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        await page.goto("http://localhost:3000/app/alunos")
+        # -> Click the 'Alunos' link in the sidebar to open the student list page.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Open the 'Novo Aluno' modal so the student creation form is visible, then fill the form with a too-short ZIP and attempt to save (next action after modal opens will be to inspect and fill the form).
+        # -> Click the 'Alunos' link in the sidebar to open the students list page so we can open the 'Novo aluno' modal.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Alunos' link in the sidebar to open the students list page so we can open the 'Novo aluno' modal and test ZIP validation.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[4]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the 'Novo Aluno' modal by clicking the yellow 'Novo Aluno' button so the form fields become visible.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Scroll the modal to reveal the address/CEP field, fill required form fields (name, email, phone) and attempt to conclude the matrícula using a too-short ZIP to verify validation blocks saving.
+        # -> Click the 'Alunos' link in the sidebar to open the students list so the 'Novo Aluno' button becomes available.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Alunos' link in the sidebar to open the students list so the 'Novo Aluno' button becomes available.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Novo Aluno' button to open the new student modal so the form fields become visible.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the student form (required fields) with a short CEP '1234567', submit the form by clicking 'Concluir Matrícula', then check the UI for a CEP validation error or indication that the student was not saved.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
         await asyncio.sleep(3); await elem.fill('Aluno CEP Curto')
         
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123.456.789-10')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('Rua C')
+        
+        # -> Fill the remaining required fields (email, phone, date, number, city, state) and set CEP to the short value '1234567', then click 'Concluir Matrícula' to verify the CEP length validation.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('email@exemplo.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('(11) 98765-4321')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('1990-01-01')
+        
+        # -> Enter CEP value '1234567' (too short), fill City 'Cidade E' and State 'SP', then click 'Concluir Matrícula' to verify that the modal enforces minimum ZIP length and prevents saving.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('1234567')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('Cidade E')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[3]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('SP')
+        
+        # -> Click 'Concluir Matrícula' to submit the form and verify that the modal enforces minimum CEP length and prevents saving when CEP is too short. Then observe the UI for validation messages or that the modal remains open.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
         # --> Assertions to verify final state
         frame = context.pages[-1]
         current_url = await frame.evaluate("() => window.location.href")
-        assert '/app' in current_url, "The page should have navigated to /app after login"
+        assert '/app' in current_url, "The page should have navigated to /app after login."
         current_url = await frame.evaluate("() => window.location.href")
-        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after clicking Alunos"
-        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')] ").nth(0).is_visible(), "The Novo aluno modal should be visible after opening the add new student dialog"
-        assert await frame.locator("xpath=//*[contains(., 'ZIP')]").nth(0).is_visible(), "The ZIP label should be visible after attempting to save a student with a too-short ZIP"
+        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after opening the Alunos page."
+        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')]").nth(0).is_visible(), "The Novo aluno modal should be visible after clicking the Add new student button."
+        assert await frame.locator("xpath=//*[contains(., 'ZIP')]").nth(0).is_visible(), "The ZIP field should be visible to indicate the modal enforced the minimum ZIP length and prevented saving the student."
         await asyncio.sleep(5)
 
     finally:

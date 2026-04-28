@@ -30,25 +30,43 @@ async def run_test():
         page = await context.new_page()
 
         # Interact with the page elements to simulate user flow
-        # -> Navigate to http://localhost:3000/
-        await page.goto("http://localhost:3000/")
+        # -> Navigate to http://localhost:9002/
+        await page.goto("http://localhost:9002/")
         
-        # -> Click the 'Entrar' (login) link to open the login page.
+        # -> Open the login page by clicking the 'Entrar' link so I can sign in.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Entrar' link to open the login page.
+        # -> Open the login page/modal by clicking the 'Entrar' link in the top navigation.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Entrar' link in the top navigation to open the login page/modal and observe the login form.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Entrar' link in the top navigation to open the login page/modal and observe the login form.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Entrar' link in the top area to open the login page/modal and observe the login form.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to the login page at /login (http://localhost:3000/login) to access the login form.
-        await page.goto("http://localhost:3000/login")
+        # -> Open the login page by navigating to http://localhost:9002/login and observe the login form.
+        await page.goto("http://localhost:9002/login")
         
-        # -> Fill email and password fields and click the login button to access the app dashboard.
+        # -> Fill the email and password fields with teste10@teste.com / 123456 and click 'Acessar painel' to submit the login form.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -64,28 +82,44 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal so the sidebar navigation (including 'Alunos') becomes clickable.
+        # -> Dismiss the welcome modal (click 'Agora Não'), then open the 'Alunos' section to add a new student.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Navigate to the students list at /app/alunos so I can open the 'Add new student' modal.
-        await page.goto("http://localhost:3000/app/alunos")
+        # -> Open the 'Alunos' section from the main navigation to access the student list and the add-student modal.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Novo Aluno' button to open the 'Novo aluno' modal so the form fields can be observed and filled.
+        # -> Open the Students area (URL /app/alunos) so the 'Novo aluno' button and student modal can be used.
+        await page.goto("http://localhost:9002/app/alunos")
+        
+        # -> Click the 'Novo Aluno' button to open the add-student modal so fields for name, CPF, phone and full address can be filled.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the 'Nome completo do aluno' field with 'Aluno Teste E2E' and scroll the modal down to reveal the remaining address/CPF/phone fields so they can be filled.
+        # -> Fill the student form fields (name, birthdate, CPF, full address fields) and submit the form to create the student. After submission, verify the new student appears in the students list.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
         await asyncio.sleep(3); await elem.fill('Aluno Teste E2E')
         
-        # -> Fill the visible personal/contact fields (email and phone) then scroll the modal to reveal the CPF and address fields so they can be filled.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('1990-01-01')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('123.456.789-10')
+        
+        # -> Fill the remaining student form fields (email, phone, full address), submit the form (Concluir Matrícula), then verify that 'Aluno Teste E2E' appears in the students list.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
@@ -96,14 +130,41 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
         await asyncio.sleep(3); await elem.fill('(11) 98765-4321')
         
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('Rua das Flores')
+        
+        # -> Fill CEP, Cidade and Estado in the add-student modal, click 'Concluir Matrícula' to submit the form, then verify that 'Aluno Teste E2E' appears in the students list.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('01001-000')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('São Paulo')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[3]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('SP')
+        
+        # -> Click 'Concluir Matrícula' to submit the new student, wait for the modal to close/processing to finish, then verify that 'Aluno Teste E2E' appears in the students list.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
         # --> Assertions to verify final state
         frame = context.pages[-1]
         current_url = await frame.evaluate("() => window.location.href")
-        assert '/app' in current_url, "The app should navigate to /app after successful login."
+        assert '/app' in current_url, "The page should have navigated to /app after login."
         current_url = await frame.evaluate("() => window.location.href")
-        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after selecting Alunos in the navigation."
-        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')]").nth(0).is_visible(), "The Novo aluno modal should be visible after clicking Add new student."
-        assert await frame.locator("xpath=//*[contains(., 'Aluno Teste E2E')]").nth(0).is_visible(), "The student Aluno Teste E2E should appear in the listing after saving the new student."
+        assert '/app/alunos' in current_url, "The page should have navigated to /app/alunos after opening the Alunos section."
+        assert await frame.locator("xpath=//*[contains(., 'Novo aluno')]").nth(0).is_visible(), "The Novo aluno title should be visible after opening the add-student modal."
+        assert await frame.locator("xpath=//*[contains(., 'Aluno Teste E2E')]").nth(0).is_visible(), "The new student 'Aluno Teste E2E' should appear in the students list after saving the student."
         await asyncio.sleep(5)
 
     finally:

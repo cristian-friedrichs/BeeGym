@@ -171,7 +171,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
         }
     }, [open, workoutToEdit, defaultStudentId]);
 
-    const generateRecurrencePayloads = (baseDate: Date, orgId: string) => {
+    const generateRecurrencePayloads = (baseDate: Date, orgId: string, resolvedTitle?: string) => {
         const payloads = [];
         const recurrenceId = crypto.randomUUID();
         // Ensure end date is inclusive and set to end of day
@@ -188,7 +188,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             payloads.push({
                 organization_id: orgId,
                 student_id: selectedStudentId,
-                title,
+                title: resolvedTitle ?? title,
                 type,
                 status: 'Agendado',
                 scheduled_at: current.toISOString(),
@@ -212,7 +212,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     };
 
     const handleSave = async () => {
-        if (!title || !date || !time || !selectedStudentId || (locationType === 'external' && !locationDetails)) {
+        if (!date || !time || !selectedStudentId || (locationType === 'external' && !locationDetails)) {
             toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
             return;
         }
@@ -220,12 +220,13 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
         // Combine date and time
         const dateStr = format(date, 'yyyy-MM-dd');
         const scheduledDate = new Date(`${dateStr}T${time}:00`);
+        const effectiveTitle = title.trim() || `Treino ${format(scheduledDate, 'dd/MM/yyyy')} ${time}`;
         const endDateTime = addMinutes(scheduledDate, parseInt(duration));
 
         // MODO EDIÇÃO
         if (workoutToEdit) {
             const payload = {
-                title,
+                title: effectiveTitle,
                 type,
                 scheduled_at: scheduledDate.toISOString(),
                 end_time: endDateTime.toISOString(),
@@ -264,12 +265,12 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
             let payloadsToInsert = [];
             if (recurrenceType !== 'none' && endDate) {
-                payloadsToInsert = generateRecurrencePayloads(scheduledDate, profile?.organization_id || '');
+                payloadsToInsert = generateRecurrencePayloads(scheduledDate, profile?.organization_id || '', effectiveTitle);
             } else {
                 payloadsToInsert = [{
                     organization_id: profile?.organization_id,
                     student_id: selectedStudentId,
-                    title,
+                    title: effectiveTitle,
                     type,
                     status: 'Agendado',
                     scheduled_at: scheduledDate.toISOString(),
