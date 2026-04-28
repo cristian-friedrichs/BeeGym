@@ -285,14 +285,14 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                                     {formData.hasPhysicalLocation ? (
                                         <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                                             <div className="relative">
-                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">CEP</Label>
-                                                <Input name="addressZip" value={formData.addressZip} onChange={handleChange} onBlur={handleCepBlur} placeholder="00000-000" maxLength={9} className="h-11 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm mt-1 px-5" />
+                                                <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">CEP <span className="text-red-400">*</span></Label>
+                                                <Input name="addressZip" value={formData.addressZip} onChange={handleChange} onBlur={handleCepBlur} placeholder="00000-000" maxLength={9} className={cn("h-11 rounded-2xl border-slate-200 focus-visible:ring-bee-amber/20 focus-visible:border-bee-amber shadow-sm mt-1 px-5", !formData.addressZip && "border-red-200")} />
                                                 {isCepLoading && <Loader2 className="absolute right-4 bottom-4 h-5 w-5 animate-spin text-bee-amber" />}
                                             </div>
                                             <div className="grid grid-cols-4 gap-4">
                                                 <div className="col-span-3 space-y-2">
-                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Endereço</Label>
-                                                    <Input name="addressLine1" value={formData.addressLine1} readOnly className="h-11 bg-slate-50/50 border-slate-100 italic rounded-2xl text-slate-500 px-5" />
+                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Endereço <span className="text-red-400">*</span></Label>
+                                                    <Input name="addressLine1" value={formData.addressLine1} readOnly className={cn("h-11 bg-slate-50/50 border-slate-100 italic rounded-2xl text-slate-500 px-5", !formData.addressLine1 && "border-red-200")} />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Nº</Label>
@@ -301,18 +301,17 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
-                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Cidade</Label>
-                                                    <Input value={formData.addressCity} readOnly className="h-11 bg-slate-50/50 border-slate-100 italic rounded-2xl text-slate-500 px-5" />
+                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Cidade <span className="text-red-400">*</span></Label>
+                                                    <Input value={formData.addressCity} readOnly className={cn("h-11 bg-slate-50/50 border-slate-100 italic rounded-2xl text-slate-500 px-5", !formData.addressCity && "border-red-200")} />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">UF</Label>
-                                                    <Input value={formData.addressState} readOnly className="h-11 bg-slate-50/50 border-slate-100 italic uppercase rounded-2xl text-slate-500 px-5" />
+                                                    <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">UF <span className="text-red-400">*</span></Label>
+                                                    <Input value={formData.addressState} readOnly className={cn("h-11 bg-slate-50/50 border-slate-100 italic uppercase rounded-2xl text-slate-500 px-5", !formData.addressState && "border-red-200")} />
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <p className="text-[11px] text-slate-400 font-bold ml-1">Cidade e estado são obrigatórios para fins de estatística regional.</p>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label className="text-[11px] font-black uppercase tracking-widest text-slate-400 ml-1">Estado (UF) <span className="text-red-400">*</span></Label>
@@ -435,11 +434,10 @@ export function NovoClienteModal({ isOpen, onClose, onClientCreated }: { isOpen:
                                     if (!formData.businessType || !formData.empresaName || !formData.document) {
                                         toast({ variant: 'destructive', title: 'Preencha os campos obrigatórios do negócio' }); return;
                                     }
-                                    if (!formData.addressCity.trim()) {
-                                        toast({ variant: 'destructive', title: 'Cidade é obrigatória', description: 'Informe a cidade para fins de estatística.' }); return;
-                                    }
-                                    if (!formData.addressState.trim()) {
-                                        toast({ variant: 'destructive', title: 'Estado (UF) é obrigatório', description: 'Informe o estado para fins de estatística.' }); return;
+                                    if (!formData.hasPhysicalLocation) {
+                                        if (!formData.addressCity.trim() || !formData.addressState.trim()) return;
+                                    } else {
+                                        if (!formData.addressZip.trim() || !formData.addressLine1.trim() || !formData.addressCity.trim() || !formData.addressState.trim()) return;
                                     }
                                 }
                                 setStep(s => s + 1);
