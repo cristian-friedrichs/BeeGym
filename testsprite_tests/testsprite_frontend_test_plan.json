@@ -1,25 +1,49 @@
 [
   {
     "id": "TC001",
-    "title": "Log in and reach the dashboard",
-    "description": "Verifies a user can sign in and is taken to the authenticated dashboard as a stable entry point.",
-    "category": "User Authentication",
+    "title": "Complete tenant activation from registration through onboarding to dashboard access",
+    "description": "A new tenant can register, complete onboarding with a paid plan via PIX, and then access the dashboard with an active tenant.",
+    "category": "Organization Onboarding & Registration",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /login"
+        "description": "Navigate to /register"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
+        "description": "Fill a valid name into the name field"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+        "description": "Fill a unique valid email into the email field"
       },
       {
         "type": "action",
-        "description": "Submit the login form"
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill the same valid password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "action",
+        "description": "Wait for the onboarding page to load"
+      },
+      {
+        "type": "action",
+        "description": "Select an available plan"
+      },
+      {
+        "type": "action",
+        "description": "Initiate the checkout for the selected plan"
+      },
+      {
+        "type": "action",
+        "description": "Complete the PIX payment steps in the app until returning to the application flow"
       },
       {
         "type": "assertion",
@@ -30,46 +54,78 @@
   },
   {
     "id": "TC002",
-    "title": "Auth-gated route redirects to login and returns after authentication",
-    "description": "Verifies visiting an authenticated page while logged out redirects to login and, after signing in, returns the user to the originally requested page.",
-    "category": "User Authentication",
+    "title": "Paid plan enrollment auto-creates a pending invoice visible in organization payments",
+    "description": "When a student is enrolled in a paid plan, a pending invoice is automatically created and appears in the payments list.",
+    "category": "Automated Invoice Generation",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /app/alunos"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the user is redirected to the login page"
+        "description": "Navigate to /login"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
         "description": "Submit the login form"
       },
       {
+        "type": "action",
+        "description": "Navigate to /app/alunos"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-student flow"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid student name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF with 14 characters into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Select a plan with price greater than 0"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid due date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation to the payments area"
+      },
+      {
         "type": "assertion",
-        "description": "Verify the user lands on the students page"
+        "description": "Verify a pending invoice is displayed for the newly created student"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC003",
-    "title": "Access payments requires login and returns to requested page",
-    "description": "Verifies that a logged-out user attempting to access payments is redirected to login and, after successful login, lands on the payments page.",
-    "category": "Payment Processing (PIX EFI)",
+    "title": "Register a student with full details and assigned plan",
+    "description": "A staff user can add a new student with contact and address details, assign a plan and dates, and see the student in the list.",
+    "category": "Student Registration & Management",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /app/pagamentos"
+        "description": "Navigate to /login"
       },
       {
         "type": "action",
@@ -84,82 +140,57 @@
         "description": "Submit the login form"
       },
       {
+        "type": "action",
+        "description": "Navigate to /app/alunos"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-student flow"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid student name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF with 14 characters into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid address fields (street, number, neighborhood, city, state, zip)"
+      },
+      {
+        "type": "action",
+        "description": "Select an available plan"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid due date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
         "type": "assertion",
-        "description": "Verify the user lands on the payments page"
+        "description": "Verify the newly created student appears in the student list"
       }
     ],
     "priority": "High"
   },
   {
     "id": "TC004",
-    "title": "Create a new student with full details and plan dates",
-    "description": "Verifies staff can create a student with CPF, contact, address, and plan dates and see the student appear in the list.",
-    "category": "Student Management",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the students area"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new student"
-      },
-      {
-        "type": "action",
-        "description": "Fill a unique full name into the student name field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid CPF in the required format into the CPF field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid phone number into the phone field"
-      },
-      {
-        "type": "action",
-        "description": "Fill valid address details into the address fields"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan start date"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan due date after the start date"
-      },
-      {
-        "type": "action",
-        "description": "Save the student"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the new student appears in the student list"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC005",
-    "title": "Generate PIX QR code and copy payload for an outstanding invoice",
-    "description": "Verifies that staff can select an outstanding invoice and generate a PIX QR code and a copyable payload string for payment.",
-    "category": "Payment Processing (PIX EFI)",
+    "title": "Create and assign a workout to a student",
+    "description": "An instructor can create a new workout with at least one exercise and save it so it appears as assigned to the selected student.",
+    "category": "Workout Assignment",
     "steps": [
       {
         "type": "action",
@@ -179,145 +210,15 @@
       },
       {
         "type": "action",
-        "description": "Click the navigation option to open payments"
+        "description": "Click the navigation item to open the workouts area"
       },
       {
         "type": "action",
-        "description": "Select an outstanding invoice from the list"
+        "description": "Start creating a new workout"
       },
       {
         "type": "action",
-        "description": "Generate PIX payment details for the selected invoice"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify a PIX QR code is displayed and a copyable payment payload string is shown"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC006",
-    "title": "Register a new user then see onboarding after first login",
-    "description": "Verifies a new user can register, log in, and is shown an onboarding plan prompt after first login.",
-    "category": "User Authentication",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /register"
-      },
-      {
-        "type": "action",
-        "description": "Fill a new unique name into the name field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a new unique email into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid password into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Fill the same password into the confirm password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the registration form"
-      },
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill the newly registered email into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill the same password into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify an onboarding prompt to choose a plan is displayed"
-      }
-    ],
-    "priority": "High"
-  },
-  {
-    "id": "TC007",
-    "title": "Create and assign a workout with exercises and parameters",
-    "description": "Verifies an instructor can select a student, create a workout with exercises and set details, save it, and see it listed as assigned for that student.",
-    "category": "Workout Prescription",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the students area"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new student"
-      },
-      {
-        "type": "action",
-        "description": "Fill a unique full name into the student name field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid CPF in the required format into the CPF field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid phone number into the phone field"
-      },
-      {
-        "type": "action",
-        "description": "Fill valid address details into the address fields"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan start date"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan due date after the start date"
-      },
-      {
-        "type": "action",
-        "description": "Save the student"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the workouts area"
-      },
-      {
-        "type": "action",
-        "description": "Select the newly created student from the student list"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new workout for the selected student"
+        "description": "Select a student from the list"
       },
       {
         "type": "action",
@@ -325,15 +226,15 @@
       },
       {
         "type": "action",
-        "description": "Set a valid number of sets for the added exercise"
+        "description": "Fill valid sets into the sets field"
       },
       {
         "type": "action",
-        "description": "Set a valid number of reps for the added exercise"
+        "description": "Fill valid reps into the reps field"
       },
       {
         "type": "action",
-        "description": "Set valid cadence and rest details for the added exercise"
+        "description": "Select a valid rest time for the exercise"
       },
       {
         "type": "action",
@@ -341,16 +242,195 @@
       },
       {
         "type": "assertion",
-        "description": "Verify the workout is shown as assigned for the selected student"
+        "description": "Verify the workout is listed for the selected student"
       }
     ],
     "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Free plan enrollment does not create any pending invoice",
+    "description": "When a student is enrolled in a free plan, no pending invoice is created and it does not appear in the payments list.",
+    "category": "Automated Invoice Generation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /app/alunos"
+      },
+      {
+        "type": "action",
+        "description": "Open the add-student flow"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid student name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF with 14 characters into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Select a plan with price equal to 0"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid due date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation to the payments area"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify there is no pending invoice shown for the newly created student"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Generate PIX for a pending invoice and display QR and payload",
+    "description": "Staff can select a pending invoice and generate a PIX payment request, resulting in a visible QR code and a copyable payload.",
+    "category": "PIX Payment (EFI Integration)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation item to open the payments area"
+      },
+      {
+        "type": "action",
+        "description": "Select a pending invoice from the list"
+      },
+      {
+        "type": "action",
+        "description": "Generate a PIX payment request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a PIX QR code is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a copyable PIX payload is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC007",
+    "title": "Prevent saving a workout with no exercises then allow save after adding one",
+    "description": "An instructor is blocked from saving a workout without exercises, and after adding an exercise the workout saves and appears for the student.",
+    "category": "Workout Assignment",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation item to open the workouts area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new workout"
+      },
+      {
+        "type": "action",
+        "description": "Select a student from the list"
+      },
+      {
+        "type": "action",
+        "description": "Save the workout"
+      },
+      {
+        "type": "action",
+        "description": "Add an exercise from the exercise library"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid sets into the sets field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid reps into the reps field"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid rest time for the exercise"
+      },
+      {
+        "type": "action",
+        "description": "Save the workout"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible for missing exercises"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the workout is listed for the selected student"
+      }
+    ],
+    "priority": "Medium"
   },
   {
     "id": "TC008",
-    "title": "Session persists across page reload on authenticated area",
-    "description": "Verifies an authenticated session remains active after a page reload so the user stays in the app.",
-    "category": "User Authentication",
+    "title": "CPF length validation prevents saving until corrected",
+    "description": "A staff user cannot save a student with an invalid CPF length and can save successfully after correcting it.",
+    "category": "Student Registration & Management",
     "steps": [
       {
         "type": "action",
@@ -358,11 +438,11 @@
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
@@ -370,24 +450,44 @@
       },
       {
         "type": "action",
-        "description": "Navigate to /app/painel"
+        "description": "Navigate to /app/alunos"
       },
       {
         "type": "action",
-        "description": "Reload the page"
+        "description": "Open the add-student flow"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid student name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a CPF shorter than 14 characters into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF with 14 characters into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
       },
       {
         "type": "assertion",
-        "description": "Verify the user remains on an authenticated app page without being sent to login"
+        "description": "Verify the newly created student appears in the student list"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
     "id": "TC009",
-    "title": "View invoices list with payment statuses",
-    "description": "Verifies that an authenticated user can open payments and see a list of invoices with their current statuses displayed.",
-    "category": "Payment Processing (PIX EFI)",
+    "title": "Assign a workout with multiple exercises",
+    "description": "An instructor can add more than one exercise with parameters and save successfully so the workout appears assigned to the student.",
+    "category": "Workout Assignment",
     "steps": [
       {
         "type": "action",
@@ -407,20 +507,64 @@
       },
       {
         "type": "action",
-        "description": "Click the navigation option to open payments"
+        "description": "Click the navigation item to open the workouts area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new workout"
+      },
+      {
+        "type": "action",
+        "description": "Select a student from the list"
+      },
+      {
+        "type": "action",
+        "description": "Add an exercise from the exercise library"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid sets into the sets field for the first exercise"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid reps into the reps field for the first exercise"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid rest time for the first exercise"
+      },
+      {
+        "type": "action",
+        "description": "Add a second exercise from the exercise library"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid sets into the sets field for the second exercise"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid reps into the reps field for the second exercise"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid rest time for the second exercise"
+      },
+      {
+        "type": "action",
+        "description": "Save the workout"
       },
       {
         "type": "assertion",
-        "description": "Verify a list of invoices is displayed with payment status information"
+        "description": "Verify the workout is listed for the selected student"
       }
     ],
-    "priority": "High"
+    "priority": "Medium"
   },
   {
     "id": "TC010",
-    "title": "Edit an existing student and persist updates",
-    "description": "Verifies a user can create a student, edit contact/address details, save, and see the updated details persist when reopening the student.",
-    "category": "Student Management",
+    "title": "Regenerate PIX for the same pending invoice",
+    "description": "Staff can generate PIX for the same pending invoice more than once and still see a QR code and payload each time.",
+    "category": "PIX Payment (EFI Integration)",
     "steps": [
       {
         "type": "action",
@@ -428,11 +572,11 @@
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
@@ -440,333 +584,44 @@
       },
       {
         "type": "action",
-        "description": "Click the navigation link to the students area"
+        "description": "Click the navigation item to open the payments area"
       },
       {
         "type": "action",
-        "description": "Start creating a new student"
+        "description": "Select a pending invoice from the list"
       },
       {
         "type": "action",
-        "description": "Fill a unique full name into the student name field"
+        "description": "Generate a PIX payment request"
       },
       {
         "type": "action",
-        "description": "Fill a valid CPF in the required format into the CPF field"
+        "description": "Close the PIX details view"
       },
       {
         "type": "action",
-        "description": "Fill a valid phone number into the phone field"
+        "description": "Select the same pending invoice again"
       },
       {
         "type": "action",
-        "description": "Fill valid address details into the address fields"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan start date"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan due date after the start date"
-      },
-      {
-        "type": "action",
-        "description": "Save the student"
-      },
-      {
-        "type": "action",
-        "description": "Open the newly created student from the list"
-      },
-      {
-        "type": "action",
-        "description": "Update the phone field to a different valid number"
-      },
-      {
-        "type": "action",
-        "description": "Update one address field to a new valid value"
-      },
-      {
-        "type": "action",
-        "description": "Save the changes"
-      },
-      {
-        "type": "action",
-        "description": "Reopen the same student from the list"
+        "description": "Generate a PIX payment request"
       },
       {
         "type": "assertion",
-        "description": "Verify the updated student details are displayed"
+        "description": "Verify a PIX QR code is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a copyable PIX payload is displayed"
       }
     ],
-    "priority": "High"
+    "priority": "Low"
   },
   {
     "id": "TC011",
-    "title": "Cancel invoice selection returns to invoice list without PIX details",
-    "description": "Verifies that staff can back out of a selected invoice and return to the invoice list without PIX details remaining visible.",
-    "category": "Payment Processing (PIX EFI)",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the email field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation option to open payments"
-      },
-      {
-        "type": "action",
-        "description": "Select an invoice from the list"
-      },
-      {
-        "type": "action",
-        "description": "Return to the invoice list view"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify only the invoice list is displayed and no PIX QR or payload is shown"
-      }
-    ],
-    "priority": "Medium"
-  },
-  {
-    "id": "TC012",
-    "title": "Invoice list handles empty state",
-    "description": "Verifies that when there are no invoices to display, the payments page shows an empty state instead of a broken or blank UI.",
-    "category": "Payment Processing (PIX EFI)",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the email field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation option to open payments"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify an empty state message is visible for invoices"
-      }
-    ],
-    "priority": "Medium"
-  },
-  {
-    "id": "TC013",
-    "title": "Workout requires at least one exercise before saving",
-    "description": "Verifies the workout form blocks saving a workout when no exercises are added and shows a validation error.",
-    "category": "Workout Prescription",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the students area"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new student"
-      },
-      {
-        "type": "action",
-        "description": "Fill a unique full name into the student name field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid CPF in the required format into the CPF field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid phone number into the phone field"
-      },
-      {
-        "type": "action",
-        "description": "Fill valid address details into the address fields"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan start date"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan due date after the start date"
-      },
-      {
-        "type": "action",
-        "description": "Save the student"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the workouts area"
-      },
-      {
-        "type": "action",
-        "description": "Select the newly created student from the student list"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new workout for the selected student"
-      },
-      {
-        "type": "action",
-        "description": "Attempt to save the workout without adding any exercises"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify a validation error is displayed requiring at least one exercise"
-      }
-    ],
-    "priority": "Low"
-  },
-  {
-    "id": "TC014",
-    "title": "Student CPF length validation prevents save",
-    "description": "Verifies the student form blocks saving when CPF does not meet the required length and shows a validation error.",
-    "category": "Student Management",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_USER}} into the email field"
-      },
-      {
-        "type": "action",
-        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation link to the students area"
-      },
-      {
-        "type": "action",
-        "description": "Start creating a new student"
-      },
-      {
-        "type": "action",
-        "description": "Fill a name into the student name field"
-      },
-      {
-        "type": "action",
-        "description": "Fill an invalid-length CPF into the CPF field"
-      },
-      {
-        "type": "action",
-        "description": "Fill a valid phone number into the phone field"
-      },
-      {
-        "type": "action",
-        "description": "Fill minimal valid address details into the address fields"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan start date"
-      },
-      {
-        "type": "action",
-        "description": "Select a valid plan due date after the start date"
-      },
-      {
-        "type": "action",
-        "description": "Attempt to save the student"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify a CPF validation error is displayed and the student is not saved"
-      }
-    ],
-    "priority": "Low"
-  },
-  {
-    "id": "TC015",
-    "title": "Prevent PIX generation when invoice amount is invalid or missing",
-    "description": "Verifies that attempting to generate PIX for an invoice with missing or invalid amount is blocked with a validation error and no QR/payload is produced.",
-    "category": "Payment Processing (PIX EFI)",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the email field with {{LOGIN_USER}}"
-      },
-      {
-        "type": "action",
-        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
-      },
-      {
-        "type": "action",
-        "description": "Submit the login form"
-      },
-      {
-        "type": "action",
-        "description": "Click the navigation option to open payments"
-      },
-      {
-        "type": "action",
-        "description": "Select an invoice that has no amount or an invalid amount"
-      },
-      {
-        "type": "action",
-        "description": "Attempt to generate PIX payment details"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify a validation error is visible preventing PIX generation"
-      }
-    ],
-    "priority": "Low"
-  },
-  {
-    "id": "TC016",
-    "title": "Registration blocks invalid email or mismatched passwords",
-    "description": "Verifies registration validation prevents creating an account when email format is invalid or passwords do not match.",
-    "category": "User Authentication",
+    "title": "Registration form blocks invalid inputs and allows successful submission after correction",
+    "description": "A user sees validation errors for invalid registration inputs and can correct them to successfully submit registration.",
+    "category": "Organization Onboarding & Registration",
     "steps": [
       {
         "type": "action",
@@ -774,11 +629,11 @@
       },
       {
         "type": "action",
-        "description": "Fill a name into the name field"
+        "description": "Fill a name shorter than 3 characters into the name field"
       },
       {
         "type": "action",
-        "description": "Fill an invalid email format into the email field"
+        "description": "Fill an invalid email into the email field"
       },
       {
         "type": "action",
@@ -793,8 +648,171 @@
         "description": "Submit the registration form"
       },
       {
+        "type": "action",
+        "description": "Fill a valid name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique valid email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill the same valid password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
         "type": "assertion",
-        "description": "Verify validation errors are displayed for the invalid inputs"
+        "description": "Verify the user reaches the next step after registration"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC012",
+    "title": "Block PIX generation for a zero-value invoice",
+    "description": "Staff cannot generate PIX for an invoice with value equal to zero and is shown a validation error instead of a QR code.",
+    "category": "PIX Payment (EFI Integration)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation item to open the payments area"
+      },
+      {
+        "type": "action",
+        "description": "Select an invoice with value equal to zero"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to generate a PIX payment request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a PIX generation validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no PIX QR code is displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC013",
+    "title": "Cancel workout creation without assigning anything",
+    "description": "An instructor can exit the new workout flow without saving and no new workout appears for the student.",
+    "category": "Workout Assignment",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation item to open the workouts area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new workout"
+      },
+      {
+        "type": "action",
+        "description": "Select a student from the list"
+      },
+      {
+        "type": "action",
+        "description": "Add an exercise from the exercise library"
+      },
+      {
+        "type": "action",
+        "description": "Exit the workout creation flow without saving"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the workout creation form is no longer shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no newly created workout appears for the selected student"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC014",
+    "title": "Cancel out of PIX generation without altering the invoice list",
+    "description": "Staff can close the PIX generation view and return to the payments list without losing the current list context.",
+    "category": "PIX Payment (EFI Integration)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation item to open the payments area"
+      },
+      {
+        "type": "action",
+        "description": "Select a pending invoice from the list"
+      },
+      {
+        "type": "action",
+        "description": "Generate a PIX payment request"
+      },
+      {
+        "type": "action",
+        "description": "Close the PIX details view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the payments list view is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify invoices are displayed in the list"
       }
     ],
     "priority": "Low"

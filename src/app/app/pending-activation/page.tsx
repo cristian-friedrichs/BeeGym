@@ -87,7 +87,7 @@ export default function PendingActivation() {
                             </li>
                             <li className="flex items-start gap-3">
                                 <span className="w-1.5 h-1.5 rounded-full bg-bee-amber mt-1.5 flex-shrink-0" />
-                                <span>Se desejar alterar a forma de pagamento, <a href="/app/onboarding/pagamento" className="text-bee-amber font-bold underline">clique aqui</a>.</span>
+                                <span>Se desejar alterar a forma de pagamento, <a href="/app/onboarding" className="text-bee-amber font-bold underline">clique aqui</a>.</span>
                             </li>
                         </ul>
                     </div>
