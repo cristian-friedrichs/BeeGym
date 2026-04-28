@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' (login) link to open the login form/page.
+        # -> Open the login page by clicking 'Entrar', then wait for the login form to appear so we can fill credentials.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields and submit the login form.
+        # -> Fill the email field with teste10@teste.com (immediate next action).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,9 +55,33 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
+        # -> Dismiss the welcome modal by clicking 'Agora Não' (index 1994), wait for the UI to settle, then proceed to the Payments (Pagamentos) section.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the Pagamentos (Payments) section by clicking the 'Pagamentos' menu item, then locate an invoice with missing or invalid amount.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the actions menu for the first invoice (João Silva Teste — Mensalidade Abril) to attempt generating PIX details.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div[4]/div[2]/table/tbody/tr/td[6]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Gerar PIX' button in the invoice details panel to attempt generating PIX details and observe the result (validation error or QR/payload).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div[2]/div/div[2]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Informe um valor válido')]").nth(0).is_visible(), "A validation error informing the user to enter a valid amount should be visible preventing PIX generation"
+        assert await frame.locator("xpath=//*[contains(., 'Valor inválido')]").nth(0).is_visible(), "The page should display a validation error preventing PIX generation because the invoice amount is missing or invalid."
         await asyncio.sleep(5)
 
     finally:

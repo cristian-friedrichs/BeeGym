@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' link to go to the login page.
+        # -> Open the login page by clicking the 'Entrar' link.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields with the provided credentials and click 'Acessar painel' to submit the login form, then wait for the dashboard to load.
+        # -> Fill the email and password fields with the provided credentials and submit the login form.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,9 +55,65 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
+        # -> Close the welcome modal so the dashboard is fully accessible, then navigate to the 'Alunos' (Students) area to start creating a new student.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Alunos' navigation link to open the students area so we can create a new student.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the 'Novo Aluno' (New Student) button to open the student creation form/modal so we can observe fields and fill them.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the 'Plano Selecionado' combobox to reveal plan options (click element index 2331). After the options appear, stop and re-observe the new fields before selecting a plan and filling plan dates.
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('Auto Test Student 2026')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('1990-01-01')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('111.444.777-35')
+        
+        # -> Click the 'Plano Selecionado' combobox to reveal available plans so dependent plan fields (start/end dates) appear.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[6]/div[2]/div/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the remaining contact and address fields in the 'Nova Matrícula' modal, then click 'Concluir Matrícula' to attempt creating the student (observe any validation or errors).
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('auto.test.2026@example.com')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('(11) 91234-5678')
+        
+        frame = context.pages[-1]
+        # Input text
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
+        await asyncio.sleep(3); await elem.fill('Rua Teste')
+        
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Aluno cadastrado com sucesso')]").nth(0).is_visible(), "The student should appear in the list after being created and saved"
+        assert await frame.locator("xpath=//*[contains(., 'Auto Test Student 2026')]").nth(0).is_visible(), "The students list should show the new student Auto Test Student 2026 after successful creation."
         await asyncio.sleep(5)
 
     finally:

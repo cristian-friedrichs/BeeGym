@@ -33,17 +33,17 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Open the registration page by clicking the 'Começar Agora' / register CTA.
+        # -> Open the registration page by clicking the 'Começar Agora' CTA (index 100).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/main/section/div[2]/div[2]/a/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the registration form with an invalid email and a password, submit the form, then check the UI for validation errors about the email (and note that password confirmation can't be tested because the field is missing).
+        # -> Fill the name field, enter an invalid email, enter a valid password, submit the form, and then observe validation messages for the invalid email. If confirm-password is required but missing, report that the feature is not present.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Teste Usuario')
+        await asyncio.sleep(3); await elem.fill('Teste Usuário')
         
         frame = context.pages[-1]
         # Input text
@@ -55,7 +55,7 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[3]/input').nth(0)
         await asyncio.sleep(3); await elem.fill('Password123!')
         
-        # -> Click the 'Criar minha conta' submit button to trigger validation, then observe the page for validation messages or errors.
+        # -> Submit the registration form by clicking 'Criar minha conta' and observe validation messages for the invalid email.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
