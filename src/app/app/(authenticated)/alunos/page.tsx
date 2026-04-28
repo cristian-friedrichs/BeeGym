@@ -66,14 +66,14 @@ export default function StudentsPage() {
             .select('*, last_activity, membership_plans(name)') // Join com tabela de planos
             .order('full_name');
 
-        if (currentUnitId === organizationId) {
-            // Se é a unidade Master/Principal, queremos os alunos legados (sem unidade, associados apenas à org) 
-            // e alunos que (em teoria) possam ter a master como unit_id
+        if (!organizationId || currentUnitId === organizationId) {
+            // Master unit or org not yet loaded: include legacy students (unit_id null) and master-unit students
             query = query.or(`unit_id.is.null,unit_id.eq.${currentUnitId}`);
-            // Garantimos que filtramos apenas pela ORG
-            query = query.eq('organization_id', organizationId);
+            if (organizationId) {
+                query = query.eq('organization_id', organizationId);
+            }
         } else {
-            // Se é filial, traz apenas da filial
+            // Branch unit: only show branch students
             query = query.eq('unit_id', currentUnitId);
         }
 
