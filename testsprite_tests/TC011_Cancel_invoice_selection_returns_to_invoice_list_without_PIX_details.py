@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' link to open the login page so we can authenticate as staff.
+        # -> Click the 'Entrar' button to open the login page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email field with teste10@teste.com, fill the password with 123456, and submit the login form.
+        # -> Fill the email field with teste10@teste.com, fill the password field with 123456, submit the login form, then wait for the dashboard to load.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,31 +55,31 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal so the side navigation is accessible.
+        # -> Dismiss the welcome modal so the navigation is fully accessible, then open the Pagamentos (Payments) section.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Pagamentos' navigation link to open the payments/invoices section.
+        # -> Click 'Pagamentos' in the left navigation to open the payments/invoices list.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Open the first invoice detail by clicking its actions button so we can view PIX details (then return to list and confirm PIX info is no longer displayed).
+        # -> Open the first invoice's detail view by clicking its actions button so we can then return to the list and verify PIX details are not left visible.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div[4]/div[2]/table/tbody/tr/td[6]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the invoice detail close/back control to return to the invoice list, then allow the UI to settle so we can confirm PIX QR/payload are not visible.
+        # -> Close the invoice details panel (return to the invoice list) and verify that no PIX QR/payload or PIX details remain visible on the list view.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div[2]/div/div[2]/button[3]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the invoice detail close control to return to the invoice list, then confirm PIX QR/payload are not visible and finish the test.
+        # -> Click the invoice details dialog 'Close' button (index 2248), wait for the UI to settle, then extract page text to confirm the details dialog is gone and no PIX QR/payload remains visible.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)

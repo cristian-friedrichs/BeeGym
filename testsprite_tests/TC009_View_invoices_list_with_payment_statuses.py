@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' link/button to open the login page or form (element index 69). After the login form appears, observe the fields before filling.
+        # -> Click the 'Entrar' link to open the login page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields with teste10@teste.com and 123456, then submit the login form.
+        # -> Fill the email and password fields and submit the login form using teste10@teste.com / 123456.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,13 +55,13 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Dismiss the welcome modal by clicking the 'Agora Não' / dismiss button (element index 1995), then open the Payments section.
+        # -> Close the welcome modal, then click the 'Pagamentos' item in the left navigation so the invoice list can be inspected for status labels.
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
+        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Pagamentos' navigation item to open the Payments page and verify that a list of invoices with their payment statuses is displayed.
+        # -> Click the 'Pagamentos' navigation item to open the Payments page so the invoice list and their statuses can be inspected.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)

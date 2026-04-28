@@ -33,10 +33,10 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Navigate to http://127.0.0.1:9002/app/alunos to verify it redirects to login when logged out.
+        # -> Navigate to /app/alunos and verify the app redirects to the login page when logged out, then sign in and confirm it returns to /app/alunos.
         await page.goto("http://127.0.0.1:9002/app/alunos")
         
-        # -> Fill the email field with teste10@teste.com, fill the password with 123456, and submit the login form to verify the app returns to /app/alunos.
+        # -> Fill the email field with teste10@teste.com, fill the password with 123456, and submit the login form to verify redirect back to /app/alunos.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)

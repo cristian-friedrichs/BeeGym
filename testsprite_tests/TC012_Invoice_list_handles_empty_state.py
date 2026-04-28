@@ -39,7 +39,7 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields and submit the login form to access the dashboard.
+        # -> Fill the email and password fields and submit the login form (use teste10@teste.com / 123456).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,13 +55,13 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal, click the 'Pagamentos' item in the sidebar, wait for the payments page to load, and check for an empty-state message for invoices.
+        # -> Close the welcome modal, click the 'Pagamentos' navigation item, wait for the page to load, then extract visible text to verify an empty invoices state message.
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
+        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Pagamentos' sidebar item and verify the payments page shows an empty-state message when there are no invoices.
+        # -> Click the 'Pagamentos' navigation item to open the payments page (immediate action). Then inspect the page for an empty-state message for invoices.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
@@ -69,7 +69,7 @@ async def run_test():
         
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Nenhuma fatura encontrada')]").nth(0).is_visible(), "The payments page should show an empty state message 'Nenhuma fatura encontrada' when there are no invoices."
+        assert await frame.locator("xpath=//*[contains(., 'Nenhuma fatura encontrada')]").nth(0).is_visible(), "The payments page should show an empty state message for invoices when there are no invoices."
         await asyncio.sleep(5)
 
     finally:

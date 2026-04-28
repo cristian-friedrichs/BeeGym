@@ -366,6 +366,14 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             toast({ title: "Nome é obrigatório", variant: "destructive" });
             return;
         }
+
+        // CPF validation: when filled, must have 11 digits
+        const cpfDigits = cpf.replace(/\D/g, '');
+        if (cpf && cpfDigits.length < 11) {
+            toast({ title: "CPF inválido", description: "O CPF deve ter 11 dígitos.", variant: "destructive" });
+            return;
+        }
+
         if (!email.trim()) {
             toast({ title: "Email é obrigatório", variant: "destructive" });
             return;

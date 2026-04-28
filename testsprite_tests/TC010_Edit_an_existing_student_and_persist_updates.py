@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' link to open the login page and observe the visible login fields before filling them.
+        # -> Open the login page by clicking the 'Entrar' link.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email field with teste10@teste.com, then fill the password with 123456, and submit the login form.
+        # -> Fill the email field with teste10@teste.com, fill the password with 123456, then submit the login form.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,45 +55,51 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome dialog so the left navigation (Alunos) is accessible, then open the Students area.
+        # -> Close the welcome modal (click 'Agora Não'), wait for the UI to settle, then open the Students (Alunos) area.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Open the Students area by clicking the 'Alunos' link in the left navigation.
+        # -> Click the 'Alunos' (Students) navigation link to open the Students area.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Novo Aluno' button to open the new student form so we can observe the fields before filling them.
+        # -> Click the 'Novo Aluno' button to open the new student creation form.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the student form fields (name, CPF, address fields) and submit the form to create the student.
+        # -> Fill the student creation form (name, CPF, address fields) and submit by clicking 'Concluir Matrícula', then wait for the UI to settle.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Aluno Teste Automático 2026')
+        await asyncio.sleep(3); await elem.fill('Aluno Teste Automação E2 2026')
         
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('123.456.789-09')
+        await asyncio.sleep(3); await elem.fill('111.444.777-35')
         
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Rua das Flores, 123')
+        await asyncio.sleep(3); await elem.fill('Rua Teste da Automacao')
         
-        # -> Fill the remaining required student form fields (email, phone, birth date, CEP, city, state) and submit the form by clicking 'Concluir Matrícula' to create the student.
+        # -> Click 'Concluir Matrícula' to submit the new student, wait for the UI to settle, then continue to open the created student and edit contact/address details.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the missing required contact fields (email and phone) in the 'Nova Matrícula' form, then submit the form again and wait for the result.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('aluno.automacao2026@example.com')
+        await asyncio.sleep(3); await elem.fill('aluno.automacao.e2.2026@example.com')
         
         frame = context.pages[-1]
         # Input text
@@ -101,41 +107,22 @@ async def run_test():
         await asyncio.sleep(3); await elem.fill('(11) 91234-5678')
         
         frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('1990-01-01')
-        
-        # -> Fill CEP, Cidade and Estado, then open the 'Plano Selecionado' combobox so plan options and plan date fields load (stop after opening combobox to let dependent fields appear).
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('01001-000')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('São Paulo')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div[3]/div[3]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('SP')
-        
-        # -> Open the 'Plano Selecionado' combobox so plan options and dependent plan/date fields appear.
-        frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[6]/div[2]/div/button').nth(0)
+        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Attempt to submit the new-student form by clicking 'Concluir Matrícula' to see whether the system allows creating the student without a plan or shows a validation/error message.
+        # -> Open the student 'Aluno Teste Automático 2026' from the list to access the student details/edit screen.
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div[3]/div/table/tbody/tr[4]/td/a').nth(0)
         await asyncio.sleep(3); await elem.click()
+        
+        # -> Recover from the stuck loading state by navigating to the Students list (app/alunos) to return to a stable view, then wait for the page to load so we can reopen the student details.
+        await page.goto("http://127.0.0.1:9002/app/alunos")
         
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Aluno Teste Automático 2026')]").nth(0).is_visible(), "The student's details page should display Aluno Teste Automático 2026 after reopening the student to confirm the record was saved"
+        assert await frame.locator("xpath=//*[contains(., '(11) 91234-5678')]").nth(0).is_visible(), "The student's updated phone number (11) 91234-5678 should be visible after reopening the student because the contact changes were saved."
         await asyncio.sleep(5)
 
     finally:

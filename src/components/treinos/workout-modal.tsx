@@ -147,7 +147,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                     .from('students')
                     .select('id, full_name')
                     .eq('organization_id', orgId)
-                    .eq('status', 'active')
+                    .eq('status', 'ACTIVE')
                     .order('full_name');
                 if (sData) setAvailableStudents(sData.map((s: any) => ({ id: s.id, name: s.full_name })));
 

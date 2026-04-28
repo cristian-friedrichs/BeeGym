@@ -33,10 +33,10 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Navigate to /app/pagamentos to attempt access to the payments page (expect redirect to login). After page settles, fill login with teste10@teste.com / 123456 and submit.
+        # -> Navigate to /app/pagamentos to attempt to access the payments page as a logged-out user.
         await page.goto("http://127.0.0.1:9002/app/pagamentos")
         
-        # -> Fill the email field (index 1413) with teste10@teste.com, fill the password field (index 1414) with 123456, then click the submit button (index 1416).
+        # -> Fill the email and password fields and submit the login form to verify the app redirects to the payments page (/app/pagamentos).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)

@@ -33,10 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Navigate to the login page (/login) so I can observe the login fields and proceed with authentication.
-        await page.goto("http://127.0.0.1:9002/login")
+        # -> Click the 'Entrar' link to open the login page (index 74).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email field with the provided username (teste10@teste.com).
+        # -> Fill the email and password fields with teste10@teste.com / 123456, submit the form, then navigate to /app/painel and reload to verify the session persists.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -52,7 +55,7 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Wait for the login to complete, then navigate to /app/painel, reload the page, and verify the user remains authenticated (not redirected back to /login).
+        # -> Navigate to /app/painel to see whether the app shows an authenticated dashboard.
         await page.goto("http://127.0.0.1:9002/app/painel")
         
         # --> Test passed — verified by AI agent
