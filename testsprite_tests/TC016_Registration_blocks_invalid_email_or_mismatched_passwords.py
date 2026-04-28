@@ -33,17 +33,14 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Começar Agora' CTA to reach the registration page, then observe the form fields before filling any inputs.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a[2]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
+        # -> Navigate to the registration page at /register
+        await page.goto("http://127.0.0.1:9002/register")
         
-        # -> Fill the visible registration fields with a name, an invalid email (to trigger email-format validation), and a valid password, then submit the form to observe validation feedback for the invalid email.
+        # -> Fill the registration fields (name, invalid email, password) then submit the form to trigger validation errors.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Teste Usuario')
+        await asyncio.sleep(3); await elem.fill('Test User')
         
         frame = context.pages[-1]
         # Input text
@@ -53,9 +50,9 @@ async def run_test():
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[3]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('ValidPass123')
+        await asyncio.sleep(3); await elem.fill('Password123!')
         
-        # -> Click the 'Criar minha conta' submit button to attempt registration and observe validation feedback for the invalid email.
+        # -> Submit the registration form by clicking the 'Criar minha conta' button to trigger validation and observe errors.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)

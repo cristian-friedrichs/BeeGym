@@ -39,7 +39,7 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Enter the email into the email field (index 1461), enter the password into the password field (index 1473), then submit the form by clicking the login button (index 1481).
+        # -> Fill the email and password fields with the provided credentials and submit the form to sign in. Then verify the user lands on the authenticated dashboard.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)

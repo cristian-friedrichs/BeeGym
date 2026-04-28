@@ -33,13 +33,19 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Open the login page by clicking the 'Entrar' link.
+        # -> Click the 'Entrar' link to open the login form/page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields and submit the login form.
+        # -> Open the login form by clicking the 'Entrar' link, then wait for the login form to appear so credentials can be entered.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the login form (email and password) and submit to authenticate as teste10@teste.com, then wait for the app to load the dashboard.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,60 +61,12 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Alunos' (Students) navigation link to open the students area.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
-        await asyncio.sleep(3); await elem.click()
+        # -> Wait for login to complete and navigate to the Students (Alunos) page so we can create a new student and test CPF validation.
+        await page.goto("http://127.0.0.1:9002/alunos")
         
-        # -> Open the 'Novo Aluno' form so I can inspect the student creation fields (name, CPF, phone, address, plan dates) and then attempt to save with an invalid-length CPF.
+        # --> Assertions to verify final state
         frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Fill the student's name, enter an invalid-length CPF, then click 'Concluir Matrícula' to trigger validation. After that, check the page for a CPF validation error and confirm the student was not saved.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Teste CPF inválido')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('123')
-        
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Fill the required email and minimal address fields, then attempt to submit the form again to see if a CPF-specific validation error appears.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('teste.cpf@exemplo.com')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('(11) 91234-5678')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Rua de Teste')
-        
-        # -> Click 'Concluir Matrícula' to attempt to save, wait for the UI to settle, then collect visible validation errors/notifications and check specifically for a CPF length validation message and confirm the student was not created.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # --> Test passed — verified by AI agent
-        frame = context.pages[-1]
-        current_url = await frame.evaluate("() => window.location.href")
-        assert current_url is not None, "Test completed successfully"
+        assert await frame.locator("xpath=//*[contains(., 'CPF inválido')]").nth(0).is_visible(), "The form should display a CPF validation error and prevent saving the student."]}} However there's an extra closing brace — wait. The JSON must adhere to schema: top-level object with 
         await asyncio.sleep(5)
 
     finally:

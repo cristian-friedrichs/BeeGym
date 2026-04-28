@@ -33,13 +33,19 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Open the login page by clicking the 'Entrar' link so we can authenticate (click element index 63).
+        # -> Click the 'Entrar' link to open the login form.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill email and password, then submit the login form (click 'Acessar painel'). After login, open the Payments section and verify the invoices list and statuses.
+        # -> Click the 'Entrar' link on the registration page to open the login form (element index 1757).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the email and password fields and submit the login form to authenticate the user.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,13 +61,7 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome modal (if open), click the 'Pagamentos' navigation item to open the Payments page, then verify a list of invoices and their statuses is displayed.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Click the 'Pagamentos' navigation item to open the Payments page and then verify a list of invoices with their current statuses is displayed.
+        # -> Click the 'Pagamentos' navigation item to open the payments/invoices list, then verify a list of invoices is displayed with payment status information.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)

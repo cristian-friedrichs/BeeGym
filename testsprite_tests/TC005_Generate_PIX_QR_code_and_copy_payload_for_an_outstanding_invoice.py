@@ -33,13 +33,19 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' button/link to open the login page so we can authenticate as teste10@teste.com.
+        # -> Click the 'Entrar' link to open the login form or page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the login form with teste10@teste.com / 123456 and submit to authenticate.
+        # -> Open the login page/form (click the 'Entrar' link on the registration page) so we can fill credentials and sign in.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Fill the email and password fields and submit the login form (click 'Acessar painel').
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,25 +61,25 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Close the welcome dialog, then open the 'Pagamentos' section to view invoices.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Open the 'Pagamentos' (Payments) section to view the invoice list so an outstanding invoice can be selected.
+        # -> Open the Payments (Pagamentos) view from the sidebar so we can locate outstanding invoices.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the actions button for the overdue invoice (João Silva Teste, R$150, status Atrasado) to open invoice actions and reveal payment options (PIX).
+        # -> Click the 'Pagamentos' sidebar link to open the Payments view, then wait for the payments/invoices list to load so we can select an outstanding invoice.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Click the actions button for the overdue (Atrasado) invoice row to open invoice actions (to generate PIX).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div[4]/div[2]/table/tbody/tr/td[6]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Gerar PIX' button in the invoice details panel to generate the PIX QR code and payment payload.
+        # -> Click the 'Gerar PIX' button in the invoice details panel to open the PIX modal, wait for it to render, then extract the visibility of the QR and the copyable payload string (and capture the payload if present).
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div[2]/div/div[2]/button[2]').nth(0)
