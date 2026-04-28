@@ -1,10 +1,9 @@
 [
   {
     "id": "TC001",
-    "title": "Create a new student with valid details and see it in the list",
-    "description": "Verifies a user can add a student via the modal using valid CPF, phone, and complete address, and the student appears in the listing.",
-    "category": "Student Management",
-    "priority": "High",
+    "title": "Log in and reach the dashboard",
+    "description": "Verifies a user can sign in and is taken to the authenticated dashboard as a stable entry point.",
+    "category": "User Authentication",
     "steps": [
       {
         "type": "action",
@@ -12,198 +11,90 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Aluno Teste E2E\" into the \"Full name\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123.456.789-10\" into the \"CPF\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"11987654321\" into the \"Phone\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Rua das Flores\" into the \"Street\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"100\" into the \"Number\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Centro\" into the \"Neighborhood\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"São Paulo\" into the \"City\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"SP\" into the \"State\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"01001000\" into the \"ZIP\" field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Save student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Aluno Teste E2E\" is visible"
+        "description": "Verify the user lands on the dashboard"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC002",
-    "title": "Student list loads and is visible",
-    "description": "Verifies the student list page renders and shows the list area/state for an authenticated user.",
-    "category": "Student Management",
-    "priority": "High",
+    "title": "Auth-gated route redirects to login and returns after authentication",
+    "description": "Verifies visiting an authenticated page while logged out redirects to login and, after signing in, returns the user to the originally requested page.",
+    "category": "User Authentication",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Navigate to /app/alunos"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
+        "description": "Verify the user is redirected to the login page"
       },
       {
         "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Alunos\" is visible"
+        "description": "Verify the user lands on the students page"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC003",
-    "title": "Validation errors shown for invalid CPF and missing address fields",
-    "description": "Verifies form validations prevent saving when CPF length is wrong and required address fields are missing.",
-    "category": "Student Management",
-    "priority": "High",
+    "title": "Access payments requires login and returns to requested page",
+    "description": "Verifies that a logged-out user attempting to access payments is redirected to login and, after successful login, lands on the payments page.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /login"
+        "description": "Navigate to /app/pagamentos"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Aluno CPF Invalido\" into the \"Full name\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123\" into the \"CPF\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"11987654321\" into the \"Phone\" field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Save student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"CPF\" is visible"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Endereço\" is visible"
+        "description": "Verify the user lands on the payments page"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC004",
-    "title": "Phone validation blocks save when phone has fewer than 10 digits",
-    "description": "Verifies the modal enforces the minimum phone length and does not save the student when phone is too short.",
+    "title": "Create a new student with full details and plan dates",
+    "description": "Verifies staff can create a student with CPF, contact, address, and plan dates and see the student appear in the list.",
     "category": "Student Management",
-    "priority": "Medium",
     "steps": [
       {
         "type": "action",
@@ -211,88 +102,64 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the students area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique full name into the student name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF in the required format into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid address details into the address fields"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan due date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Aluno Telefone Curto\" into the \"Full name\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123.456.789-10\" into the \"CPF\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123456789\" into the \"Phone\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Rua A\" into the \"Street\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"10\" into the \"Number\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Bairro B\" into the \"Neighborhood\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Cidade C\" into the \"City\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"SP\" into the \"State\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"01001000\" into the \"ZIP\" field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Save student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Phone\" is visible"
+        "description": "Verify the new student appears in the student list"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC005",
-    "title": "ZIP validation blocks save when ZIP has fewer than 8 characters",
-    "description": "Verifies the modal enforces the minimum ZIP length and does not save the student when ZIP is too short.",
-    "category": "Student Management",
-    "priority": "Medium",
+    "title": "Generate PIX QR code and copy payload for an outstanding invoice",
+    "description": "Verifies that staff can select an outstanding invoice and generate a PIX QR code and a copyable payload string for payment.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
@@ -300,141 +167,93 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open payments"
+      },
+      {
+        "type": "action",
+        "description": "Select an outstanding invoice from the list"
+      },
+      {
+        "type": "action",
+        "description": "Generate PIX payment details for the selected invoice"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Aluno CEP Curto\" into the \"Full name\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123.456.789-10\" into the \"CPF\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"11987654321\" into the \"Phone\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Rua C\" into the \"Street\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"20\" into the \"Number\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Bairro D\" into the \"Neighborhood\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Cidade E\" into the \"City\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"SP\" into the \"State\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"1234567\" into the \"ZIP\" field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Save student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"ZIP\" is visible"
+        "description": "Verify a PIX QR code is displayed and a copyable payment payload string is shown"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC006",
-    "title": "Cancel/close the new student modal without saving",
-    "description": "Verifies the user can dismiss the creation modal and return to the student list without adding a student.",
-    "category": "Student Management",
-    "priority": "Low",
+    "title": "Register a new user then see onboarding after first login",
+    "description": "Verifies a new user can register, log in, and is shown an onboarding plan prompt after first login.",
+    "category": "User Authentication",
     "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /register"
+      },
+      {
+        "type": "action",
+        "description": "Fill a new unique name into the name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a new unique email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill the same password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
       {
         "type": "action",
         "description": "Navigate to /login"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill the newly registered email into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill the same password into the password field"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Cancel\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is not visible"
+        "description": "Verify an onboarding prompt to choose a plan is displayed"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC007",
-    "title": "Required address fields prevent saving when street is empty",
-    "description": "Verifies the form blocks saving and shows an address-related validation when a required address field (street) is missing.",
-    "category": "Student Management",
-    "priority": "Medium",
+    "title": "Create and assign a workout with exercises and parameters",
+    "description": "Verifies an instructor can select a student, create a workout with exercises and set details, save it, and see it listed as assigned for that student.",
+    "category": "Workout Prescription",
     "steps": [
       {
         "type": "action",
@@ -442,84 +261,96 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the students area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique full name into the student name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF in the required format into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid address details into the address fields"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan due date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the workouts area"
+      },
+      {
+        "type": "action",
+        "description": "Select the newly created student from the student list"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new workout for the selected student"
+      },
+      {
+        "type": "action",
+        "description": "Add an exercise from the exercise library"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid number of sets for the added exercise"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid number of reps for the added exercise"
+      },
+      {
+        "type": "action",
+        "description": "Set valid cadence and rest details for the added exercise"
+      },
+      {
+        "type": "action",
+        "description": "Save the workout"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Add new student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Novo aluno\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Aluno Sem Rua\" into the \"Full name\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"123.456.789-10\" into the \"CPF\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"11987654321\" into the \"Phone\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"55\" into the \"Number\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Bairro F\" into the \"Neighborhood\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Cidade G\" into the \"City\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"SP\" into the \"State\" field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"01001000\" into the \"ZIP\" field"
-      },
-      {
-        "type": "action",
-        "description": "Click on the \"Save student\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Endereço\" is visible"
+        "description": "Verify the workout is shown as assigned for the selected student"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC008",
-    "title": "Authenticated access to Student Management route loads students page",
-    "description": "Verifies that after logging in, navigating through the UI to the Student Management page lands on /app/alunos successfully.",
-    "category": "Student Management",
-    "priority": "High",
+    "title": "Session persists across page reload on authenticated area",
+    "description": "Verifies an authenticated session remains active after a page reload so the user stays in the app.",
+    "category": "User Authentication",
     "steps": [
       {
         "type": "action",
@@ -527,40 +358,36 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click on the \"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app\""
+        "description": "Submit the login form"
       },
       {
         "type": "action",
-        "description": "Click on \"Alunos\" in the main navigation/menu"
+        "description": "Navigate to /app/painel"
+      },
+      {
+        "type": "action",
+        "description": "Reload the page"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app/alunos"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"student list\" is visible"
+        "description": "Verify the user remains on an authenticated app page without being sent to login"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC009",
-    "title": "Create and save a workout with one exercise (reps as range string)",
-    "description": "Verifies a trainer can create a workout for a selected student with an exercise and reps entered as a range string, and the workout appears in the student’s list.",
-    "category": "Workout Prescription",
-    "priority": "High",
+    "title": "View invoices list with payment statuses",
+    "description": "Verifies that an authenticated user can open payments and see a list of invoices with their current statuses displayed.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
@@ -568,64 +395,32 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open payments"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add Workout\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add exercise to workout\""
-      },
-      {
-        "type": "action",
-        "description": "Choose an exercise from the exercise library list"
-      },
-      {
-        "type": "action",
-        "description": "Type \"3\" into the sets field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"10-12\" into the reps field"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Save workout\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the workout is visible in the workout list for the selected student"
+        "description": "Verify a list of invoices is displayed with payment status information"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC010",
-    "title": "Create and save a workout with one exercise (reps as free-text string)",
-    "description": "Verifies reps accepts non-numeric text (e.g., \"Até a falha\") and the workout saves successfully.",
-    "category": "Workout Prescription",
-    "priority": "High",
+    "title": "Edit an existing student and persist updates",
+    "description": "Verifies a user can create a student, edit contact/address details, save, and see the updated details persist when reopening the student.",
+    "category": "Student Management",
     "steps": [
       {
         "type": "action",
@@ -633,64 +428,84 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the students area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique full name into the student name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF in the required format into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid address details into the address fields"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan due date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Open the newly created student from the list"
+      },
+      {
+        "type": "action",
+        "description": "Update the phone field to a different valid number"
+      },
+      {
+        "type": "action",
+        "description": "Update one address field to a new valid value"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "action",
+        "description": "Reopen the same student from the list"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add Workout\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add exercise to workout\""
-      },
-      {
-        "type": "action",
-        "description": "Choose an exercise from the exercise library list"
-      },
-      {
-        "type": "action",
-        "description": "Type \"4\" into the sets field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"Até a falha\" into the reps field"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Save workout\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the workout is visible in the workout list for the selected student"
+        "description": "Verify the updated student details are displayed"
       }
-    ]
+    ],
+    "priority": "High"
   },
   {
     "id": "TC011",
-    "title": "Validation: cannot save a workout without exercises",
-    "description": "Verifies the UI blocks saving when no exercise has been added and shows the expected validation error.",
-    "category": "Workout Prescription",
-    "priority": "High",
+    "title": "Cancel invoice selection returns to invoice list without PIX details",
+    "description": "Verifies that staff can back out of a selected invoice and return to the invoice list without PIX details remaining visible.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
@@ -698,48 +513,40 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open payments"
+      },
+      {
+        "type": "action",
+        "description": "Select an invoice from the list"
+      },
+      {
+        "type": "action",
+        "description": "Return to the invoice list view"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add Workout\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Save workout\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Workout must contain at least one exercise\" is visible"
+        "description": "Verify only the invoice list is displayed and no PIX QR or payload is shown"
       }
-    ]
+    ],
+    "priority": "Medium"
   },
   {
     "id": "TC012",
-    "title": "Switching student updates the workout list context",
-    "description": "Verifies that selecting a different student changes the displayed workout list context (not showing the previous student’s selected context).",
-    "category": "Workout Prescription",
-    "priority": "Medium",
+    "title": "Invoice list handles empty state",
+    "description": "Verifies that when there are no invoices to display, the payments page shows an empty state instead of a broken or blank UI.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
@@ -747,52 +554,32 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open payments"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"Workout list\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Select a different student from the student selector"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the selected student name is visible near the workout section"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the workout list is updated for the newly selected student"
+        "description": "Verify an empty state message is visible for invoices"
       }
-    ]
+    ],
+    "priority": "Medium"
   },
   {
     "id": "TC013",
-    "title": "Exercise library can be opened and an exercise selected before saving",
-    "description": "Verifies the exercise library selection flow is usable end-to-end (open library, pick an exercise, return to workout form).",
+    "title": "Workout requires at least one exercise before saving",
+    "description": "Verifies the workout form blocks saving a workout when no exercises are added and shows a validation error.",
     "category": "Workout Prescription",
-    "priority": "Medium",
     "steps": [
       {
         "type": "action",
@@ -800,56 +587,80 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the students area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a unique full name into the student name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid CPF in the required format into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill valid address details into the address fields"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan due date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Save the student"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation link to the workouts area"
+      },
+      {
+        "type": "action",
+        "description": "Select the newly created student from the student list"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new workout for the selected student"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to save the workout without adding any exercises"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add Workout\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add exercise to workout\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Exercise library\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Choose an exercise from the exercise library list"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the chosen exercise name is visible in the workout form"
+        "description": "Verify a validation error is displayed requiring at least one exercise"
       }
-    ]
+    ],
+    "priority": "Low"
   },
   {
     "id": "TC014",
-    "title": "Auth required: accessing Treinos after login lands on Treinos page successfully",
-    "description": "Verifies authenticated users can access the Treinos page and see the core controls to prescribe workouts.",
-    "category": "Workout Prescription",
-    "priority": "High",
+    "title": "Student CPF length validation prevents save",
+    "description": "Verifies the student form blocks saving when CPF does not meet the required length and shows a validation error.",
+    "category": "Student Management",
     "steps": [
       {
         "type": "action",
@@ -857,44 +668,64 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill {{LOGIN_USER}} into the email field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app\""
+        "description": "Submit the login form"
       },
       {
         "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
+        "description": "Click the navigation link to the students area"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new student"
+      },
+      {
+        "type": "action",
+        "description": "Fill a name into the student name field"
+      },
+      {
+        "type": "action",
+        "description": "Fill an invalid-length CPF into the CPF field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid phone number into the phone field"
+      },
+      {
+        "type": "action",
+        "description": "Fill minimal valid address details into the address fields"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan start date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid plan due date after the start date"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to save the student"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app/treinos\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"Student selector\" is visible"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"Add Workout\" is visible"
+        "description": "Verify a CPF validation error is displayed and the student is not saved"
       }
-    ]
+    ],
+    "priority": "Low"
   },
   {
     "id": "TC015",
-    "title": "Canceling workout creation does not save a workout",
-    "description": "Verifies exiting the workout creation flow (via a visible Cancel/Close control) does not create a workout entry.",
-    "category": "Workout Prescription",
-    "priority": "Low",
+    "title": "Prevent PIX generation when invoice amount is invalid or missing",
+    "description": "Verifies that attempting to generate PIX for an invoice with missing or invalid amount is blocked with a validation error and no QR/payload is produced.",
+    "category": "Payment Processing (PIX EFI)",
     "steps": [
       {
         "type": "action",
@@ -902,298 +733,70 @@
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email field"
+        "description": "Fill in the email field with {{LOGIN_USER}}"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
       },
       {
         "type": "action",
-        "description": "Click the \"Login\" button"
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open payments"
+      },
+      {
+        "type": "action",
+        "description": "Select an invoice that has no amount or an invalid amount"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to generate PIX payment details"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app\""
-      },
-      {
-        "type": "action",
-        "description": "Click on \"Treinos\" in the main navigation"
-      },
-      {
-        "type": "action",
-        "description": "Select a student from the student selector"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add Workout\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Add exercise to workout\""
-      },
-      {
-        "type": "action",
-        "description": "Choose an exercise from the exercise library list"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Cancel\" or \"Close\" on the workout creation form"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the workout creation form is not visible"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify the newly selected exercise is not visible as a saved workout entry in the workout list"
+        "description": "Verify a validation error is visible preventing PIX generation"
       }
-    ]
+    ],
+    "priority": "Low"
   },
   {
     "id": "TC016",
-    "title": "Generate PIX checkout and verify QR code + copia-e-cola are displayed",
-    "description": "Verifies a user can generate a PIX payment request and sees both the QR code and copia-e-cola string on the Payments page.",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "High",
+    "title": "Registration blocks invalid email or mismatched passwords",
+    "description": "Verifies registration validation prevents creating an account when email format is invalid or passwords do not match.",
+    "category": "User Authentication",
     "steps": [
       {
         "type": "action",
-        "description": "Navigate to /login"
+        "description": "Navigate to /register"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
+        "description": "Fill a name into the name field"
       },
       {
         "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
+        "description": "Fill an invalid email format into the email field"
       },
       {
         "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a different password into the confirm password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
       },
       {
         "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Generate PIX QR Code\" for a visible plan/option"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"PIX QR Code\" is visible"
+        "description": "Verify validation errors are displayed for the invalid inputs"
       }
-    ]
-  },
-  {
-    "id": "TC017",
-    "title": "After generating PIX, verify copia-e-cola string is visible and non-empty",
-    "description": "Verifies the PIX 'copia-e-cola' payment string is shown after generating a checkout.",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Generate PIX QR Code\" for a visible plan/option"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"copia-e-cola\" is visible"
-      }
-    ]
-  },
-  {
-    "id": "TC018",
-    "title": "Payments page shows an organization payment status label",
-    "description": "Verifies the Payments page displays a visible payment status for the organization (e.g., PENDING/PAID).",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"Status\" is visible"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"Payment status\" is visible"
-      }
-    ]
-  },
-  {
-    "id": "TC019",
-    "title": "Paid status reflected in UI and dashboard access is available",
-    "description": "Verifies that when payment is marked PAID, the user sees PAID status and can access the main dashboard.",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "High",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify text \"PAID\" is visible"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Painel\" in the main app navigation"
-      }
-    ]
-  },
-  {
-    "id": "TC020",
-    "title": "Payments page remains usable after generating PIX (no crash, status still visible)",
-    "description": "Verifies the Payments page continues to show status information after a PIX checkout is generated.",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "Medium",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "action",
-        "description": "Click \"Generate PIX QR Code\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify element \"Payment status\" is visible"
-      }
-    ]
-  },
-  {
-    "id": "TC021",
-    "title": "Authenticated user can open Payments page from dashboard navigation",
-    "description": "Verifies basic navigation path to Payments within the authenticated app shell works.",
-    "category": "Payment Processing (PIX EFI)",
-    "priority": "Low",
-    "steps": [
-      {
-        "type": "action",
-        "description": "Navigate to /login"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_USER}}\" into the email/username field"
-      },
-      {
-        "type": "action",
-        "description": "Type \"{{LOGIN_PASSWORD}}\" into the password field"
-      },
-      {
-        "type": "action",
-        "description": "Click the \"Entrar\"/\"Login\" button"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/painel\""
-      },
-      {
-        "type": "action",
-        "description": "Click \"Pagamentos\" in the main app navigation"
-      },
-      {
-        "type": "assertion",
-        "description": "Verify URL contains \"/app/pagamentos\""
-      },
-      {
-        "type": "assertion",
-        "description": "Verify page title contains \"Pagamentos\""
-      }
-    ]
+    ],
+    "priority": "Low"
   }
 ]

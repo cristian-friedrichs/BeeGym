@@ -1,101 +1,50 @@
 version: "2"
 type: frontend
 tech_stack:
-  - typescript
-  - react
-  - nextjs
-  - tailwindcss
-  - supabase
-  - efi_pix
+  - TypeScript
+  - Next.js
+  - Tailwind CSS
+  - Radix UI
+  - Supabase
 routes:
-  - path: /
-    file: src/app/(marketing)/page.tsx
-    auth_required: false
-    description: Marketing landing page
   - path: /login
     file: src/app/login/page.tsx
     auth_required: false
-    description: User login page
-  - path: /register
-    file: src/app/register/page.tsx
-    auth_required: false
-    description: User registration
-  - path: /app/painel
-    file: src/app/app/(authenticated)/painel/page.tsx
-    auth_required: true
-    description: Main application dashboard
+    description: Login page
   - path: /app/alunos
     file: src/app/app/(authenticated)/alunos/page.tsx
     auth_required: true
-    description: Student management and listing
+    description: Student management page
   - path: /app/treinos
     file: src/app/app/(authenticated)/treinos/page.tsx
     auth_required: true
-    description: Workout management
+    description: Workout management page
   - path: /app/pagamentos
     file: src/app/app/(authenticated)/pagamentos/page.tsx
     auth_required: true
-    description: Payment management
+    description: Payments and billing
 features:
-  - name: User Authentication
-    description: Login and registration flow for gym owners and staff
-    files:
-      - src/app/login/page.tsx
-      - src/app/register/page.tsx
-      - src/lib/schemas/authSchema.ts
-    entry_route: /login
-    user_interactions:
-      - Fill email input field
-      - Fill password input field
-      - Click Login button to submit
-    api_calls:
-      - method: POST
-        endpoint: /api/auth/login
-    auth_required: false
   - name: Student Management
-    description: Create, view and manage student profiles and plans
+    description: Create, edit, and list gym students
     files:
       - src/app/app/(authenticated)/alunos/page.tsx
-      - src/lib/schemas/studentSchema.ts
+      - src/components/alunos/student-modal.tsx
     entry_route: /app/alunos
     user_interactions:
-      - View student list
-      - Click to add new student
-      - Fill student details modal
-      - Save student
-    api_calls:
-      - method: GET
-        endpoint: /api/students
-      - method: POST
-        endpoint: /api/students
+      - Click "Adicionar Aluno"
+      - Fill form (Name, CPF, Phone, Address)
+      - Click Save
     auth_required: true
-  - name: Workout Prescription
-    description: Assign and manage workouts for students
+  - name: Workout Management
+    description: Create and assign workouts to students
     files:
       - src/app/app/(authenticated)/treinos/page.tsx
+      - src/components/treinos/workout-modal.tsx
     entry_route: /app/treinos
     user_interactions:
-      - Select a student
-      - Add exercise to workout
+      - Select student
+      - Add exercises
       - Define sets/reps
-      - Save workout
-    api_calls:
-      - method: GET
-        endpoint: /api/workouts
-      - method: POST
-        endpoint: /api/workouts
-    auth_required: true
-  - name: Payment Processing
-    description: Manage gym subscriptions and student payments through PIX EFI
-    files:
-      - src/app/app/(authenticated)/pagamentos/page.tsx
-      - src/app/api/webhooks/efi/route.ts
-    entry_route: /app/pagamentos
-    user_interactions:
-      - View payment status
-      - Generate PIX QR Code
-    api_calls:
-      - method: POST
-        endpoint: /api/payments
+      - Click Save
     auth_required: true
 known_limitations: []
