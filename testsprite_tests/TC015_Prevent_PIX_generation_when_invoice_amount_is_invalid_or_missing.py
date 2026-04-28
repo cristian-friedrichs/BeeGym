@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Open the login page by clicking 'Entrar'.
+        # -> Open the login page by clicking the 'Entrar' link.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill email and password, submit the login form to access the dashboard.
+        # -> Fill the email and password fields and submit the login form to sign in as teste10@teste.com.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,17 +55,27 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Dismiss the welcome modal if present, then open Pagamentos (Payments) → Faturas (Invoices) page so we can find an invoice with a missing/invalid amount and attempt to generate PIX.
+        # -> Dismiss the welcome modal, then navigate to Pagamentos → Invoices and find an invoice with a missing or invalid amount to attempt PIX generation.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        await page.goto("http://127.0.0.1:9002/app/pagamentos/faturas")
+        # -> Open the Pagamentos (Payments) section from the dashboard to locate invoices.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[7]').nth(0)
+        await asyncio.sleep(3); await elem.click()
+        
+        # -> Open the actions menu for the first invoice (row for 'João Silva Teste' with 27/04/2026) to look for a 'Gerar PIX' or similar option and proceed to attempt PIX generation.
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div[4]/div[2]/table/tbody/tr/td[6]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Valor inválido')]").nth(0).is_visible(), "A validation error should be visible preventing PIX generation because the invoice amount is missing or invalid."
+        assert await frame.locator("xpath=//*[contains(., 'Valor inválido')]").nth(0).is_visible(), "A validation error should be visible preventing PIX generation."
         await asyncio.sleep(5)
 
     finally:

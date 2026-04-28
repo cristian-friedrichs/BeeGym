@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Click the 'Entrar' (login) link to open the login form.
+        # -> Open the login page by clicking the 'Entrar' link.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email and password fields and submit the login form to access the dashboard.
+        # -> Fill the email field with teste10@teste.com (then fill password and submit the login form).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
@@ -55,83 +55,25 @@ async def run_test():
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Dismiss the welcome modal by clicking 'Agora Não' so the dashboard nav is accessible.
+        # -> Close the welcome modal so the left navigation becomes accessible, then navigate to the 'Alunos' (Students) area.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Alunos' (Students) link in the left sidebar to open the students page.
+        # -> Open the 'Treinos' (Workouts) area from the left navigation to start creating a new workout.
         frame = context.pages[-1]
         # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[5]').nth(0)
+        elem = frame.locator('xpath=/html/body/div[2]/aside/nav/a[4]').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Click the 'Novo Aluno' (New Student) button to open the create-student form.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Fill the new-student form fields (name, birth date, CPF, address fields) and click 'Concluir Matrícula' to create the student. After the modal closes, navigate to Treinos to create a workout for that student.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Aluno Automação Teste 2026-04-28')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('1990-01-01')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[3]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('123.456.789-09')
-        
-        # -> Fill the missing address and contact fields, submit 'Concluir Matrícula' to create the student, then navigate to /app/treinos to start creating a new workout for that student.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[4]/div[2]/div/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Rua Teste Automação')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('aluno.automacao.2026-04-28@example.com')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div/div[2]/div[2]/div[2]/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('(11) 99999-0000')
-        
-        # -> Click 'Concluir Matrícula' to create the student (submit the new enrollment form). After submission, proceed to the workouts area to create a new workout for the student.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Wait for the student submission to complete and the modal to close, then open the workouts (Treinos) page to start creating a new workout for the student.
-        await page.goto("http://127.0.0.1:9002/app/treinos")
-        
-        # -> Open the 'Novo Treino' dialog to start creating a new workout for the student so we can attempt to save it without exercises and verify the validation error.
+        # -> Click the 'Novo Treino' button to open the create-workout form.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div/main/div/div/div[2]/button').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Select the newly created student, fill required workout fields (name), scroll to reveal the submit button, then attempt to save the workout without adding any exercises to trigger and observe the validation error.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div[2]/div/div/div/div/div/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Aluno Automação Teste 2026-04-28')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[5]/div[2]/div[2]/div[3]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Treino Automação - Teste')
-        
-        # -> Click the 'Agendar Treino' button to attempt to save the workout without any exercises and observe any validation error message.
+        # -> Click the 'Agendar Treino' button to attempt saving the workout without adding any exercises and observe whether a validation error appears requiring at least one exercise.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[5]/div[3]/button[2]').nth(0)

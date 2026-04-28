@@ -14,42 +14,43 @@
 
 #### Test TC001 Log in and reach the dashboard
 - **Test Code:** [TC001_Log_in_and_reach_the_dashboard.py](./TC001_Log_in_and_reach_the_dashboard.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/8c967381-2c6c-459a-99d8-f04aa2c32c94
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/9c06284f-a91f-4065-a1f4-39414a4e30c4
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC002 Auth-gated route redirects to login and returns after authentication
 - **Test Code:** [TC002_Auth_gated_route_redirects_to_login_and_returns_after_authentication.py](./TC002_Auth_gated_route_redirects_to_login_and_returns_after_authentication.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/f2893286-9748-4a58-a893-ec37df39cf00
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/d02ad996-cd71-44a7-b47b-c55681016f42
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC003 Access payments requires login and returns to requested page
 - **Test Code:** [TC003_Access_payments_requires_login_and_returns_to_requested_page.py](./TC003_Access_payments_requires_login_and_returns_to_requested_page.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/a24a9c0c-2443-4065-9769-c236d0bd0c67
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/5b73a093-0c57-4347-acb4-30b31392c75b
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC004 Create a new student with full details and plan dates
 - **Test Code:** [TC004_Create_a_new_student_with_full_details_and_plan_dates.py](./TC004_Create_a_new_student_with_full_details_and_plan_dates.py)
-- **Test Error:** TEST FAILURE
+- **Test Error:** TEST BLOCKED
 
-The student was created but the required plan dates were not set during creation.
+The student enrollment could not be completed because there are no plans available to select.
 
 Observations:
-- The page showed a notification 'Aluno cadastrado com sucesso!'.
-- The students list contains 'Aluno Automacao 2026' but its Plano column shows 'Sem Plano'.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/f9f48dbc-3648-4718-b5ef-50d118c9891e
-- **Status:** ❌ Failed
+- The 'Plano Selecionado' combobox was opened and the listbox displayed the message 'Nenhum plano disponível'.
+- Without a plan it is not possible to set plan start/end dates or finish the enrollment, so the new student cannot be created as required.
+
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/d1e2384d-1374-4d90-adaa-0d531c3c0858
+- **Status:** BLOCKED
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC005 Generate PIX QR code and copy payload for an outstanding invoice
 - **Test Code:** [TC005_Generate_PIX_QR_code_and_copy_payload_for_an_outstanding_invoice.py](./TC005_Generate_PIX_QR_code_and_copy_payload_for_an_outstanding_invoice.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/d9de0e68-c922-4222-8708-cb1af4f021b6
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/41c2a9d8-66a0-4199-836d-5b3a0fd30c28
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -58,42 +59,43 @@ Observations:
 - **Test Code:** [TC006_Register_a_new_user_then_see_onboarding_after_first_login.py](./TC006_Register_a_new_user_then_see_onboarding_after_first_login.py)
 - **Test Error:** TEST FAILURE
 
-Registration/login did not work — the newly created account could not log in.
+Registration failed — the application showed a database error and did not create the new user account.
 
 Observations:
-- After submitting the login form the page displayed 'E-mail ou senha incorretos. Tente novamente.'
-- The application remained on the login screen and no onboarding plan prompt or dashboard was shown.
+- The registration page showed the error banner: "Database error saving new user".
+- The registration form remained visible with the inputs filled and no redirect to a dashboard or onboarding.
+- No success notification or account confirmation was displayed.
 
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/f5fff6cc-eaa7-476a-9be3-c845bfde1267
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/1a67de73-ca3f-407b-8ffa-31d99e396338
 - **Status:** ❌ Failed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC007 Create and assign a workout with exercises and parameters
 - **Test Code:** [TC007_Create_and_assign_a_workout_with_exercises_and_parameters.py](./TC007_Create_and_assign_a_workout_with_exercises_and_parameters.py)
-- **Test Error:** TEST FAILURE
+- **Test Error:** TEST BLOCKED
 
-Selecting a student inside the 'Novo Treino' modal does not work, so the instructor cannot create and assign a workout to the student.
+Student creation is blocked because no membership plans are available, so the workflow (select student → create workout → assign to student) cannot be completed.
 
 Observations:
-- The 'Novo Treino' modal is open but the Aluno combobox shows 'Nenhum aluno encontrado.'
-- Multiple search attempts (full name and several substrings) returned no suggestions.
-- Because no student can be selected, exercises cannot be added and the workout cannot be saved.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/21e36198-5721-4060-af40-8ee6ab35d8ac
-- **Status:** ❌ Failed
+- The students list shows 'Nenhum aluno encontrado.' so no students exist.
+- The 'Plano Selecionado' combobox displays 'Nenhum plano disponível'.
+- A prior attempt to submit 'Concluir Matrícula' completed processing but no student was created.
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/8645788c-0d2d-44bd-8501-42e08f07c71c
+- **Status:** BLOCKED
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC008 Session persists across page reload on authenticated area
 - **Test Code:** [TC008_Session_persists_across_page_reload_on_authenticated_area.py](./TC008_Session_persists_across_page_reload_on_authenticated_area.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/45244f11-ae5c-45d6-a3c0-2c66ad86ac87
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/d8a5e6ac-979c-41e0-b958-f32aea92bbb2
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC009 View invoices list with payment statuses
 - **Test Code:** [TC009_View_invoices_list_with_payment_statuses.py](./TC009_View_invoices_list_with_payment_statuses.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/0bfc3234-96ef-46c8-be26-8f6d31fc28b1
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/1cf5dd07-35bf-4bf2-b626-d185b3d33b3c
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
@@ -102,57 +104,42 @@ Observations:
 - **Test Code:** [TC010_Edit_an_existing_student_and_persist_updates.py](./TC010_Edit_an_existing_student_and_persist_updates.py)
 - **Test Error:** TEST BLOCKED
 
-The student details view cannot be reached because the application is stuck on a full-page loading spinner, preventing further interactions required by the test.
+Student creation cannot be completed because there are no available plans to select.
 
 Observations:
-- The page displays a persistent full-page loading spinner and only minimal interactive elements (app logo SVG and notifications).
-- Multiple attempts to open the student, click the app logo to recover, re-navigate to /app/alunos, and waiting did not resolve the loading state.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/e41780f6-6465-4ab8-8d9a-4879a3ac21e8
+- The 'Plano Selecionado' combobox shows 'Nenhum plano disponível'
+- Attempting to submit the new-student form displayed the validation 'Nome é obrigatório' and prevented saving
+- There are no plan options available in the plan list, so a required prerequisite (a selectable plan) is missing
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/1dd8a85a-0735-4a60-a24a-1493477fc5a2
 - **Status:** BLOCKED
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC011 Cancel invoice selection returns to invoice list without PIX details
 - **Test Code:** [TC011_Cancel_invoice_selection_returns_to_invoice_list_without_PIX_details.py](./TC011_Cancel_invoice_selection_returns_to_invoice_list_without_PIX_details.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/da0d9a94-5326-43d6-a864-20564abc170c
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/3e35b231-5ab3-404f-bd09-5f934d3fb746
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC012 Invoice list handles empty state
 - **Test Code:** [TC012_Invoice_list_handles_empty_state.py](./TC012_Invoice_list_handles_empty_state.py)
-- **Test Error:** TEST FAILURE
-
-The payments page does not show an empty-state when there are no invoices — instead it displays existing transaction rows.
-
-Observations:
-- The 'Histórico de Transações' table contains two transaction rows with student names and values (e.g., 'João Silva Teste' — R$ 150,00).
-- The page shows dates and statuses (e.g., 27/04/2026, 30/03/2026, Atrasado, Realizado), indicating populated data rather than an empty message.
-- No empty-state message or placeholder text indicating "no invoices" is visible on the payments page.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/e01b1830-3140-47ff-9af3-d8a8663c126d
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/aa54a959-de17-46a9-b0e7-4f7fce5909d6
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC013 Workout requires at least one exercise before saving
 - **Test Code:** [TC013_Workout_requires_at_least_one_exercise_before_saving.py](./TC013_Workout_requires_at_least_one_exercise_before_saving.py)
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/a50d90fa-b049-4da6-beb8-825b8ec135a3
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/811f89de-a7eb-4b5b-9626-49648f40f8ab
 - **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC014 Student CPF length validation prevents save
 - **Test Code:** [TC014_Student_CPF_length_validation_prevents_save.py](./TC014_Student_CPF_length_validation_prevents_save.py)
-- **Test Error:** TEST FAILURE
-
-Could not verify CPF-length validation because the form repeatedly blocked submission with 'Email é obrigatório' and the CPF check was not reached.
-
-Observations:
-- Clicking 'Concluir Matrícula' showed a red toast 'Email é obrigatório' and prevented the form from submitting.
-- The new-student modal was discarded or the submit element became unavailable between attempts, preventing progressing to CPF validation.
-- The CPF-length validation message was never displayed.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/b18b65f3-11d7-4d03-ba0a-8609a0c06df7
-- **Status:** ❌ Failed
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/36957889-5140-40ea-81ca-46ff79d6d206
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
@@ -160,35 +147,28 @@ Observations:
 - **Test Code:** [TC015_Prevent_PIX_generation_when_invoice_amount_is_invalid_or_missing.py](./TC015_Prevent_PIX_generation_when_invoice_amount_is_invalid_or_missing.py)
 - **Test Error:** TEST BLOCKED
 
-The Invoices page could not be reached, so the PIX generation flow for an invoice cannot be tested.
+The test cannot proceed because an invoice with a missing or invalid amount could not be found or created through the visible UI.
 
 Observations:
-- Navigating to /app/pagamentos/faturas showed a 404 page with the message 'This page could not be found.'
-- No invoice list or controls to attempt PIX generation were present on the page.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/34c31067-e089-4979-b1ab-eee71322b59e
+- The opened invoice details show a valid amount: R$ 150.00 for 'João Silva Teste'.
+- The payments list contains only invoices with valid amounts (no missing/invalid amounts found).
+- There is no visible UI control available to create or edit an invoice amount into a missing/invalid state from this page.
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/b2a0e0b3-80f0-4c95-ac99-367bbfd509e5
 - **Status:** BLOCKED
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 #### Test TC016 Registration blocks invalid email or mismatched passwords
 - **Test Code:** [TC016_Registration_blocks_invalid_email_or_mismatched_passwords.py](./TC016_Registration_blocks_invalid_email_or_mismatched_passwords.py)
-- **Test Error:** TEST BLOCKED
-
-The passwords-mismatch validation could not be reached because the registration form does not include a confirm-password field.
-
-Observations:
-- The page showed the validation message: 'Unable to validate email address: invalid format'.
-- The E-mail input is marked invalid (invalid=true) and submission is prevented for the malformed email.
-- The registration form does not contain a confirm-password field, so mismatched-password behavior cannot be tested via the UI.
-- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/49e78229-032f-4a4a-862c-eab382947e93/82970e10-0198-44e3-b2f0-8ae5055ccd73
-- **Status:** BLOCKED
+- **Test Visualization and Result:** https://www.testsprite.com/dashboard/mcp/tests/8fa94146-3b23-4707-89b9-dae44e2b9011/19c4931d-4a6e-4125-b7a8-37878b5cf64a
+- **Status:** ✅ Passed
 - **Analysis / Findings:** {{TODO:AI_ANALYSIS}}.
 ---
 
 
 ## 3️⃣ Coverage & Matching Metrics
 
-- **50.00** of tests passed
+- **68.75** of tests passed
 
 | Requirement        | Total Tests | ✅ Passed | ❌ Failed  |
 |--------------------|-------------|-----------|------------|

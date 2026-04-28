@@ -33,10 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Navigate to /register and open the registration form.
-        await page.goto("http://127.0.0.1:9002/register")
+        # -> Open the registration/signup flow by clicking the 'Começar Agora' button (navbar CTA).
+        frame = context.pages[-1]
+        # Click element
+        elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a[2]/button').nth(0)
+        await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the registration form (name, unique email, password) and submit it.
+        # -> Fill the visible registration form (name, email, password) and submit it to create a new user account.
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/input').nth(0)
@@ -45,36 +48,14 @@ async def run_test():
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[2]/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('autotest20260428_1523@example.com')
+        await asyncio.sleep(3); await elem.fill('autotest-20260428-001@example.com')
         
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[3]/input').nth(0)
         await asyncio.sleep(3); await elem.fill('Password123!')
         
-        # -> Submit the registration form by clicking the 'Criar minha conta' button, then observe the resulting page for login or onboarding prompt.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Open the login page by clicking the 'Entrar' link, then proceed to log in with the registered credentials.
-        frame = context.pages[-1]
-        # Click element
-        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/div[5]/p/a').nth(0)
-        await asyncio.sleep(3); await elem.click()
-        
-        # -> Log in using the newly registered credentials and observe whether an onboarding plan prompt is shown after first login.
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('autotest20260428_1523@example.com')
-        
-        frame = context.pages[-1]
-        # Input text
-        elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[2]/div/input').nth(0)
-        await asyncio.sleep(3); await elem.fill('Password123!')
-        
+        # -> Click the 'Criar minha conta' submit button to create the account, then wait for the page to update so we can verify the onboarding plan prompt.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div[4]/button').nth(0)
@@ -82,7 +63,7 @@ async def run_test():
         
         # --> Assertions to verify final state
         frame = context.pages[-1]
-        assert await frame.locator("xpath=//*[contains(., 'Escolha um plano')]").nth(0).is_visible(), "The onboarding prompt to choose a plan should be displayed after first login"
+        assert await frame.locator("xpath=//*[contains(., 'Escolha um plano')]").nth(0).is_visible(), "The onboarding plan selection should be visible after first login"
         await asyncio.sleep(5)
 
     finally:

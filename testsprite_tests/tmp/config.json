@@ -9,11 +9,11 @@
     "projectName": "BeeGym",
     "projectPath": "c:\\Projetos\\BeeGym",
     "testIds": [],
-    "additionalInstruction": "Execute all tests for the entire application codebase, focusing on student and workout management. Ensure that authentication is thoroughly tested as it was the primary blocker in the previous run. User 'teste10@teste.com' with password '123456' should be used for login tests.",
+    "additionalInstruction": "Execute all tests for the entire application codebase, focusing on student and workout management. Ensure that authentication is thoroughly tested. User 'teste10@teste.com' with password '123456' should be used for login tests. Validate student creation, workout assignment, and invoice list.",
     "serverMode": "production",
     "envs": {
       "API_KEY": "sk-user-q3acgxG9hKeabGjpd0aS7szPb4P6iQ3DrxTtpf4_H04CS_6m7wE0Pa6uubkoijSbABrVYmiFpNhpDv-w9V5Kx9IxRD5x6wAweFQuVqOMpu6kLW80OCFRRIAqMyjrw9rbIrs"
     }
   },
-  "serverPort": 52157
+  "serverPort": 61658
 }

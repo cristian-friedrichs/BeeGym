@@ -33,13 +33,13 @@ async def run_test():
         # -> Navigate to http://127.0.0.1:9002
         await page.goto("http://127.0.0.1:9002")
         
-        # -> Open the login page by clicking the 'Entrar' button (interactive element index 76).
+        # -> Click the 'Entrar' link to open the login page.
         frame = context.pages[-1]
         # Click element
         elem = frame.locator('xpath=/html/body/div[2]/header/div/div/a').nth(0)
         await asyncio.sleep(3); await elem.click()
         
-        # -> Fill the email field (index 1472) with teste10@teste.com, fill the password field (index 1484) with 123456, then click the submit button (index 1492) to sign in and verify arrival at the dashboard.
+        # -> Enter the email into the email field (index 1461), enter the password into the password field (index 1473), then submit the form by clicking the login button (index 1481).
         frame = context.pages[-1]
         # Input text
         elem = frame.locator('xpath=/html/body/div[2]/div[2]/div/form/div/div/input').nth(0)
