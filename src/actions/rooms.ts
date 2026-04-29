@@ -15,9 +15,20 @@ export async function createRoomAction(formData: {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Usuário não autenticado' };
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    if (!profile?.organization_id) return { success: false, error: 'Organização não encontrada' };
+
     const { data, error } = await supabase
         .from('rooms')
-        .insert([formData])
+        .insert([{ ...formData, organization_id: profile.organization_id }])
         .select()
         .single();
 
