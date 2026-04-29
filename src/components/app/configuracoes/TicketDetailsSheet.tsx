@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Send, Clock, LifeBuoy, Paperclip, Loader2 } from 'lucide-react';
+import { Send, Clock, LifeBuoy, Paperclip, Loader2, CheckCircle2, XCircle, PauseCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +32,9 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
     const [newMessage, setNewMessage] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSending, setIsSending] = useState(false);
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+    const [ticketStatus, setTicketStatus] = useState<string>(ticket?.status ?? 'open');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -76,6 +78,7 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
 
         resolveRole();
         fetchMessages();
+        setTicketStatus(ticket?.status ?? 'open');
     }, [isOpen, ticket]);
 
     const handleSendMessage = async () => {
@@ -121,6 +124,25 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
         }
     };
 
+    const handleUpdateStatus = async (newStatus: string) => {
+        if (!ticket) return;
+        setIsUpdatingStatus(true);
+        try {
+            const { error } = await (supabase as any)
+                .from('support_tickets')
+                .update({ status: newStatus, updated_at: new Date().toISOString() })
+                .eq('id', ticket.id);
+            if (error) throw error;
+            setTicketStatus(newStatus);
+            ticket.status = newStatus;
+            onUpdate();
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: 'Erro ao atualizar status', description: err.message });
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
@@ -137,7 +159,8 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
 
     if (!ticket) return null;
 
-    const isResolved = ticket.status === 'resolved';
+    const isResolved = ticketStatus === 'resolved';
+    const isAdmin = isSuperAdmin(currentUserRole);
 
     return (
         <Sheet open={isOpen} onOpenChange={onClose}>
@@ -146,7 +169,7 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
                 <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white">
                     <div className="absolute top-0 right-0 w-48 h-48 bg-bee-amber/[0.04] rounded-full -mr-24 -mt-24 blur-3xl" />
                     <div className="flex items-center gap-2 mb-3 relative">
-                        {getStatusBadge(ticket.status)}
+                        {getStatusBadge(ticketStatus)}
                         <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded-md">
                             Ticket #{ticket.id.slice(0, 8).toUpperCase()}
                         </span>
@@ -247,9 +270,44 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
                     </ScrollArea>
 
                     {/* Input area */}
-                    <div className="p-6 border-t bg-white shrink-0">
+                    <div className="p-6 border-t bg-white shrink-0 space-y-4">
+                        {/* Status action buttons — admin only */}
+                        {isAdmin && (
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={isUpdatingStatus || ticketStatus === 'resolved'}
+                                    onClick={() => handleUpdateStatus('resolved')}
+                                    className="flex-1 h-9 rounded-xl border-green-200 text-green-700 hover:bg-green-50 font-bold text-[11px] gap-1.5 disabled:opacity-40"
+                                >
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    Solucionado
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={isUpdatingStatus || ticketStatus === 'open'}
+                                    onClick={() => handleUpdateStatus('open')}
+                                    className="flex-1 h-9 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-bold text-[11px] gap-1.5 disabled:opacity-40"
+                                >
+                                    <XCircle className="h-3.5 w-3.5" />
+                                    Não Solucionado
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={isUpdatingStatus || ticketStatus === 'in_progress'}
+                                    onClick={() => handleUpdateStatus('in_progress')}
+                                    className="flex-1 h-9 rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50 font-bold text-[11px] gap-1.5 disabled:opacity-40"
+                                >
+                                    <PauseCircle className="h-3.5 w-3.5" />
+                                    Aguardando
+                                </Button>
+                            </div>
+                        )}
                         {isResolved ? (
-                            <div className="flex items-center justify-center gap-2 py-4 text-slate-400">
+                            <div className="flex items-center justify-center gap-2 py-3 text-slate-400">
                                 <LifeBuoy className="h-4 w-4" />
                                 <p className="text-xs font-black uppercase tracking-widest">
                                     Ticket resolvido — sem novas mensagens
