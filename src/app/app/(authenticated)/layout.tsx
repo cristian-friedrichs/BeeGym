@@ -53,10 +53,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       // Se não é admin master e o profile ainda está carregando, não tomamos decisão abrupta
       if (!profile && !isMasterAdmin) {
-        // Se authLoading já terminou e profile ainda é null, o usuário está em onboarding (sem org)
-        if (!authLoading) {
+        // Só redireciona para onboarding se já terminou de carregar E a rota não é onboarding
+        if (!authLoading && !pathname.startsWith('/app/onboarding')) {
           console.log('[AccessCheck] Auth loaded but no profile — redirecting to onboarding.');
           router.push('/app/onboarding');
+          return;
+        }
+        // Se já estamos no onboarding ou ainda carregando, deixa passar
+        if (pathname.startsWith('/app/onboarding')) {
+          setIsAuthorized(true);
           return;
         }
         console.log('[AccessCheck] Profile not ready and not master admin, waiting...');
