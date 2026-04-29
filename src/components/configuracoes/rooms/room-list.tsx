@@ -33,6 +33,7 @@ import { RoomForm, RoomFormValues } from './room-form';
 import { createRoomAction, updateRoomAction, deleteRoomAction } from '@/actions/rooms';
 import { useToast } from '@/hooks/use-toast';
 import { SectionHeader } from '@/components/ui/section-header';
+import { useUnit } from '@/context/UnitContext';
 
 interface Room {
     id: string;
@@ -56,10 +57,14 @@ interface RoomListProps {
 export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
     const { toast } = useToast();
     const router = useRouter();
+    const { currentUnitId } = useUnit();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingRoom, setEditingRoom] = useState<Room | null>(null);
     const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Current unit info for display
+    const currentUnit = units.find(u => u.id === currentUnitId);
 
     const getUnitName = (unitId: string) => {
         const unit = units.find(u => u.id === unitId);
@@ -67,8 +72,12 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
     };
 
     const handleAddRoom = async (values: RoomFormValues) => {
+        if (!currentUnitId) {
+            toast({ title: 'Erro', description: 'Nenhuma unidade selecionada na barra superior.', variant: 'destructive' });
+            return;
+        }
         setIsLoading(true);
-        const result = await createRoomAction(values);
+        const result = await createRoomAction({ ...values, unit_id: currentUnitId });
         setIsLoading(false);
 
         if (result.success) {
@@ -212,7 +221,7 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
                                     <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tighter h-5 px-2">Espaço</Badge>
                                 </div>
                                 <SheetDescription className="text-slate-400 font-medium">
-                                    Defina o espaço para aulas e treinos
+                                    {currentUnit ? `Unidade: ${currentUnit.name}` : 'Defina o espaço para aulas e treinos'}
                                 </SheetDescription>
                             </div>
                         </div>

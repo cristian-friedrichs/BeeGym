@@ -18,16 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-
-import {
     Layout,
-    Building2,
     Users,
     AlignLeft,
 } from 'lucide-react';
@@ -43,7 +34,7 @@ export type RoomFormValues = z.infer<typeof roomSchema>;
 
 interface RoomFormProps {
     initialData?: any;
-    units: Array<{ id: string; name: string }>;
+    units?: Array<{ id: string; name: string }>; // kept for edit mode compatibility
     onSubmit: (values: RoomFormValues) => void;
     isLoading?: boolean;
     showButtons?: boolean;
@@ -108,46 +99,7 @@ export function RoomForm({ initialData, units, onSubmit, isLoading, showButtons 
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="unit_id"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-2">
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Unidade</FormLabel>
-                                        <div className="group relative transition-all">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-bee-amber z-10 transition-colors pointer-events-none">
-                                                <Building2 className="h-4 w-4" />
-                                            </div>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="pl-11 h-12 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-medium text-slate-900 overflow-hidden">
-                                                        <SelectValue placeholder="Selecione a unidade" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent className="rounded-2xl border-slate-100 shadow-2xl">
-                                                    {units.length > 0 ? (
-                                                        units.map((unit) => (
-                                                            <SelectItem key={unit.id} value={unit.id} className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-midnight py-3">
-                                                                {unit.name}
-                                                            </SelectItem>
-                                                        ))
-                                                    ) : (
-                                                        <div className="p-4 text-xs text-slate-400 text-center font-medium">
-                                                            Nenhuma unidade disponível.
-                                                        </div>
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        {units.length === 0 && (
-                                            <p className="text-[10px] font-bold text-red-500 ml-1 mt-1">
-                                                É necessário ter pelo menos uma unidade ativa para criar uma sala.
-                                            </p>
-                                        )}
-                                        <FormMessage className="text-[10px] font-bold text-red-500 ml-1" />
-                                    </FormItem>
-                                )}
-                            />
+                            {/* unit_id is injected by the parent from UnitContext — not shown here */}
                         </div>
                     </div>
 
@@ -230,7 +182,7 @@ export function RoomForm({ initialData, units, onSubmit, isLoading, showButtons 
 
                 {showButtons && (
                     <div className="flex justify-end gap-3 pt-4 border-t">
-                        <Button type="submit" disabled={isLoading || units.length === 0} className="w-full md:w-auto">
+                        <Button type="submit" disabled={isLoading} className="w-full md:w-auto">
                             {isLoading ? 'Salvando...' : 'Salvar Sala'}
                         </Button>
                     </div>
