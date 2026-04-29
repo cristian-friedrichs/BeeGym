@@ -25,7 +25,7 @@ import {
 
 const roomSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    unit_id: z.string().uuid('Selecione uma unidade válida'),
+    unit_id: z.string().optional().default(''), // injected by parent from UnitContext
     capacity: z.coerce.number().min(0, 'Capacidade deve ser válida'),
     description: z.string().optional().or(z.literal('')),
 });
