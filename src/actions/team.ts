@@ -1,12 +1,35 @@
 'use server';
 
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 import { randomUUID } from 'crypto';
-
-
 import { requirePermission } from '@/lib/rbac';
+
+// Resolves the organization_id of the currently authenticated user (server-side).
+async function getCallerOrgId(): Promise<string | null> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+    return profile?.organization_id ?? null;
+}
+
+// Validates that a role_id belongs to the given organization.
+async function validateRoleOwnership(roleId: string, organizationId: string): Promise<boolean> {
+    const { data } = await supabaseAdmin
+        .from('app_roles')
+        .select('id')
+        .eq('id', roleId)
+        .eq('organization_id', organizationId)
+        .maybeSingle();
+    return !!data;
+}
 
 export async function createTeamMemberAction(formData: {
     fullName: string;
@@ -18,8 +41,26 @@ export async function createTeamMemberAction(formData: {
     hasSystemAccess: boolean;
     isInstructor: boolean;
 }) {
-    // ✅ Check permission
     await requirePermission('settings', 'manage');
+
+    // Security: verify caller belongs to the org they're creating into
+    const callerOrgId = await getCallerOrgId();
+    if (!callerOrgId || callerOrgId !== formData.organizationId) {
+        return { success: false, error: 'Sem permissão para criar membros nesta organização.' };
+    }
+
+    // Security: verify role_id belongs to the same org
+    if (formData.roleId) {
+        const roleValid = await validateRoleOwnership(formData.roleId, formData.organizationId);
+        if (!roleValid) {
+            return { success: false, error: 'Perfil de acesso inválido ou não pertence a esta organização.' };
+        }
+    }
+
+    // Security: require role when system access is enabled
+    if (formData.hasSystemAccess && !formData.roleId) {
+        return { success: false, error: 'Selecione um perfil de acesso antes de habilitar o acesso ao sistema.' };
+    }
 
     try {
         let profileId: string;
@@ -163,8 +204,31 @@ export async function updateTeamMemberAction(formData: {
     roleId?: string;
     organizationId: string;
 }) {
-    // ✅ Check permission
     await requirePermission('settings', 'manage');
+
+    // Security: verify caller belongs to the org they're updating into
+    const callerOrgId = await getCallerOrgId();
+    if (!callerOrgId || callerOrgId !== formData.organizationId) {
+        return { success: false, error: 'Sem permissão para editar membros nesta organização.' };
+    }
+
+    // Security: verify the profile being edited belongs to this org
+    const { data: targetProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', formData.profileId)
+        .maybeSingle();
+    if (!targetProfile || targetProfile.organization_id !== formData.organizationId) {
+        return { success: false, error: 'Membro não encontrado nesta organização.' };
+    }
+
+    // Security: verify role_id belongs to the same org
+    if (formData.roleId) {
+        const roleValid = await validateRoleOwnership(formData.roleId, formData.organizationId);
+        if (!roleValid) {
+            return { success: false, error: 'Perfil de acesso inválido ou não pertence a esta organização.' };
+        }
+    }
 
     try {
         // 1. Update profile

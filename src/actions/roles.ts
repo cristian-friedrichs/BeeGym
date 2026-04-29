@@ -107,6 +107,23 @@ export async function updateRoleAction(roleId: string, roleData: UpdateRoleData)
         return { success: false, error: 'Usuário não autenticado' };
     }
 
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    // Security: verify the role belongs to the caller's org before updating
+    const { data: existingRole } = await supabase
+        .from('app_roles')
+        .select('id, organization_id')
+        .eq('id', roleId)
+        .maybeSingle();
+
+    if (!existingRole || existingRole.organization_id !== profile?.organization_id) {
+        return { success: false, error: 'Perfil de acesso não encontrado nesta organização.' };
+    }
+
     const updatePayload: Record<string, any> = {};
     if (roleData.name !== undefined) updatePayload.name = roleData.name;
     if (roleData.description !== undefined) updatePayload.description = roleData.description;
@@ -142,6 +159,23 @@ export async function deleteRoleAction(roleId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const { data: callerProfile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single();
+
+    // Security: verify the role belongs to the caller's org before deleting
+    const { data: existingRole } = await supabase
+        .from('app_roles')
+        .select('id, organization_id')
+        .eq('id', roleId)
+        .maybeSingle();
+
+    if (!existingRole || existingRole.organization_id !== callerProfile?.organization_id) {
+        return { success: false, error: 'Perfil de acesso não encontrado nesta organização.' };
     }
 
     // Check if any profiles are using this role

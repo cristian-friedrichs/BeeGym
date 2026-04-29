@@ -78,6 +78,7 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
     });
 
     const hasSystemAccess = form.watch('hasSystemAccess');
+    const noRolesAvailable = hasSystemAccess && !isLoadingRoles && roles.length === 0;
 
     useEffect(() => {
         if (open) {
@@ -246,10 +247,14 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent className="rounded-xl border-slate-100">
-                                                                {roles.length === 0 && !isLoadingRoles ? (
+                                                                {isLoadingRoles ? (
+                                                                    <div className="py-6 px-4 text-center text-xs text-slate-400 font-bold flex items-center justify-center gap-2">
+                                                                        <Loader2 className="h-3 w-3 animate-spin" /> Carregando...
+                                                                    </div>
+                                                                ) : roles.length === 0 ? (
                                                                     <div className="py-8 px-4 text-center space-y-2">
                                                                         <p className="text-sm font-bold text-slate-400">Nenhum perfil criado</p>
-                                                                        <p className="text-[10px] uppercase font-bold text-bee-amber">Configurações {'>'} Perfis</p>
+                                                                        <p className="text-[10px] uppercase font-bold text-bee-amber">Configurações → Perfis de Acesso</p>
                                                                     </div>
                                                                 ) : (
                                                                     roles.map((role) => (
@@ -308,14 +313,25 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
                                                 />
                                             </div>
 
-                                            <Alert className="bg-bee-amber/5 border-bee-amber/10 rounded-2xl p-4 flex items-start gap-3">
-                                                <div className="h-6 w-6 rounded-full bg-bee-amber/10 flex items-center justify-center shrink-0 mt-0.5">
-                                                    <Info className="h-3 w-3 text-bee-amber" />
-                                                </div>
-                                                <AlertDescription className="text-[11px] leading-relaxed font-bold text-bee-amber/80 uppercase tracking-tight">
-                                                    O usuário receberá uma senha temporária e será solicitado a alterá-la no primeiro acesso.
-                                                </AlertDescription>
-                                            </Alert>
+                                            {noRolesAvailable ? (
+                                                <Alert className="bg-red-50 border-red-100 rounded-2xl p-4 flex items-start gap-3">
+                                                    <div className="h-6 w-6 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <Info className="h-3 w-3 text-red-500" />
+                                                    </div>
+                                                    <AlertDescription className="text-[11px] leading-relaxed font-bold text-red-600 uppercase tracking-tight">
+                                                        Crie pelo menos um perfil de acesso em Configurações → Perfis de Acesso antes de adicionar um membro com acesso ao sistema.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            ) : (
+                                                <Alert className="bg-bee-amber/5 border-bee-amber/10 rounded-2xl p-4 flex items-start gap-3">
+                                                    <div className="h-6 w-6 rounded-full bg-bee-amber/10 flex items-center justify-center shrink-0 mt-0.5">
+                                                        <Info className="h-3 w-3 text-bee-amber" />
+                                                    </div>
+                                                    <AlertDescription className="text-[11px] leading-relaxed font-bold text-bee-amber/80 uppercase tracking-tight">
+                                                        O usuário receberá uma senha temporária e será solicitado a alterá-la no primeiro acesso.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -346,8 +362,8 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs px-8"
+                                disabled={isSubmitting || noRolesAvailable}
+                                className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? (
                                     <>
