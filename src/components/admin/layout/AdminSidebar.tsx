@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { BeeGymLogo } from '@/components/ui/beegym-logo';
+
 const navGroups = [
     {
         label: 'Menu Principal',
@@ -40,9 +41,18 @@ export function AdminSidebar() {
     const supabase = createClient();
     const [mounted, setMounted] = useState(false);
     const [isSignOutLoading, setIsSignOutLoading] = useState(false);
+    const [openTickets, setOpenTickets] = useState(0);
 
     useEffect(() => {
         setMounted(true);
+        async function loadOpenTickets() {
+            const { count } = await (supabase as any)
+                .from('support_tickets')
+                .select('id', { count: 'exact', head: true })
+                .in('status', ['open', 'in_progress']);
+            setOpenTickets(count ?? 0);
+        }
+        loadOpenTickets();
     }, []);
 
     const handleLogout = async () => {
@@ -89,7 +99,12 @@ export function AdminSidebar() {
                                                 isActive ? 'text-[#FFBF00]' : 'text-slate-400 group-hover:text-[#0B0F1A]'
                                             )}
                                         />
-                                        {item.label}
+                                        <span className="flex-1">{item.label}</span>
+                                        {item.href === '/admin/suporte' && openTickets > 0 && (
+                                            <span className="min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 leading-none">
+                                                {openTickets > 99 ? '99+' : openTickets}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             })}

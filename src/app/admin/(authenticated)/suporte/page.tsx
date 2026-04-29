@@ -69,12 +69,14 @@ export default function AdminSupportPage() {
                 .from('support_tickets')
                 .select(`
                     *,
-                    user:profiles!support_tickets_user_id_fkey ( full_name, email ),
-                    organization:organizations!support_tickets_organization_id_fkey ( name )
+                    user:profiles!support_tickets_user_id_fkey ( full_name, email )
                 `)
                 .order('updated_at', { ascending: false });
 
-            if (error) throw error;
+            if (error) {
+                console.error('[Admin Suporte] Query error:', error);
+                throw error;
+            }
 
             const all: SupportTicket[] = data || [];
             setTickets(all);

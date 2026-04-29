@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Bell, ChevronDown } from 'lucide-react';
+import { Search, Bell, ChevronDown, LifeBuoy } from 'lucide-react';
+import Link from 'next/link';
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
     '/admin/dashboard': { title: 'Dashboard', subtitle: 'Visão geral da plataforma' },
@@ -31,6 +32,7 @@ export function AdminHeader() {
     const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
     const [mounted, setMounted] = useState(false);
     const [isSignOutLoading, setIsSignOutLoading] = useState(false);
+    const [openTickets, setOpenTickets] = useState(0);
 
     const meta = Object.entries(pageMeta).find(([key]) =>
         pathname.startsWith(key)
@@ -61,6 +63,16 @@ export function AdminHeader() {
             }
         }
         loadUser();
+
+        async function loadOpenTickets() {
+            const { count } = await (supabase as any)
+                .from('support_tickets')
+                .select('id', { count: 'exact', head: true })
+                .in('status', ['open', 'in_progress']);
+            if (isMounted) setOpenTickets(count ?? 0);
+        }
+        loadOpenTickets();
+
         return () => { isMounted = false; };
     }, [supabase]);
 
@@ -101,11 +113,15 @@ export function AdminHeader() {
                     <Search className="w-3.5 h-3.5" />
                 </button>
 
-                {/* Notifications */}
-                <button className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">
+                {/* Support tickets notification */}
+                <Link href="/admin/suporte" className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors flex items-center">
                     <Bell className="w-4 h-4" />
-                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-amber-400 rounded-full" />
-                </button>
+                    {openTickets > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 leading-none">
+                            {openTickets > 99 ? '99+' : openTickets}
+                        </span>
+                    )}
+                </Link>
 
                 {/* Divider */}
                 <div className="w-px h-6 bg-slate-100 mx-1" />
