@@ -64,7 +64,9 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Current unit info for display
+    // units prop only contains real units (not master/org). currentUnitId may be the org_id (master unit).
     const currentUnit = units.find(u => u.id === currentUnitId);
+    const isMasterUnitSelected = !currentUnit && !!currentUnitId;
 
     const getUnitName = (unitId: string) => {
         const unit = units.find(u => u.id === unitId);
@@ -72,8 +74,8 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
     };
 
     const handleAddRoom = async (values: RoomFormValues) => {
-        if (!currentUnitId) {
-            toast({ title: 'Erro', description: 'Nenhuma unidade selecionada na barra superior.', variant: 'destructive' });
+        if (!currentUnitId || isMasterUnitSelected) {
+            toast({ title: 'Selecione uma unidade', description: 'Selecione uma unidade específica na barra superior antes de criar uma sala.', variant: 'destructive' });
             return;
         }
         setIsLoading(true);
@@ -130,11 +132,18 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
         <div className="flex-1 space-y-6">
             <SectionHeader
                 title="Salas & Espaços"
-                subtitle="Gerencie os locais de treinamento da sua academia"
+                subtitle={isMasterUnitSelected
+                    ? '⚠️ Selecione uma unidade específica na topbar para criar salas'
+                    : currentUnit
+                        ? `Unidade: ${currentUnit.name}`
+                        : 'Gerencie os locais de treinamento da sua academia'
+                }
                 action={
                     <Button
                         onClick={() => setIsAddModalOpen(true)}
-                        className="bg-bee-amber hover:bg-amber-500 text-deep-midnight font-bold h-9 px-4 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-wider"
+                        disabled={isMasterUnitSelected}
+                        title={isMasterUnitSelected ? 'Selecione uma unidade específica na topbar' : undefined}
+                        className="bg-bee-amber hover:bg-amber-500 text-deep-midnight font-bold h-9 px-4 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                         <Plus className="h-4 w-4 mr-2" />
                         Nova Sala

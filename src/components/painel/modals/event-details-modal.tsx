@@ -503,12 +503,14 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         let personRole = (type === 'CLASS' || type === 'Aula Coletiva') ? 'Instrutor' : 'Aluno';
 
         if (personRole === 'Instrutor') {
-            personLabel = event.instructor || 'Não atribuído';
+            const instructorRaw = event.instructor;
+            personLabel = (typeof instructorRaw === 'object' ? instructorRaw?.name : instructorRaw) || 'Não atribuído';
         } else {
             personLabel = event.student?.full_name || event.student_name || event.student?.name || 'Aluno Desconhecido';
         }
 
-        const location = event.address || event.room || event.location || 'Sem local';
+        const roomName = typeof event.room === 'object' ? event.room?.name : event.room;
+        const location = event.address || roomName || event.location || 'Sem local';
 
         let modality = '';
         if (event.template?.title) {
