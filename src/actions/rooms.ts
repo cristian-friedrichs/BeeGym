@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
 import { requirePermission } from '@/lib/rbac';
+import { assertRowBelongsToOrg, getCallerContext } from '@/lib/auth/tenant-guard';
 
 export async function createRoomAction(formData: {
     name: string;
@@ -87,10 +88,20 @@ export async function updateRoomAction(roomId: string, formData: {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
+    const caller = await getCallerContext();
+    const ownsRoom = await assertRowBelongsToOrg('rooms', roomId, caller.organizationId);
+    if (!ownsRoom) return { success: false, error: 'Sala não encontrada nesta organização' };
+
+    if (formData.unit_id) {
+        const ownsUnit = await assertRowBelongsToOrg('units', formData.unit_id, caller.organizationId);
+        if (!ownsUnit) return { success: false, error: 'Unidade inválida' };
+    }
+
     const { error } = await supabase
         .from('rooms')
         .update(formData)
-        .eq('id', roomId);
+        .eq('id', roomId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error updating room:', error);
@@ -113,10 +124,15 @@ export async function deleteRoomAction(roomId: string) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
+    const caller = await getCallerContext();
+    const ownsRoom = await assertRowBelongsToOrg('rooms', roomId, caller.organizationId);
+    if (!ownsRoom) return { success: false, error: 'Sala não encontrada nesta organização' };
+
     const { error } = await supabase
         .from('rooms')
         .delete()
-        .eq('id', roomId);
+        .eq('id', roomId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error deleting room:', error);

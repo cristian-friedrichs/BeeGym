@@ -132,6 +132,15 @@ export async function middleware(request: NextRequest) {
 
     // LÓGICA PARA USUÁRIOS SAAS (NÃO ADMIN)
     if (!isAdminUser) {
+        // 🚨 INACTIVE PROFILE: defense-in-depth. Admin API ban already prevents login,
+        // but if a session was created before deactivation, force sign-out here.
+        if (profile && (profile as any).status === 'INACTIVE') {
+            await supabase.auth.signOut()
+            url.pathname = '/login'
+            url.searchParams.set('reason', 'inactive')
+            return NextResponse.redirect(url)
+        }
+
         // Se SaaS tentar acessar QUALQUER rota Admin -> Joga pro app/painel
         if (isAdminRoute || isAdminAuthPage) {
             if (url.pathname.startsWith('/api/')) {

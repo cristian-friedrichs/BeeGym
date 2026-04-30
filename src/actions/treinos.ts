@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { workoutSchema } from '@/lib/schemas/workoutSchema';
 import { revalidatePath } from 'next/cache';
 import { requirePermission } from '@/lib/rbac';
+import { getCallerContext } from '@/lib/auth/tenant-guard';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { 
@@ -16,9 +17,10 @@ import {
     isAfter 
 } from 'date-fns';
 
-export async function saveGeneratedWorkout(data: z.infer<typeof workoutSchema> & { organizationId: string, userId: string, studentId: string }) {
+export async function saveGeneratedWorkout(data: z.infer<typeof workoutSchema> & { organizationId?: string, userId?: string, studentId: string }) {
     await requirePermission('workouts', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
 
     // 1. Validar dados com Zod
     const validation = workoutSchema.safeParse(data);
@@ -26,15 +28,26 @@ export async function saveGeneratedWorkout(data: z.infer<typeof workoutSchema> &
         return { success: false, error: validation.error.message };
     }
 
-    // 2. Inserir Workout principal
+    // 2. Verificar que o aluno pertence à organização do caller
+    const { data: student } = await supabase
+        .from('students')
+        .select('organization_id')
+        .eq('id', data.studentId)
+        .maybeSingle();
+
+    if (!student || student.organization_id !== caller.organizationId) {
+        return { success: false, error: 'Aluno não encontrado nesta organização' };
+    }
+
+    // 3. Inserir Workout principal — usar SEMPRE os IDs do caller, nunca os do payload
     const { data: workout, error: wError } = await supabase
         .from('workouts')
         .insert({
-            organization_id: data.organizationId,
+            organization_id: caller.organizationId,
             student_id: data.studentId,
             title: data.title,
             goal: data.goal,
-            created_by_user_id: data.userId
+            created_by_user_id: caller.userId
         })
         .select()
         .single();
@@ -76,7 +89,7 @@ export async function saveGeneratedWorkout(data: z.infer<typeof workoutSchema> &
  */
 export async function saveRecurringWorkouts(data: {
     studentId: string;
-    organizationId: string;
+    organizationId?: string; // ignored — overridden by caller's org
     title: string;
     type: string;
     schedule: { day: number; time: string }[]; // 0-6 (Sun-Sat)
@@ -84,6 +97,18 @@ export async function saveRecurringWorkouts(data: {
 }) {
     await requirePermission('workouts', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
+
+    // Verify student belongs to caller's org before any mutation
+    const { data: student } = await supabase
+        .from('students')
+        .select('organization_id')
+        .eq('id', data.studentId)
+        .maybeSingle();
+
+    if (!student || student.organization_id !== caller.organizationId) {
+        return { success: false, error: 'Aluno não encontrado nesta organização' };
+    }
 
     // 1. Deletar treinos PENDENTES futuros que possuem recurrence_id
     // A regra diz: A grade é soberana para o futuro.
@@ -137,7 +162,7 @@ export async function saveRecurringWorkouts(data: {
             // Adicionar apenas se for no futuro
             if (isAfter(scheduledAt, new Date())) {
                 workoutsToInsert.push({
-                    organization_id: data.organizationId,
+                    organization_id: caller.organizationId,
                     student_id: data.studentId,
                     title: data.title,
                     type: data.type,
@@ -150,7 +175,7 @@ export async function saveRecurringWorkouts(data: {
 
                 // Espelhamento na Agenda (calendar_events)
                 calendarEventsToInsert.push({
-                    organization_id: data.organizationId,
+                    organization_id: caller.organizationId,
                     title: `${data.title} - ${data.studentName || 'Aluno'}`,
                     start_datetime: scheduledAt.toISOString(),
                     end_datetime: endDateTime.toISOString(),

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 import { requirePermission } from '@/lib/rbac';
+import { getCallerContext } from '@/lib/auth/tenant-guard';
 
 // ─── Shared: Check student plan limits ────────────────────────────────────────
 // Returns an error message string if blocked, or null if allowed.
@@ -109,17 +110,32 @@ export async function checkStudentScheduleLimits(
 export async function enrollStudent(eventId: string, studentId: string) {
     await requirePermission('classes', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
 
     try {
-        // 1. Get Event Details (Capacity + Date for weekly limit check)
+        // 1. Get Event + Student details — ensure both belong to caller's org
         const { data: event, error: eventError } = await supabase
             .from('calendar_events')
-            .select('capacity, start_datetime')
+            .select('capacity, start_datetime, organization_id')
             .eq('id', eventId)
             .single();
 
         if (eventError || !event) {
             return { error: 'Evento não encontrado.' };
+        }
+
+        if (event.organization_id !== caller.organizationId) {
+            return { error: 'Evento não pertence à sua organização.' };
+        }
+
+        const { data: student } = await supabase
+            .from('students')
+            .select('organization_id')
+            .eq('id', studentId)
+            .maybeSingle();
+
+        if (!student || student.organization_id !== caller.organizationId) {
+            return { error: 'Aluno não encontrado nesta organização.' };
         }
 
         // 2. Overbooking guard
@@ -158,13 +174,14 @@ export async function enrollStudent(eventId: string, studentId: string) {
             return { error: 'Aluno já inscrito.' };
         }
 
-        // 5. Enroll
+        // 5. Enroll — set organization_id explicitly (don't rely on triggers)
         const { error: insertError } = await supabase
             .from('event_enrollments')
             .insert({
                 event_id: eventId,
                 student_id: studentId,
-                status: 'CONFIRMED'
+                status: 'CONFIRMED',
+                organization_id: caller.organizationId,
             });
 
         if (insertError) {
@@ -182,17 +199,19 @@ export async function enrollStudent(eventId: string, studentId: string) {
     }
 }
 
-// ─── Remove student (no changes) ─────────────────────────────────────────────
+// ─── Remove student ─────────────────────────────────────────────
 export async function removeStudent(eventId: string, studentId: string) {
     await requirePermission('classes', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
 
     try {
         const { error } = await supabase
             .from('event_enrollments')
             .delete()
             .eq('event_id', eventId)
-            .eq('student_id', studentId);
+            .eq('student_id', studentId)
+            .eq('organization_id', caller.organizationId);
 
         if (error) {
             console.error('Remove error:', error);

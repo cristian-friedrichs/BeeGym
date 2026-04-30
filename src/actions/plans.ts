@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
 import { requirePermission } from '@/lib/rbac';
+import { assertRowBelongsToOrg, getCallerContext } from '@/lib/auth/tenant-guard';
 
 export async function createPlanAction(formData: {
     name: string;
@@ -21,18 +22,19 @@ export async function createPlanAction(formData: {
     credits?: number;
     validity_months?: number;
 
-    organization_id: string;
+    organization_id?: string; // ignored — overridden by caller's org
 }) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
 
-    // Map to membership_plans schema
+    // Map to membership_plans schema. Force organization_id to caller's org.
     const insertData = {
         name: formData.name,
         description: formData.description || null,
         price: formData.price,
         plan_type: formData.plan_type,
-        organization_id: formData.organization_id,
+        organization_id: caller.organizationId,
         duration_months: formData.plan_type === 'membership' ? (formData.duration_months || 1) : (formData.validity_months || 3),
         recurrence: formData.plan_type === 'membership' ? (formData.recurrence || 'monthly') : 'one_time',
         days_per_week: formData.plan_type === 'membership' ? formData.days_per_week : null,
@@ -67,7 +69,11 @@ export async function updatePlanAction(planId: string, formData: any) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
-    // Map to membership_plans schema
+    const caller = await getCallerContext();
+    const owns = await assertRowBelongsToOrg('membership_plans', planId, caller.organizationId);
+    if (!owns) return { success: false, error: 'Plano não encontrado nesta organização' };
+
+    // Map to membership_plans schema. Whitelist fields — never let caller patch organization_id.
     const updateData = {
         name: formData.name,
         description: formData.description || null,
@@ -83,7 +89,8 @@ export async function updatePlanAction(planId: string, formData: any) {
     const { error } = await supabase
         .from('membership_plans')
         .update(updateData)
-        .eq('id', planId);
+        .eq('id', planId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error updating plan:', error);
@@ -106,10 +113,15 @@ export async function togglePlanStatusAction(planId: string, active: boolean) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
+    const caller = await getCallerContext();
+    const owns = await assertRowBelongsToOrg('membership_plans', planId, caller.organizationId);
+    if (!owns) return { success: false, error: 'Plano não encontrado nesta organização' };
+
     const { error } = await supabase
         .from('membership_plans')
         .update({ active })
-        .eq('id', planId);
+        .eq('id', planId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error toggling plan status:', error);

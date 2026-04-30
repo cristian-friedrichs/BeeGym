@@ -295,3 +295,101 @@ export async function updateTeamMemberAction(formData: {
         return { success: false, error: error.message || 'Erro inesperado' };
     }
 }
+
+/**
+ * Activates or deactivates a team member.
+ *
+ * When deactivating: marks profile.status='INACTIVE' AND bans the auth user
+ * (via Admin API) so they cannot log in. Existing sessions are revoked.
+ *
+ * When activating: marks profile.status='ACTIVE' AND lifts the auth ban.
+ *
+ * Cannot be used to deactivate OWNER/PROPRIETARY accounts (frontend disables it,
+ * backend enforces it). Cannot deactivate yourself.
+ */
+export async function setMemberActiveAction(profileId: string, active: boolean) {
+    await requirePermission('settings', 'manage');
+
+    const supabase = await createClient();
+    const { data: { user: caller } } = await supabase.auth.getUser();
+    if (!caller) return { success: false, error: 'Não autenticado.' };
+
+    const callerOrgId = await getCallerOrgId();
+    if (!callerOrgId) return { success: false, error: 'Organização do usuário não encontrada.' };
+
+    // Cannot deactivate yourself
+    if (profileId === caller.id) {
+        return { success: false, error: 'Você não pode alterar o status do seu próprio usuário.' };
+    }
+
+    // Verify target profile belongs to caller's org and read role
+    const { data: targetProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('id, organization_id, role, full_name')
+        .eq('id', profileId)
+        .maybeSingle();
+
+    if (!targetProfile || targetProfile.organization_id !== callerOrgId) {
+        return { success: false, error: 'Membro não encontrado nesta organização.' };
+    }
+
+    const targetRole = (targetProfile as any).role;
+    if (targetRole === 'OWNER' || targetRole === 'PROPRIETARY' || targetRole === 'SUPER_ADMIN') {
+        return { success: false, error: 'Não é possível alterar o status desse usuário.' };
+    }
+
+    const newStatus = active ? 'ACTIVE' : 'INACTIVE';
+
+    // 1. Update profile status (uses admin client to bypass RLS update-self-only policy)
+    const { error: updateError } = await (supabaseAdmin as any)
+        .from('profiles')
+        .update({ status: newStatus })
+        .eq('id', profileId)
+        .eq('organization_id', callerOrgId);
+
+    if (updateError) {
+        console.error('Error updating profile status:', updateError);
+        return { success: false, error: 'Erro ao atualizar status no banco.' };
+    }
+
+    // 2. Ban / unban via Admin API
+    // ban_duration: 'none' (the literal string 'none') unbans; '876600h' (~100 years) bans effectively forever.
+    try {
+        const banDuration = active ? 'none' : '876600h';
+        const { error: banError } = await (supabaseAdmin.auth.admin as any).updateUserById(profileId, {
+            ban_duration: banDuration,
+        });
+        if (banError) {
+            console.error('Error setting auth ban:', banError);
+            // Roll back profile status to keep state consistent
+            await (supabaseAdmin as any)
+                .from('profiles')
+                .update({ status: active ? 'INACTIVE' : 'ACTIVE' })
+                .eq('id', profileId);
+            return { success: false, error: 'Erro ao revogar acesso de autenticação.' };
+        }
+
+        // When deactivating, also explicitly revoke any live sessions
+        if (!active) {
+            try {
+                await (supabaseAdmin.auth.admin as any).signOut(profileId, 'global');
+            } catch (e) {
+                // Best-effort; ban already prevents new logins
+                console.warn('signOut failed (non-fatal):', e);
+            }
+        }
+    } catch (e: any) {
+        console.error('Unexpected auth admin error:', e);
+        return { success: false, error: 'Erro inesperado ao alterar acesso.' };
+    }
+
+    await logActivity({
+        action: 'UPDATE',
+        resource: 'team',
+        details: `${active ? 'Ativou' : 'Inativou'} o membro ${(targetProfile as any).full_name ?? profileId}`,
+        metadata: { profile_id: profileId, active },
+    });
+
+    revalidatePath('/app/configuracoes/team');
+    return { success: true };
+}

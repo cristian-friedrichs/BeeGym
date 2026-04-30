@@ -29,6 +29,7 @@ import { EditMemberModal } from '@/components/configuracoes/team/edit-member-mod
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SectionHeader } from '@/components/ui/section-header';
+import { setMemberActiveAction } from '@/actions/team';
 
 interface TeamListProps {
     initialUsers: any[];
@@ -52,28 +53,26 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
     }, [initialUsers]);
 
     const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
-        const newStatus = currentStatus ? 'PENDING' : 'ACTIVE';
+        const result = await setMemberActiveAction(userId, !currentStatus);
 
-        const { error } = await (supabase
-            .from('profiles') as any)
-            .update({ status: newStatus })
-            .eq('id', userId);
-
-        if (error) {
-            console.error('Error updating status:', error);
+        if (!result.success) {
             toast({
                 title: 'Erro',
-                description: 'Erro ao atualizar status do usuário',
+                description: result.error || 'Erro ao atualizar status do usuário',
                 variant: 'destructive',
             });
-        } else {
-            setUsers(prev => prev.map(u => u.id === userId ? { ...u, active: !currentStatus, status: newStatus } : u));
-            toast({
-                title: 'Sucesso',
-                description: 'Status atualizado com sucesso',
-            });
-            router.refresh();
+            return;
         }
+
+        const newActive = !currentStatus;
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, active: newActive, status: newActive ? 'ACTIVE' : 'INACTIVE' } : u));
+        toast({
+            title: newActive ? 'Membro ativado' : 'Membro desativado',
+            description: newActive
+                ? 'O membro pode acessar o sistema novamente.'
+                : 'O acesso ao sistema foi revogado e as sessões ativas foram encerradas.',
+        });
+        router.refresh();
     };
 
     const openEdit = (member: any) => {

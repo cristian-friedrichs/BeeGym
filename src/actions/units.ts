@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 
 import { requirePermission } from '@/lib/rbac';
+import { assertRowBelongsToOrg, getCallerContext } from '@/lib/auth/tenant-guard';
 
 export async function createUnitAction(formData: {
     name: string;
@@ -17,16 +18,21 @@ export async function createUnitAction(formData: {
     address_neighborhood?: string;
     address_city?: string;
     address_state?: string;
-    organization_id: string;
+    organization_id?: string; // ignored — overridden by caller's org
     services?: string[];
 }) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
+    const caller = await getCallerContext();
+
+    // Strip any client-supplied organization_id and force the caller's org
+    const { organization_id: _ignored, ...safeData } = formData;
 
     const { data, error } = await supabase
         .from('units')
         .insert([{
-            ...formData,
+            ...safeData,
+            organization_id: caller.organizationId,
             is_main: false, // Explicitly false for new ones via GUI
             active: true
         }])
@@ -54,10 +60,18 @@ export async function updateUnitAction(unitId: string, formData: any) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
+    const caller = await getCallerContext();
+    const owns = await assertRowBelongsToOrg('units', unitId, caller.organizationId);
+    if (!owns) return { success: false, error: 'Unidade não encontrada nesta organização' };
+
+    // Strip any organization_id from the patch — never let the client move a unit between orgs
+    const { organization_id: _ignored, ...safe } = formData ?? {};
+
     const { error } = await supabase
         .from('units')
-        .update(formData)
-        .eq('id', unitId);
+        .update(safe)
+        .eq('id', unitId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error updating unit:', error);
@@ -80,12 +94,18 @@ export async function deleteUnitAction(unitId: string) {
     await requirePermission('settings', 'manage');
     const supabase = await createClient();
 
-    // 1. Check if it's main
+    const caller = await getCallerContext();
+
+    // 1. Verify ownership and is_main in a single query
     const { data: unit } = await supabase
         .from('units')
-        .select('is_main')
+        .select('is_main, organization_id')
         .eq('id', unitId)
-        .single();
+        .maybeSingle();
+
+    if (!unit || unit.organization_id !== caller.organizationId) {
+        return { success: false, error: 'Unidade não encontrada nesta organização' };
+    }
 
     if (unit?.is_main) {
         return { success: false, error: 'A Matriz não pode ser excluída.' };
@@ -94,7 +114,8 @@ export async function deleteUnitAction(unitId: string) {
     const { error } = await supabase
         .from('units')
         .delete()
-        .eq('id', unitId);
+        .eq('id', unitId)
+        .eq('organization_id', caller.organizationId);
 
     if (error) {
         console.error('Error deleting unit:', error);
