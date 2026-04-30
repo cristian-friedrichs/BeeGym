@@ -32,9 +32,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast";
+import { useSetupStatus } from "@/context/SetupStatusContext";
 
 export default function WorkoutsPage() {
     const supabase = createClient();
+    const { toast } = useToast();
+    const { hasUnit, hasStudent, refresh: refreshSetup } = useSetupStatus();
+    const treinoBlocker = !hasUnit ? 'unidade' : !hasStudent ? 'aluno' : null;
     const [workouts, setWorkouts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -262,8 +267,18 @@ export default function WorkoutsPage() {
                 subtitle="Crie e gerencie as fichas de treino (A, B, C) dos alunos."
                 action={
                     <Button
-                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none"
+                        disabled={!!treinoBlocker}
+                        title={treinoBlocker ? `Cadastre um(a) ${treinoBlocker} antes de criar treinos.` : undefined}
+                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         onClick={() => {
+                            if (treinoBlocker) {
+                                toast({
+                                    variant: 'destructive',
+                                    title: 'Configuração incompleta',
+                                    description: `Cadastre um(a) ${treinoBlocker} antes de criar treinos.`,
+                                });
+                                return;
+                            }
                             setWorkoutToEdit(null);
                             setIsWorkoutModalOpen(true);
                         }}

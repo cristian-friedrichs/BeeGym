@@ -23,6 +23,7 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { getClassType } from '@/lib/class-definitions';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useSetupStatus } from '@/context/SetupStatusContext';
 
 // Helper para renderizar ícone dinâmico
 // --- COMPONENTE BLINDADO ---
@@ -74,6 +75,8 @@ interface ClassEvent {
 export default function ClassesPage() {
   const router = useRouter();
   const { hasFeature, loading: subLoading } = useSubscription();
+  const { hasUnit, hasInstructor, hasPlan, hasStudent, refresh: refreshSetup } = useSetupStatus();
+  const aulaBlocker = !hasUnit ? 'unidade' : !hasInstructor ? 'instrutor' : !hasPlan ? 'plano' : !hasStudent ? 'aluno' : null;
   const [classes, setClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -348,8 +351,20 @@ export default function ClassesPage() {
           </div>
         </div>
           <Button
-            onClick={() => setCreateModalOpen(true)}
-            className="h-10 px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-0.98 uppercase tracking-widest text-[11px]"
+            onClick={() => {
+              if (aulaBlocker) {
+                toast({
+                  variant: 'destructive',
+                  title: 'Configuração incompleta',
+                  description: `Cadastre um(a) ${aulaBlocker} antes de criar aulas.`,
+                });
+                return;
+              }
+              setCreateModalOpen(true);
+            }}
+            disabled={!!aulaBlocker}
+            title={aulaBlocker ? `Cadastre um(a) ${aulaBlocker} antes de criar aulas.` : undefined}
+            className="h-10 px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-0.98 uppercase tracking-widest text-[11px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Plus className="w-4 h-4 mr-2 stroke-[3px]" /> Nova Aula
           </Button>

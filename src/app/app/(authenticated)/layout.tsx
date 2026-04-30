@@ -7,7 +7,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { UnitProvider } from "@/context/UnitContext";
+import { SetupStatusProvider } from "@/context/SetupStatusContext";
 import { StatusAutomator } from "@/components/global/status-automator";
+import { SetupChecklist } from "@/components/global/setup-checklist";
 import { Loader2 } from 'lucide-react';
 import { useSubscription } from "@/hooks/useSubscription";
 import { PlanFeature } from "@/config/plans";
@@ -140,17 +142,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <UnitProvider>
-      <StatusAutomator />
-      <div className="flex h-[100dvh] w-full bg-background-light dark:bg-background-dark overflow-hidden">
-        <Sidebar className="flex-shrink-0" />
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <Header className="flex-shrink-0" />
-          <main className="flex-1 flex flex-col p-6 md:p-8 overflow-y-auto overflow-x-hidden pb-20 md:pb-6 relative">
-            {children}
-          </main>
-          <BottomBar />
+      <SetupStatusProvider>
+        <StatusAutomator />
+        <div className="flex h-[100dvh] w-full bg-background-light dark:bg-background-dark overflow-hidden">
+          <Sidebar className="flex-shrink-0" />
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            <Header className="flex-shrink-0" />
+            <main className="flex-1 flex flex-col p-6 md:p-8 overflow-y-auto overflow-x-hidden pb-20 md:pb-6 relative">
+              <SetupChecklist />
+              {children}
+            </main>
+            <BottomBar />
+          </div>
         </div>
-      </div>
+      </SetupStatusProvider>
     </UnitProvider>
   );
 }

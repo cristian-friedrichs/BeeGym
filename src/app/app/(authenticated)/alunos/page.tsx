@@ -18,6 +18,7 @@ import { useStudentLimit } from '@/hooks/useStudentLimit';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { useUnit } from '@/context/UnitContext';
+import { useSetupStatus } from '@/context/SetupStatusContext';
 
 interface Student {
     id: string;
@@ -38,6 +39,8 @@ export default function StudentsPage() {
     const { hasReachedLimit, maxStudents } = useStudentLimit();
     const { plan, organizationId } = useSubscription();
     const { currentUnitId } = useUnit();
+    const { hasUnit, hasPlan, refresh: refreshSetup } = useSetupStatus();
+    const setupBlocker = !hasUnit ? 'unidade' : !hasPlan ? 'plano' : null;
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -132,8 +135,18 @@ export default function StudentsPage() {
                 subtitle="Gerenciamento de alunos e matrículas"
                 action={
                     <Button
-                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none"
+                        disabled={!!setupBlocker}
+                        title={setupBlocker ? `Cadastre uma ${setupBlocker} antes de criar alunos.` : undefined}
+                        className="font-bold shadow-sm bg-bee-amber text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-10 px-6 transition-all hover:-translate-y-0.5 active:scale-95 border-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                         onClick={() => {
+                            if (setupBlocker) {
+                                toast({
+                                    title: "Configuração incompleta",
+                                    description: `Cadastre uma ${setupBlocker} antes de criar alunos.`,
+                                    variant: "destructive"
+                                });
+                                return;
+                            }
                             if (hasReachedLimit) {
                                 toast({
                                     title: "Limite de alunos atingido",
@@ -257,7 +270,7 @@ export default function StudentsPage() {
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 studentToEdit={studentToEdit}
-                onSuccess={fetchStudents}
+                onSuccess={() => { fetchStudents(); refreshSetup(); }}
             />
         </div>
     );
