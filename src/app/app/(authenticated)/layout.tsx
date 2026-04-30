@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     checkAccess();
   }, [user, profile, authLoading, subLoading, pathname, router, hasFeature]);
 
-  if (isAuthorized === null || authLoading) {
+  if (isAuthorized === null) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark">
         <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />

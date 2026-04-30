@@ -80,6 +80,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         let isMounted = true
 
+        // Safety net: if auth doesn't resolve in 8s, unblock the app
+        const safetyTimeout = setTimeout(() => {
+            if (isMounted) {
+                console.warn('[AuthContext] Safety timeout triggered — forcing loading=false')
+                setLoading(false)
+            }
+        }, 8000)
+
         const initializeAuth = async () => {
             try {
                 // 1. Check initial session
@@ -102,6 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     console.error('Erro na inicialização do auth:', error)
                 }
             } finally {
+                clearTimeout(safetyTimeout)
                 if (isMounted) setLoading(false)
             }
         }
@@ -129,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return () => {
             isMounted = false
+            clearTimeout(safetyTimeout)
             subscription.unsubscribe()
         }
     }, [])
