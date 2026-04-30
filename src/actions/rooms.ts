@@ -26,9 +26,38 @@ export async function createRoomAction(formData: {
 
     if (!profile?.organization_id) return { success: false, error: 'Organização não encontrada' };
 
+    // Resolve unit_id: ensure it points to a real unit row (not the org "master unit").
+    // If the provided unit_id doesn't exist in this org's units, fall back to the main/first unit.
+    let resolvedUnitId = formData.unit_id;
+    if (resolvedUnitId) {
+        const { data: unitMatch } = await supabase
+            .from('units')
+            .select('id')
+            .eq('id', resolvedUnitId)
+            .eq('organization_id', profile.organization_id)
+            .maybeSingle();
+        if (!unitMatch) resolvedUnitId = '';
+    }
+
+    if (!resolvedUnitId) {
+        const { data: fallbackUnit } = await supabase
+            .from('units')
+            .select('id')
+            .eq('organization_id', profile.organization_id)
+            .eq('active', true)
+            .order('is_main', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (!fallbackUnit?.id) {
+            return { success: false, error: 'Nenhuma unidade ativa encontrada. Cadastre uma unidade antes de criar salas.' };
+        }
+        resolvedUnitId = fallbackUnit.id;
+    }
+
     const { data, error } = await supabase
         .from('rooms')
-        .insert([{ ...formData, organization_id: profile.organization_id }])
+        .insert([{ ...formData, unit_id: resolvedUnitId, organization_id: profile.organization_id }])
         .select()
         .single();
 
