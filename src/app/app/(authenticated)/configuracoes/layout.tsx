@@ -41,6 +41,7 @@ const menuItems: MenuItem[] = [
     { label: 'Geral', href: '/app/configuracoes/general', icon: Settings },
     { label: 'Meu Plano', href: '/app/configuracoes/subscription', icon: Crown },
     { label: 'Equipe', href: '/app/configuracoes/team', icon: Users, feature: 'multiplos_usuarios' },
+    { label: 'Instrutores', href: '/app/configuracoes/instructors', icon: GraduationCap },
     { label: 'Perfis de Acesso', href: '/app/configuracoes/roles', icon: Shield, feature: 'multiplos_usuarios' },
     { label: 'Unidades', href: '/app/configuracoes/units', icon: Building2, feature: 'multipropriedade' },
     { label: 'Planos', href: '/app/configuracoes/plans', icon: CreditCard },

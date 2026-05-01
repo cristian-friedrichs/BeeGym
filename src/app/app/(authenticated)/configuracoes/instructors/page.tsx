@@ -1,19 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Construction } from 'lucide-react';
-import { SectionHeader } from '@/components/ui/section-header';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getServerPlan } from '@/lib/server-plan';
 import { isOrgAdmin } from '@/lib/auth/role-checks';
+import { InstructorList } from '@/components/configuracoes/instructors/instructor-list';
 
 export default async function InstructorsPage() {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/login');
-    }
+    if (!user) redirect('/login');
 
     const { data: profile } = await supabase
         .from('profiles')
@@ -26,42 +21,65 @@ export default async function InstructorsPage() {
     }
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
-
     const canManage = isOrgAdmin((profile as any).role);
 
     if (!canManage && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
         redirect('/app/configuracoes');
     }
 
-    return (
-        <div className="space-y-6">
-            <SectionHeader
-                title="Instrutores & Professores"
-                subtitle="Gerencie sua equipe técnica e qualificações"
-            />
+    // Fetch instructors with their linked profile (if any) to know who has system access
+    const { data: instructors } = await supabase
+        .from('instructors')
+        .select('id, name, bio, user_id, allowed_unit_ids, created_at')
+        .eq('organization_id', profile.organization_id)
+        .order('name', { ascending: true });
 
-            <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">
-                <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
-                        <div className="flex items-center gap-2">
-                            <div className="h-5 w-5 text-bee-amber">
-                                <GraduationCap className="h-5 w-5" />
-                            </div>
-                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Cadastro de Instrutores</CardTitle>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Construction className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h3 className="text-lg font-semibold text-foreground">Funcionalidade em Desenvolvimento</h3>
-                        <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                            Em breve você poderá cadastrar instrutores, definir especialidades e gerenciar horários.
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+    const instructorIds = (instructors ?? []).map((i: any) => i.id);
+    const userIds = (instructors ?? [])
+        .map((i: any) => i.user_id)
+        .filter((v: any): v is string => !!v);
+
+    // Fetch profiles for linked instructors so we can show email/status
+    const { data: linkedProfiles } = userIds.length > 0
+        ? await supabase
+            .from('profiles')
+            .select('id, email, status, role')
+            .in('id', userIds)
+        : { data: [] as any[] };
+
+    const profileById = new Map((linkedProfiles ?? []).map((p: any) => [p.id, p]));
+
+    const enriched = (instructors ?? []).map((i: any) => {
+        const linked = i.user_id ? profileById.get(i.user_id) : null;
+        return {
+            ...i,
+            has_system_access: !!linked,
+            email: linked?.email ?? null,
+            account_status: linked?.status ?? null,
+            access_role: linked?.role ?? null,
+        };
+    });
+
+    // Fetch units & roles for the create modal
+    const [{ data: units }, { data: roles }] = await Promise.all([
+        supabase
+            .from('units')
+            .select('id, name')
+            .eq('organization_id', profile.organization_id)
+            .eq('active', true)
+            .order('name'),
+        supabase
+            .from('app_roles')
+            .select('id, name')
+            .eq('organization_id', profile.organization_id)
+            .order('name'),
+    ]);
+
+    return (
+        <InstructorList
+            instructors={enriched as any[]}
+            units={(units ?? []) as any[]}
+            roles={(roles ?? []) as any[]}
+        />
     );
 }

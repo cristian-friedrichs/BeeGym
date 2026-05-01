@@ -34,13 +34,14 @@ import { setMemberActiveAction } from '@/actions/team';
 interface TeamListProps {
     initialUsers: any[];
     currentOrgId: string;
+    currentUserId?: string;
 }
 
 function isOwner(member: any): boolean {
     return member.role === 'OWNER' || member.role === 'PROPRIETARY';
 }
 
-export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
+export function TeamList({ initialUsers, currentOrgId, currentUserId }: TeamListProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [users, setUsers] = useState<any[]>(initialUsers);
@@ -183,7 +184,7 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                {memberIsOwner ? (
+                                                {memberIsOwner && member.id !== currentUserId ? (
                                                     <span className="text-xs text-muted-foreground italic">Protegido</span>
                                                 ) : (
                                                     <DropdownMenu>
@@ -198,26 +199,33 @@ export function TeamList({ initialUsers, currentOrgId }: TeamListProps) {
                                                                 className="gap-2"
                                                                 onClick={() => openEdit(member)}
                                                             >
-                                                                <UserCog className="h-4 w-4" /> Editar Perfil
+                                                                <UserCog className="h-4 w-4" />
+                                                                {member.id === currentUserId ? 'Editar meu cadastro' : 'Editar Perfil'}
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem className="gap-2">
-                                                                <Mail className="h-4 w-4" /> Enviar Convite
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator />
-                                                            {member.active ? (
-                                                                <DropdownMenuItem
-                                                                    className="text-destructive gap-2"
-                                                                    onClick={() => toggleUserStatus(member.id, member.active)}
-                                                                >
-                                                                    <Ban className="h-4 w-4" /> Desativar Membro
+                                                            {!memberIsOwner && member.id !== currentUserId && (
+                                                                <DropdownMenuItem className="gap-2">
+                                                                    <Mail className="h-4 w-4" /> Enviar Convite
                                                                 </DropdownMenuItem>
-                                                            ) : (
-                                                                <DropdownMenuItem
-                                                                    className="text-green-600 gap-2"
-                                                                    onClick={() => toggleUserStatus(member.id, member.active)}
-                                                                >
-                                                                    <CheckCircle2 className="h-4 w-4" /> Reativar Membro
-                                                                </DropdownMenuItem>
+                                                            )}
+                                                            {!memberIsOwner && member.id !== currentUserId && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    {member.active ? (
+                                                                        <DropdownMenuItem
+                                                                            className="text-destructive gap-2"
+                                                                            onClick={() => toggleUserStatus(member.id, member.active)}
+                                                                        >
+                                                                            <Ban className="h-4 w-4" /> Desativar Membro
+                                                                        </DropdownMenuItem>
+                                                                    ) : (
+                                                                        <DropdownMenuItem
+                                                                            className="text-green-600 gap-2"
+                                                                            onClick={() => toggleUserStatus(member.id, member.active)}
+                                                                        >
+                                                                            <CheckCircle2 className="h-4 w-4" /> Reativar Membro
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </>
                                                             )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

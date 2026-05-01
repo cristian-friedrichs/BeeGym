@@ -41,17 +41,26 @@ export default async function TeamPage() {
         .eq('organization_id', profile.organization_id)
         .order('full_name');
 
-    // Mapeia para o formato esperado pelo componente Legado/Existente
-    const mappedMembers = (teamMembers || []).map(m => ({
+    // Equipe shows users whose primary role grants administrative/system access:
+    // OWNER, ADMIN, MANAGER, STAFF (recepcionista/financeiro/etc).
+    // Instructor-only people (role === 'INSTRUCTOR') live on the /instructors page.
+    // Instructors who also have an admin role still appear here under their admin role.
+    const filteredMembers = (teamMembers || []).filter((m: any) => {
+        const role = (m.role || '').toUpperCase();
+        return role !== 'INSTRUCTOR';
+    });
+
+    const mappedMembers = filteredMembers.map((m: any) => ({
         ...m,
         name: m.full_name,
-        active: m.status === 'ACTIVE'
+        active: m.status === 'ACTIVE',
     }));
 
     return (
         <TeamList
             initialUsers={mappedMembers}
             currentOrgId={profile.organization_id}
+            currentUserId={user.id}
         />
     );
 }
