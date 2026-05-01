@@ -45,16 +45,6 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // SUPER_ADMIN bypass — equipe BeeGym não precisa de gate
-        if (isSuperAdmin(profile?.role as string | undefined)) {
-            setHasUnit(true);
-            setHasInstructor(true);
-            setHasPlan(true);
-            setHasStudent(true);
-            setLoading(false);
-            return;
-        }
-
         setLoading(true);
         try {
             const [unitsRes, instructorsRes, plansRes, studentsRes] = await Promise.all([
