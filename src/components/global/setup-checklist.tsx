@@ -20,7 +20,7 @@ interface Step {
 
 export function SetupChecklist() {
     const pathname = usePathname();
-    const { hasUnit, hasInstructor, hasPlan, isPrimaryReady, loading } = useSetupStatus();
+    const { hasUnit, hasInstructor, hasPlan, isPrimaryReady, loading, isSuperAdminUser } = useSetupStatus();
     const [collapsed, setCollapsed] = useState(false);
     const [dismissed, setDismissed] = useState(false);
 
@@ -40,6 +40,10 @@ export function SetupChecklist() {
 
     // Don't render on the onboarding routes themselves
     if (pathname?.startsWith('/app/onboarding')) return null;
+
+    // SUPER_ADMIN accounts bypass setup — they don't have tenant data to fill.
+    // Don't show the checklist for them.
+    if (isSuperAdminUser) return null;
 
     // Don't render while loading or when setup is fully done
     if (loading || isPrimaryReady) return null;

@@ -38,7 +38,7 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-    { label: 'Geral', href: '/app/configuracoes/general', icon: Settings },
+    { label: 'Dados do Negócio', href: '/app/configuracoes/general', icon: Settings },
     { label: 'Meu Plano', href: '/app/configuracoes/subscription', icon: Crown },
     { label: 'Equipe', href: '/app/configuracoes/team', icon: Users, feature: 'multiplos_usuarios' },
     { label: 'Instrutores', href: '/app/configuracoes/instructors', icon: GraduationCap },

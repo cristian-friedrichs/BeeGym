@@ -23,6 +23,7 @@ const scheduleSchema = z.object({
 
 const settingsSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+    business_type: z.string().optional().or(z.literal('')),
     description: z.string().optional(),
     website: z.string().optional().or(z.literal('')),
     instagram: z.string().optional().or(z.literal('')),
@@ -95,6 +96,7 @@ export async function updateOrganizationSettings(values: z.infer<typeof settings
             .from('organizations')
             .update({
                 name: values.name,
+                business_type: values.business_type || null,
                 description: values.description,
                 website: values.website,
                 instagram: values.instagram,

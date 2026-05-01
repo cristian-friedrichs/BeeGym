@@ -15,8 +15,21 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, Save, Upload, Globe, Instagram, Building2, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { updateOrganizationSettings } from '@/actions/organization';
 import { SectionHeader } from '@/components/ui/section-header';
+
+const BUSINESS_TYPES = [
+    { value: 'Personal Trainer', label: 'Personal Trainer' },
+    { value: 'Academia', label: 'Academia' },
+    { value: 'Box de CrossFit', label: 'Box de CrossFit' },
+    { value: 'Studio de Pilates', label: 'Studio de Pilates' },
+    { value: 'Studio de Ioga', label: 'Studio de Ioga' },
+    { value: 'Studio de Dança', label: 'Studio de Dança' },
+    { value: 'Escola de Esportes', label: 'Escola de Esportes' },
+    { value: 'Escola de Artes Marciais & Lutas', label: 'Escola de Artes Marciais & Lutas' },
+    { value: 'Outros', label: 'Outros' },
+];
 
 type DaySchedule = { start: string; end: string; active: boolean };
 type ScheduleConfig = Record<
@@ -43,6 +56,7 @@ const scheduleSchema = z.object({
 
 const settingsSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+    business_type: z.string().optional(),
     description: z.string().optional(),
     website: z.string()
         .optional()
@@ -153,6 +167,7 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
         resolver: zodResolver(settingsSchema),
         defaultValues: {
             name: org?.name || '',
+            business_type: org?.business_type || '',
             description: org?.description || '',
             website: org?.website || '',
             instagram: org?.instagram || '',
@@ -265,8 +280,8 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <SectionHeader
-                title="Configurações Gerais"
-                subtitle="Gerencie os dados básicos, identidade visual e horários da sua academia"
+                title="Dados do Negócio"
+                subtitle="Gerencie os dados básicos, identidade visual e horários do seu negócio"
                 action={
                     <Button
                         type="submit"
@@ -296,7 +311,7 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                             <div className="h-5 w-5 text-bee-amber">
                                 <Building2 className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Dados da Academia</CardTitle>
+                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Identidade do Negócio</CardTitle>
                         </div>
                     </div>
                 </CardHeader>
@@ -346,18 +361,37 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                         </div>
                     </div>
 
-                    {/* Business Name */}
-                    <div className="space-y-2">
-                        <Label htmlFor="name" className="text-deep-midnight font-bold">Nome do Negócio</Label>
-                        <Input
-                            id="name"
-                            {...register('name')}
-                            placeholder="Ex: Academia FitLife"
-                            className="rounded-full bg-slate-50 border-slate-100 focus:bg-white transition-all h-10 border focus:border-bee-amber focus:ring-1 focus:ring-bee-amber/20"
-                        />
-                        {errors.name && (
-                            <p className="text-sm text-destructive">{errors.name.message}</p>
-                        )}
+                    {/* Business Type + Name — side by side on md+ */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-deep-midnight font-bold">Tipo de Negócio</Label>
+                            <Select
+                                value={watch('business_type') || ''}
+                                onValueChange={(v) => setValue('business_type', v, { shouldDirty: true })}
+                            >
+                                <SelectTrigger className="rounded-full bg-slate-50 border-slate-100 focus:bg-white h-10 border focus:border-bee-amber focus:ring-1 focus:ring-bee-amber/20">
+                                    <SelectValue placeholder="Selecione o tipo..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {BUSINESS_TYPES.map(bt => (
+                                        <SelectItem key={bt.value} value={bt.value}>{bt.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="name" className="text-deep-midnight font-bold">Nome do Negócio / Nome Profissional</Label>
+                            <Input
+                                id="name"
+                                {...register('name')}
+                                placeholder="Ex: Academia FitLife ou João Silva PT"
+                                className="rounded-full bg-slate-50 border-slate-100 focus:bg-white transition-all h-10 border focus:border-bee-amber focus:ring-1 focus:ring-bee-amber/20"
+                            />
+                            {errors.name && (
+                                <p className="text-sm text-destructive">{errors.name.message}</p>
+                            )}
+                        </div>
                     </div>
 
                     {/* Description */}

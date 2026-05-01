@@ -13,10 +13,12 @@ export interface SetupStatus {
     isPrimaryReady: boolean;  // unit + instructor + plan
     isFullyReady: boolean;    // primary + student
     loading: boolean;
+    isSuperAdminUser: boolean;
     refresh: () => Promise<void>;
 }
 
 const defaultStatus: SetupStatus = {
+    isSuperAdminUser: false,
     hasUnit: false,
     hasInstructor: false,
     hasPlan: false,
@@ -92,6 +94,8 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
         fetchStatus();
     }, [authLoading, fetchStatus]);
 
+    const isSuperAdminUser = isSuperAdmin(profile?.role as string | undefined);
+
     const value = useMemo<SetupStatus>(() => {
         const isPrimaryReady = hasUnit && hasInstructor && hasPlan;
         return {
@@ -102,9 +106,10 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
             isPrimaryReady,
             isFullyReady: isPrimaryReady && hasStudent,
             loading,
+            isSuperAdminUser,
             refresh: fetchStatus,
         };
-    }, [hasUnit, hasInstructor, hasPlan, hasStudent, loading, fetchStatus]);
+    }, [hasUnit, hasInstructor, hasPlan, hasStudent, loading, isSuperAdminUser, fetchStatus]);
 
     return (
         <SetupStatusContext.Provider value={value}>
