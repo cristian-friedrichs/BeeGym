@@ -38,8 +38,8 @@ import { useSetupStatus } from "@/context/SetupStatusContext";
 export default function WorkoutsPage() {
     const supabase = createClient();
     const { toast } = useToast();
-    const { hasUnit, hasStudent, refresh: refreshSetup } = useSetupStatus();
-    const treinoBlocker = !hasUnit ? 'unidade' : !hasStudent ? 'aluno' : null;
+    const { hasBusinessData, hasStudent, refresh: refreshSetup } = useSetupStatus();
+    const treinoBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasStudent ? 'Aluno' : null;
     const [workouts, setWorkouts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 

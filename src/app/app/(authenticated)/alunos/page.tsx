@@ -39,8 +39,8 @@ export default function StudentsPage() {
     const { hasReachedLimit, maxStudents } = useStudentLimit();
     const { plan, organizationId } = useSubscription();
     const { currentUnitId } = useUnit();
-    const { hasUnit, hasPlan, refresh: refreshSetup } = useSetupStatus();
-    const setupBlocker = !hasUnit ? 'unidade' : !hasPlan ? 'plano' : null;
+    const { hasBusinessData, hasPlan, refresh: refreshSetup } = useSetupStatus();
+    const setupBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasPlan ? 'Plano' : null;
     const [students, setStudents] = useState<Student[]>([]);
     const [loading, setLoading] = useState(true);
 

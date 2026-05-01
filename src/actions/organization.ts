@@ -23,7 +23,7 @@ const scheduleSchema = z.object({
 
 const settingsSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    business_type: z.string().optional().or(z.literal('')),
+    business_type: z.string().min(1).optional(),
     description: z.string().optional(),
     website: z.string().optional().or(z.literal('')),
     instagram: z.string().optional().or(z.literal('')),

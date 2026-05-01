@@ -3,74 +3,70 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CheckCircle2, Circle, ChevronDown, ChevronUp, X, Sparkles, Building2, GraduationCap, Wallet, ArrowRight } from 'lucide-react';
+import {
+    CheckCircle2, Circle, ChevronDown, ChevronUp,
+    Sparkles, Settings, GraduationCap, Wallet, Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSetupStatus } from '@/context/SetupStatusContext';
 
-const DISMISS_KEY = 'beegym_setup_checklist_dismissed';
-
 interface Step {
-    key: 'unit' | 'instructor' | 'plan';
+    key: string;
     title: string;
     description: string;
     href: string;
-    icon: typeof Building2;
+    icon: typeof Settings;
     done: boolean;
 }
 
 export function SetupChecklist() {
     const pathname = usePathname();
-    const { hasUnit, hasInstructor, hasPlan, isPrimaryReady, loading } = useSetupStatus();
+    const { hasBusinessData, hasPlan, hasInstructor, hasStudent, isPrimaryReady, loading } = useSetupStatus();
+
+    // Opens on every page navigation (re-opens when pathname changes)
     const [collapsed, setCollapsed] = useState(false);
-    const [dismissed, setDismissed] = useState(false);
-
-    // Restore dismissed state from localStorage
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setDismissed(localStorage.getItem(DISMISS_KEY) === '1');
-        }
-    }, []);
+        setCollapsed(false);
+    }, [pathname]);
 
-    // Auto-clear dismissal once setup completes (so user sees it again if a step regresses, e.g. unit deactivated)
-    useEffect(() => {
-        if (isPrimaryReady && typeof window !== 'undefined') {
-            localStorage.removeItem(DISMISS_KEY);
-        }
-    }, [isPrimaryReady]);
-
-    // Don't render on the onboarding routes themselves
+    // Don't render on onboarding routes
     if (pathname?.startsWith('/app/onboarding')) return null;
 
-    // Don't render while loading or when setup is fully done
+    // Disappears completely once all 4 steps are done
     if (loading || isPrimaryReady) return null;
-
-    // User chose to hide the banner this session — respect it
-    if (dismissed) return null;
 
     const steps: Step[] = [
         {
-            key: 'unit',
-            title: 'Cadastre sua unidade',
-            description: 'Defina o local onde acontecem aulas e treinos.',
-            href: '/app/configuracoes/units',
-            icon: Building2,
-            done: hasUnit,
+            key: 'business',
+            title: 'Dados do Negócio',
+            description: 'Tipo, nome e horário de funcionamento.',
+            href: '/app/configuracoes/general',
+            icon: Settings,
+            done: hasBusinessData,
+        },
+        {
+            key: 'plan',
+            title: 'Crie os Planos',
+            description: 'Planos que sua academia oferece aos alunos.',
+            href: '/app/configuracoes/plans',
+            icon: Wallet,
+            done: hasPlan,
         },
         {
             key: 'instructor',
-            title: 'Cadastre um instrutor',
-            description: 'Adicione um membro com perfil de instrutor pela aba Equipe.',
-            href: '/app/configuracoes/team',
+            title: 'Instrutores / Monitores',
+            description: 'Cadastre instrutores, monitores e professores.',
+            href: '/app/configuracoes/instructors',
             icon: GraduationCap,
             done: hasInstructor,
         },
         {
-            key: 'plan',
-            title: 'Cadastre um plano',
-            description: 'Crie os planos que sua academia oferece aos alunos.',
-            href: '/app/configuracoes/plans',
-            icon: Wallet,
-            done: hasPlan,
+            key: 'student',
+            title: 'Matricule um Aluno',
+            description: 'Cadastre e matricule o primeiro aluno.',
+            href: '/app/alunos',
+            icon: Users,
+            done: hasStudent,
         },
     ];
 
@@ -78,99 +74,118 @@ export function SetupChecklist() {
     const totalSteps = steps.length;
     const progressPct = Math.round((completedCount / totalSteps) * 100);
 
-    const handleDismiss = () => {
-        localStorage.setItem(DISMISS_KEY, '1');
-        setDismissed(true);
-    };
-
     return (
-        <div className="rounded-2xl border border-bee-amber/30 bg-gradient-to-r from-amber-50 via-white to-amber-50 shadow-sm overflow-hidden mb-4">
+        <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50 w-[320px] max-w-[calc(100vw-2rem)] shadow-2xl rounded-2xl overflow-hidden border border-bee-amber/30 bg-white">
+            {/* Header — always visible, click to toggle */}
             <button
                 type="button"
                 onClick={() => setCollapsed(c => !c)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-50/50 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-bee-midnight to-slate-900 hover:from-slate-900 hover:to-bee-midnight transition-all text-left"
             >
-                <div className="h-9 w-9 rounded-xl bg-bee-amber/20 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-lg bg-bee-amber/20 flex items-center justify-center shrink-0">
                     <Sparkles className="h-4 w-4 text-bee-amber" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-bee-midnight font-display">
-                        Conclua a configuração inicial
+                    <p className="text-xs font-black text-white uppercase tracking-wider font-display">
+                        Configuração Inicial
                     </p>
-                    <p className="text-[11px] text-slate-500 font-medium">
-                        {completedCount} de {totalSteps} etapas concluídas — finalize para criar alunos, aulas e treinos.
+                    <p className="text-[10px] text-slate-400 font-medium">
+                        {completedCount} de {totalSteps} etapas concluídas
                     </p>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 mr-2">
-                    <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-bee-amber transition-all duration-500"
-                            style={{ width: `${progressPct}%` }}
+
+                {/* Progress ring */}
+                <div className="relative h-9 w-9 shrink-0">
+                    <svg className="rotate-[-90deg]" width="36" height="36" viewBox="0 0 36 36">
+                        <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,191,0,0.15)" strokeWidth="3" />
+                        <circle
+                            cx="18" cy="18" r="15"
+                            fill="none"
+                            stroke="#FFBF00"
+                            strokeWidth="3"
+                            strokeDasharray={`${(progressPct / 100) * 94.25} 94.25`}
+                            strokeLinecap="round"
+                            className="transition-all duration-500"
                         />
-                    </div>
-                    <span className="text-[11px] font-bold text-bee-amber tabular-nums">{progressPct}%</span>
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                    {collapsed ? (
-                        <ChevronDown className="h-4 w-4 text-slate-400" />
-                    ) : (
-                        <ChevronUp className="h-4 w-4 text-slate-400" />
-                    )}
-                    <span
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); handleDismiss(); } }}
-                        className="ml-1 p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="Ocultar até a próxima sessão"
-                    >
-                        <X className="h-4 w-4" />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-bee-amber">
+                        {progressPct}%
                     </span>
                 </div>
+
+                {collapsed ? (
+                    <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
+                ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                )}
             </button>
 
+            {/* Steps — collapsible */}
             {!collapsed && (
-                <div className="px-4 pb-4 pt-1 grid gap-2 sm:grid-cols-3">
-                    {steps.map((step) => {
+                <div className="bg-white divide-y divide-slate-50">
+                    {steps.map((step, idx) => {
                         const StepIcon = step.icon;
+                        const isNext = !step.done && steps.slice(0, idx).every(s => s.done);
+
                         return (
                             <Link
                                 key={step.key}
-                                href={step.href}
+                                href={step.done ? '#' : step.href}
+                                onClick={step.done ? (e) => e.preventDefault() : undefined}
                                 className={cn(
-                                    'group flex items-start gap-3 rounded-xl border p-3 transition-all hover:shadow-sm',
+                                    'flex items-center gap-3 px-4 py-3 transition-colors',
                                     step.done
-                                        ? 'border-emerald-200 bg-emerald-50/50'
-                                        : 'border-slate-200 bg-white hover:border-bee-amber/40 hover:bg-amber-50/30'
+                                        ? 'opacity-60 cursor-default bg-emerald-50/40'
+                                        : isNext
+                                            ? 'hover:bg-bee-amber/5 cursor-pointer'
+                                            : 'hover:bg-slate-50 cursor-pointer opacity-70'
                                 )}
                             >
-                                <div className="shrink-0 mt-0.5">
+                                {/* Step number / check */}
+                                <div className={cn(
+                                    'h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-[11px] font-black border-2',
+                                    step.done
+                                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                                        : isNext
+                                            ? 'border-bee-amber text-bee-amber'
+                                            : 'border-slate-200 text-slate-400'
+                                )}>
                                     {step.done ? (
-                                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                        <CheckCircle2 className="h-4 w-4" />
                                     ) : (
-                                        <Circle className="h-5 w-5 text-slate-300 group-hover:text-bee-amber transition-colors" />
+                                        <span>{idx + 1}</span>
                                     )}
                                 </div>
+
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5 mb-0.5">
-                                        <StepIcon className={cn('h-3.5 w-3.5 shrink-0', step.done ? 'text-emerald-500' : 'text-slate-400')} />
-                                        <p className={cn(
-                                            'text-xs font-bold truncate',
-                                            step.done ? 'text-emerald-700 line-through' : 'text-bee-midnight'
-                                        )}>
-                                            {step.title}
-                                        </p>
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug">
+                                    <p className={cn(
+                                        'text-xs font-bold leading-none mb-0.5',
+                                        step.done ? 'text-emerald-700 line-through' : isNext ? 'text-bee-midnight' : 'text-slate-500'
+                                    )}>
+                                        {step.title}
+                                    </p>
+                                    <p className="text-[10px] text-slate-400 leading-snug">
                                         {step.description}
                                     </p>
                                 </div>
-                                {!step.done && (
-                                    <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-bee-amber group-hover:translate-x-0.5 transition-all shrink-0" />
-                                )}
+
+                                <StepIcon className={cn(
+                                    'h-3.5 w-3.5 shrink-0',
+                                    step.done ? 'text-emerald-400' : isNext ? 'text-bee-amber' : 'text-slate-300'
+                                )} />
                             </Link>
                         );
                     })}
+
+                    {/* Bottom progress bar */}
+                    <div className="px-4 py-2 bg-slate-50/50">
+                        <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-bee-amber transition-all duration-700 rounded-full"
+                                style={{ width: `${progressPct}%` }}
+                            />
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

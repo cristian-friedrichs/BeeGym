@@ -56,7 +56,7 @@ const scheduleSchema = z.object({
 
 const settingsSchema = z.object({
     name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    business_type: z.string().optional(),
+    business_type: z.string().min(1, 'Selecione o tipo de negócio'),
     description: z.string().optional(),
     website: z.string()
         .optional()
@@ -82,7 +82,10 @@ const settingsSchema = z.object({
             return `@${cleanHandle}`;
         }),
     schedule: scheduleSchema,
-});
+}).refine(
+    (data) => Object.values(data.schedule).some(day => day.active),
+    { message: 'Configure pelo menos um dia de funcionamento ativo.', path: ['schedule'] }
+);
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
@@ -364,7 +367,7 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                     {/* Business Type + Name — side by side on md+ */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-deep-midnight font-bold">Tipo de Negócio</Label>
+                            <Label className="text-deep-midnight font-bold">Tipo de Negócio <span className="text-destructive">*</span></Label>
                             <Select
                                 value={watch('business_type') || ''}
                                 onValueChange={(v) => setValue('business_type', v, { shouldDirty: true })}
@@ -378,10 +381,13 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {(errors as any).business_type && (
+                                <p className="text-sm text-destructive">{(errors as any).business_type.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-deep-midnight font-bold">Nome do Negócio / Nome Profissional</Label>
+                            <Label htmlFor="name" className="text-deep-midnight font-bold">Nome do Negócio / Nome Profissional <span className="text-destructive">*</span></Label>
                             <Input
                                 id="name"
                                 {...register('name')}
@@ -447,7 +453,7 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
             </Card>
 
             {/* Card 2: Operating Schedule */}
-            <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">
+            <Card className={`rounded-[2rem] shadow-sm overflow-hidden bg-white ${(errors as any).schedule ? 'border-2 border-destructive/50' : 'border-slate-100'}`}>
                 <CardHeader className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
                     <div className="flex items-center gap-3">
                         <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
@@ -455,9 +461,12 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                             <div className="h-5 w-5 text-bee-amber">
                                 <Clock className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">Horário Comercial</CardTitle>
+                            <CardTitle className="text-lg font-bold text-deep-midnight tracking-tight font-display">
+                                Horário de Funcionamento <span className="text-destructive">*</span>
+                            </CardTitle>
                         </div>
                     </div>
+                    <p className="text-[11px] text-slate-400 font-medium">Impacta na visualização da agenda e nos agendamentos</p>
                 </CardHeader>
                 <CardContent className="space-y-3">
                     {DAY_ORDER.map((day) => (
@@ -487,6 +496,9 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
                             </div>
                         </div>
                     ))}
+                    {(errors as any).schedule && (
+                        <p className="text-sm text-destructive font-medium pt-1">{(errors as any).schedule.message}</p>
+                    )}
                 </CardContent>
             </Card>
 

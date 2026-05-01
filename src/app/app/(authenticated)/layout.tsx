@@ -149,9 +149,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Header className="flex-shrink-0" />
             <main className="flex-1 flex flex-col p-6 md:p-8 overflow-y-auto overflow-x-hidden pb-20 md:pb-6 relative">
-              <SetupChecklist />
               {children}
             </main>
+            <SetupChecklist />
             <BottomBar />
           </div>
         </div>

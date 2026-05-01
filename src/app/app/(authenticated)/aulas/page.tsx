@@ -75,8 +75,8 @@ interface ClassEvent {
 export default function ClassesPage() {
   const router = useRouter();
   const { hasFeature, loading: subLoading } = useSubscription();
-  const { hasUnit, hasInstructor, hasPlan, hasStudent, refresh: refreshSetup } = useSetupStatus();
-  const aulaBlocker = !hasUnit ? 'unidade' : !hasInstructor ? 'instrutor' : !hasPlan ? 'plano' : !hasStudent ? 'aluno' : null;
+  const { hasBusinessData, hasInstructor, hasPlan, hasStudent, refresh: refreshSetup } = useSetupStatus();
+  const aulaBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasPlan ? 'Plano' : !hasInstructor ? 'Instrutor' : !hasStudent ? 'Aluno' : null;
   const [classes, setClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);

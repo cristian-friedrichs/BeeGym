@@ -6,11 +6,12 @@ import { useAuth } from '@/lib/auth/AuthContext';
 import { isSuperAdmin } from '@/lib/auth/role-checks';
 
 export interface SetupStatus {
+    hasBusinessData: boolean; // business_type + name + at least one active schedule day
     hasUnit: boolean;
     hasInstructor: boolean;
     hasPlan: boolean;
     hasStudent: boolean;
-    isPrimaryReady: boolean;  // unit + instructor + plan
+    isPrimaryReady: boolean;  // businessData + unit + instructor + plan
     isFullyReady: boolean;    // primary + student
     loading: boolean;
     isSuperAdminUser: boolean;
@@ -19,6 +20,7 @@ export interface SetupStatus {
 
 const defaultStatus: SetupStatus = {
     isSuperAdminUser: false,
+    hasBusinessData: false,
     hasUnit: false,
     hasInstructor: false,
     hasPlan: false,
@@ -33,6 +35,7 @@ const SetupStatusContext = createContext<SetupStatus>(defaultStatus);
 
 export function SetupStatusProvider({ children }: { children: ReactNode }) {
     const { organizationId, profile, loading: authLoading } = useAuth();
+    const [hasBusinessData, setHasBusinessData] = useState(false);
     const [hasUnit, setHasUnit] = useState(false);
     const [hasInstructor, setHasInstructor] = useState(false);
     const [hasPlan, setHasPlan] = useState(false);
@@ -47,7 +50,12 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
 
         setLoading(true);
         try {
-            const [unitsRes, instructorsRes, plansRes, studentsRes] = await Promise.all([
+            const [orgRes, unitsRes, instructorsRes, plansRes, studentsRes] = await Promise.all([
+                (supabase as any)
+                    .from('organizations')
+                    .select('business_type, name, schedule')
+                    .eq('id', organizationId)
+                    .single(),
                 (supabase as any)
                     .from('units')
                     .select('id', { count: 'exact', head: true })
@@ -68,6 +76,11 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
                     .eq('organization_id', organizationId),
             ]);
 
+            const org = orgRes.data;
+            const hasSchedule = org?.schedule
+                ? Object.values(org.schedule as Record<string, { active?: boolean }>).some(d => d?.active)
+                : false;
+            setHasBusinessData(!!(org?.business_type && org?.name && hasSchedule));
             setHasUnit((unitsRes.count ?? 0) > 0);
             setHasInstructor((instructorsRes.count ?? 0) > 0);
             setHasPlan((plansRes.count ?? 0) > 0);
@@ -87,19 +100,22 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
     const isSuperAdminUser = isSuperAdmin(profile?.role as string | undefined);
 
     const value = useMemo<SetupStatus>(() => {
-        const isPrimaryReady = hasUnit && hasInstructor && hasPlan;
+        // Wizard completes when: business data + plan + instructor + student
+        // (units are optional — not part of the 4-step wizard)
+        const isPrimaryReady = hasBusinessData && hasPlan && hasInstructor && hasStudent;
         return {
+            hasBusinessData,
             hasUnit,
             hasInstructor,
             hasPlan,
             hasStudent,
             isPrimaryReady,
-            isFullyReady: isPrimaryReady && hasStudent,
+            isFullyReady: isPrimaryReady,
             loading,
             isSuperAdminUser,
             refresh: fetchStatus,
         };
-    }, [hasUnit, hasInstructor, hasPlan, hasStudent, loading, isSuperAdminUser, fetchStatus]);
+    }, [hasBusinessData, hasUnit, hasInstructor, hasPlan, hasStudent, loading, isSuperAdminUser, fetchStatus]);
 
     return (
         <SetupStatusContext.Provider value={value}>
