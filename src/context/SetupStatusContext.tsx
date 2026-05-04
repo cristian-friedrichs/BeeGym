@@ -76,11 +76,17 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
                     .eq('organization_id', organizationId),
             ]);
 
+            const VALID_BUSINESS_TYPES = [
+                'Personal Trainer', 'Academia', 'Box de CrossFit', 'Studio de Pilates',
+                'Studio de Ioga', 'Studio de Dança', 'Escola de Esportes',
+                'Escola de Artes Marciais & Lutas', 'Outros',
+            ];
             const org = orgRes.data;
             const hasSchedule = org?.schedule
                 ? Object.values(org.schedule as Record<string, { active?: boolean }>).some(d => d?.active)
                 : false;
-            setHasBusinessData(!!(org?.business_type && org?.name && hasSchedule));
+            const validBusinessType = !!(org?.business_type && VALID_BUSINESS_TYPES.includes(org.business_type));
+            setHasBusinessData(!!(validBusinessType && org?.name && hasSchedule));
             setHasUnit((unitsRes.count ?? 0) > 0);
             setHasInstructor((instructorsRes.count ?? 0) > 0);
             setHasPlan((plansRes.count ?? 0) > 0);
