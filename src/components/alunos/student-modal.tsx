@@ -461,8 +461,12 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                 address_zip: zip || null,
                 plan: selectedPlanDetails?.name || '', // Legacy text column
                 plan_id: selectedPlanDetails?.id || null, // FK Relation
-                // Initialize credits if pack plan
-                ...(selectedPlanDetails?.type === 'checkin' ? { credits_balance: selectedPlanDetails.checkin_limit } : {}),
+                // Initialize credits based on actual plan_type
+                ...(selectedPlanDetails?.plan_type === 'pack'
+                    ? { credits_balance: selectedPlanDetails.credits || 0 }
+                    : selectedPlanDetails?.plan_type === 'membership'
+                    ? { credits_balance: -1 }  // Unlimited
+                    : {}),
                 objective,
                 birth_date: birthDate || null,
                 status,

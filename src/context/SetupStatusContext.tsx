@@ -66,7 +66,7 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
                     .select('id', { count: 'exact', head: true })
                     .eq('organization_id', organizationId),
                 (supabase as any)
-                    .from('plans')
+                    .from('membership_plans')
                     .select('id', { count: 'exact', head: true })
                     .eq('organization_id', organizationId)
                     .eq('active', true),
