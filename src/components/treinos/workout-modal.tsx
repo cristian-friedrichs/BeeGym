@@ -443,7 +443,12 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                         </div>
                                         <div className="relative">
                                             {openCommand && !selectedStudentId && (
-                                                <div className="absolute w-full z-50 mt-2 rounded-2xl border border-slate-100 bg-white text-popover-foreground shadow-2xl outline-none animate-in fade-in slide-in-from-top-1 overflow-hidden">
+                                                // onMouseDown com preventDefault impede que o input perca o foco (onBlur)
+                                                // antes que o onSelect do CommandItem seja executado
+                                                <div
+                                                    className="absolute w-full z-50 mt-2 rounded-2xl border border-slate-100 bg-white text-popover-foreground shadow-2xl outline-none animate-in fade-in slide-in-from-top-1 overflow-hidden"
+                                                    onMouseDown={(e) => e.preventDefault()}
+                                                >
                                                     <CommandList className="max-h-[200px] overflow-y-auto">
                                                         <CommandEmpty className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhum aluno encontrado.</CommandEmpty>
                                                         <CommandGroup>
