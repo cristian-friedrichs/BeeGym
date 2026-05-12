@@ -297,48 +297,6 @@ export type Database = {
         }
         Relationships: []
       }
-      class_attendees: {
-        Row: {
-          class_id: string | null
-          created_at: string | null
-          id: string
-          organization_id: string | null
-          status: string | null
-          student_id: string | null
-        }
-        Insert: {
-          class_id?: string | null
-          created_at?: string | null
-          id?: string
-          organization_id?: string | null
-          status?: string | null
-          student_id?: string | null
-        }
-        Update: {
-          class_id?: string | null
-          created_at?: string | null
-          id?: string
-          organization_id?: string | null
-          status?: string | null
-          student_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "class_attendees_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_attendees_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       class_templates: {
         Row: {
           color: string | null
@@ -376,45 +334,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      classes: {
-        Row: {
-          attendees_count: number | null
-          capacity: number | null
-          end_time: string
-          id: string
-          instructor_name: string | null
-          organization_id: string
-          recurrence_id: string | null
-          start_time: string
-          status: string | null
-          title: string
-        }
-        Insert: {
-          attendees_count?: number | null
-          capacity?: number | null
-          end_time: string
-          id?: string
-          instructor_name?: string | null
-          organization_id: string
-          recurrence_id?: string | null
-          start_time: string
-          status?: string | null
-          title: string
-        }
-        Update: {
-          attendees_count?: number | null
-          capacity?: number | null
-          end_time?: string
-          id?: string
-          instructor_name?: string | null
-          organization_id?: string
-          recurrence_id?: string | null
-          start_time?: string
-          status?: string | null
-          title?: string
-        }
-        Relationships: []
       }
       event_enrollments: {
         Row: {
@@ -496,38 +415,6 @@ export type Database = {
           video_url?: string | null
         }
         Relationships: []
-      }
-      financial_summary: {
-        Row: {
-          expenses: number | null
-          id: string
-          month: string | null
-          organization_id: string | null
-          revenue: number | null
-        }
-        Insert: {
-          expenses?: number | null
-          id?: string
-          month?: string | null
-          organization_id?: string | null
-          revenue?: number | null
-        }
-        Update: {
-          expenses?: number | null
-          id?: string
-          month?: string | null
-          organization_id?: string | null
-          revenue?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financial_summary_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       instructors: {
         Row: {
@@ -874,77 +761,6 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      plans: {
-        Row: {
-          active: boolean | null
-          check_in_limit: number | null
-          checkin_cycle: string | null
-          checkin_limit: number | null
-          color: string | null
-          description: string | null
-          duration_days: number | null
-          features: Json | null
-          frequency: string | null
-          id: string
-          max_students: number | null
-          name: string
-          organization_id: string | null
-          price: number | null
-          promo_duration_months: number | null
-          promo_price: number | null
-          type: string | null
-          validity_days: number | null
-        }
-        Insert: {
-          active?: boolean | null
-          check_in_limit?: number | null
-          checkin_cycle?: string | null
-          checkin_limit?: number | null
-          color?: string | null
-          description?: string | null
-          duration_days?: number | null
-          features?: Json | null
-          frequency?: string | null
-          id?: string
-          max_students?: number | null
-          name: string
-          organization_id?: string | null
-          price?: number | null
-          promo_duration_months?: number | null
-          promo_price?: number | null
-          type?: string | null
-          validity_days?: number | null
-        }
-        Update: {
-          active?: boolean | null
-          check_in_limit?: number | null
-          checkin_cycle?: string | null
-          checkin_limit?: number | null
-          color?: string | null
-          description?: string | null
-          duration_days?: number | null
-          features?: Json | null
-          frequency?: string | null
-          id?: string
-          max_students?: number | null
-          name?: string
-          organization_id?: string | null
-          price?: number | null
-          promo_duration_months?: number | null
-          promo_price?: number | null
-          type?: string | null
-          validity_days?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "plans_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1384,44 +1200,6 @@ export type Database = {
             columns: ["saas_plan_id"]
             isOneToOne: false
             referencedRelation: "saas_plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      student_credits_log: {
-        Row: {
-          change_amount: number
-          created_at: string | null
-          id: string
-          organization_id: string
-          reason: string | null
-          reference_id: string | null
-          student_id: string | null
-        }
-        Insert: {
-          change_amount: number
-          created_at?: string | null
-          id?: string
-          organization_id: string
-          reason?: string | null
-          reference_id?: string | null
-          student_id?: string | null
-        }
-        Update: {
-          change_amount?: number
-          created_at?: string | null
-          id?: string
-          organization_id?: string
-          reason?: string | null
-          reference_id?: string | null
-          student_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "student_credits_log_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -2092,19 +1870,6 @@ export type Database = {
       }
     }
     Views: {
-      mv_financial_summary: {
-        Row: {
-          month: string | null
-          organization_id: string | null
-          total_overdue_amount: number | null
-          total_overdue_count: number | null
-          total_paid_count: number | null
-          total_pending_amount: number | null
-          total_pending_count: number | null
-          total_revenue: number | null
-        }
-        Relationships: []
-      }
       mv_workout_stats: {
         Row: {
           last_workout_at: string | null

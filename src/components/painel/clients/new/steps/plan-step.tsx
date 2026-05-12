@@ -59,26 +59,27 @@ export function PlanStep() {
 
         if (!userData?.organization_id) return;
 
-        // Note: transitioning to canonical plans table
         const { data: plansData, error } = await (supabase as any)
-          .from('plans')
-          .select('*')
+          .from('membership_plans')
+          .select('id, name, price, plan_type, days_per_week, credits')
           .eq('organization_id', userData.organization_id)
           .eq('active', true)
           .order('name');
- 
+
         if (error) {
           console.error('Error fetching plans:', error);
           return;
         }
- 
+
         const mappedPlans = (plansData || []).map((p: any) => ({
-          ...p,
-          plan_type: p.type === 'checkin' ? 'PACKAGE' : 'RECURRING', 
-          frequency_limit: p.checkin_limit,
-          total_credits: p.type === 'checkin' ? p.checkin_limit : undefined
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          plan_type: p.plan_type === 'pack' ? 'PACKAGE' : 'RECURRING',
+          frequency_limit: p.days_per_week ?? undefined,
+          total_credits: p.plan_type === 'pack' ? p.credits ?? undefined : undefined,
         })) as Plan[];
- 
+
         setPlans(mappedPlans);
       } catch (error) {
         console.error('Error in fetchPlans:', error);

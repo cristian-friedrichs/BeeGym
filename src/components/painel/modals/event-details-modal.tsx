@@ -101,20 +101,13 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         }
     }, [open, event]);
 
-    const isModernEvent = event?.eventType === 'CLASS' || event?.eventType === 'TRAINING';
-
     const fetchParticipants = async () => {
-        // Pega o ID de forma dinâmica dependendo de como a prop chega no componente
         const currentEventId = event?.id || (event as any)?.classData?.id;
         if (!currentEventId) return;
 
-        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
-        const foreignKey = isModernEvent ? 'event_id' : 'class_id';
-
         try {
-            // Busca na tabela ponte já trazendo os dados do aluno embutidos (Join Nativo)
             const { data, error } = await (supabase as any)
-                .from(table)
+                .from('event_enrollments')
                 .select(`
                     id,
                     student_id,
@@ -126,10 +119,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                         avatar_url
                     )
                 `)
-                .eq(foreignKey, currentEventId);
+                .eq('event_id', currentEventId);
 
             if (error) {
-                console.error(`Erro Supabase na busca de matrículas (${table}):`, error);
+                console.error('Erro Supabase na busca de matrículas (event_enrollments):', error);
                 throw error;
             }
 
@@ -179,11 +172,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         setSearchResults([]);
         setLoading(true);
 
-        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
-        const foreignKey = isModernEvent ? 'event_id' : 'class_id';
-
         try {
-            // 1. Get organization_id of current user
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Usuário não autenticado.");
 
@@ -193,37 +182,27 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                 throw new Error("Organização não encontrada para o usuário logado.");
             }
 
-            // 2. Check if already enrolled
             const { data: existing } = await (supabase as any)
-                .from(table)
+                .from('event_enrollments')
                 .select('id')
-                .eq(foreignKey, currentEventId)
+                .eq('event_id', currentEventId)
                 .eq('student_id', studentId)
                 .maybeSingle();
 
             if (existing) throw new Error("Este aluno já está matriculado nesta aula.");
 
-            // 3. Insert into the correct table
-            const enrollmentData: any = {
-                student_id: studentId,
-                status: isModernEvent ? 'CONFIRMED' : 'Confirmado',
-                organization_id: profile.organization_id
-            };
-            enrollmentData[foreignKey] = currentEventId;
-
             const { error: insertError } = await (supabase as any)
-                .from(table)
-                .insert(enrollmentData);
+                .from('event_enrollments')
+                .insert({
+                    event_id: currentEventId,
+                    student_id: studentId,
+                    status: 'CONFIRMED',
+                    organization_id: profile.organization_id,
+                });
 
             if (insertError) {
                 if (insertError.code === '23505') throw new Error("Este aluno já está matriculado nesta aula.");
                 throw insertError;
-            }
-
-            // 4. Update attendees_count manually ONLY for legacy classes
-            if (!isModernEvent) {
-                const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
-                await (supabase as any).from('classes').update({ attendees_count: (currentClass?.attendees_count || 0) + 1 }).eq('id', currentEventId);
             }
 
             toast({ title: "Aluno matriculado com sucesso!" });
@@ -241,22 +220,13 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         if (!currentEventId) return;
 
         setLoading(true);
-        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
-        setLoading(true);
         try {
-            // 1. Delete from the correct table
             const { error: deleteError } = await (supabase as any)
-                .from(table)
+                .from('event_enrollments')
                 .delete()
                 .eq('id', attendeeId);
 
             if (deleteError) throw deleteError;
-
-            // 2. Decrement count ONLY for legacy classes
-            if (!isModernEvent) {
-                const { data: currentClass } = await (supabase as any).from('classes').select('attendees_count').eq('id', currentEventId).single();
-                await (supabase as any).from('classes').update({ attendees_count: Math.max(0, (currentClass?.attendees_count || 1) - 1) }).eq('id', currentEventId);
-            }
 
             toast({ title: 'Inscrição cancelada.' });
             await fetchParticipants();
@@ -268,19 +238,18 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         }
     };
 
-    const updateAttendance = async (attendeeId: string, status: 'PRESENT' | 'ABSENT' | 'CONFIRMED' | 'Confirmado' | 'Faltou') => {
-        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
+    const updateAttendance = async (attendeeId: string, status: 'PRESENT' | 'ABSENT' | 'CONFIRMED') => {
         setLoading(true);
         try {
             const { error } = await (supabase as any)
-                .from(table)
+                .from('event_enrollments')
                 .update({ status })
                 .eq('id', attendeeId);
 
             if (error) throw error;
 
-            toast({ title: status === 'PRESENT' || status === 'Confirmado' || status === 'CONFIRMED' ? 'Presença confirmada' : status === 'ABSENT' || status === 'Faltou' ? 'Falta registrada' : 'Status resetado' });
-            await fetchParticipants(); // Refresh list to update UI
+            toast({ title: status === 'PRESENT' || status === 'CONFIRMED' ? 'Presença confirmada' : 'Falta registrada' });
+            await fetchParticipants();
         } catch (error) {
             console.error('Error updating attendance:', error);
             toast({ title: 'Erro ao atualizar presença', variant: 'destructive' });
@@ -289,26 +258,19 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
         }
     };
 
-    // Alterna entre Confirmado (Presença) e Faltou
     const handleToggleAttendance = async (attendeeId: string, currentStatus: string) => {
-        const table = isModernEvent ? 'event_enrollments' : 'class_attendees';
-        let newStatus = '';
-        if (isModernEvent) {
-            newStatus = currentStatus === 'ABSENT' ? 'CONFIRMED' : 'ABSENT';
-        } else {
-            newStatus = currentStatus === 'Faltou' ? 'Confirmado' : 'Faltou';
-        }
+        const newStatus = currentStatus === 'ABSENT' ? 'CONFIRMED' : 'ABSENT';
 
         try {
             const { error } = await (supabase as any)
-                .from(table)
+                .from('event_enrollments')
                 .update({ status: newStatus })
                 .eq('id', attendeeId);
 
             if (error) throw error;
 
-            toast({ title: (newStatus === 'Faltou' || newStatus === 'ABSENT') ? "Falta registrada no sistema." : "Presença confirmada." });
-            fetchParticipants(); // Recarrega a lista
+            toast({ title: newStatus === 'ABSENT' ? "Falta registrada no sistema." : "Presença confirmada." });
+            fetchParticipants();
         } catch (error: any) {
             toast({ title: "Erro ao atualizar presença", description: error.message, variant: "destructive" });
         }
