@@ -136,7 +136,6 @@ export async function saveRecurringWorkouts(data: {
     // 2. Gerar novos treinos para os próximos 3 meses
     const recurrenceId = randomUUID();
     const workoutsToInsert: any[] = [];
-    const calendarEventsToInsert: any[] = [];
     const startDate = new Date();
     const endDate = addMonths(startDate, 3);
 
@@ -159,7 +158,6 @@ export async function saveRecurringWorkouts(data: {
             const scheduledAt = setMinutes(setHours(currentDate, hours), minutes);
             const endDateTime = setMinutes(setHours(currentDate, hours + 1), minutes);
             
-            // Adicionar apenas se for no futuro
             if (isAfter(scheduledAt, new Date())) {
                 workoutsToInsert.push({
                     organization_id: caller.organizationId,
@@ -172,24 +170,12 @@ export async function saveRecurringWorkouts(data: {
                     recurrence_id: recurrenceId,
                     recurrence_type: 'WEEKLY'
                 });
-
-                // Espelhamento na Agenda (calendar_events)
-                calendarEventsToInsert.push({
-                    organization_id: caller.organizationId,
-                    title: `${data.title} - ${data.studentName || 'Aluno'}`,
-                    start_datetime: scheduledAt.toISOString(),
-                    end_datetime: endDateTime.toISOString(),
-                    type: 'TRAINING',
-                    status: 'SCHEDULED'
-                });
             }
             currentDate = addDays(currentDate, 7);
         }
     }
 
     if (workoutsToInsert.length > 0) {
-        // Inserir em lotes se necessário (Supabase handles large inserts well, but let's be safe if > 1000)
-        // Here it will be ~12 dates * 7 days max = 84 rows max. Safe for single insert.
         const { error: insertError } = await supabase
             .from('workouts')
             .insert(workoutsToInsert);
@@ -197,15 +183,6 @@ export async function saveRecurringWorkouts(data: {
         if (insertError) {
             console.error('Error inserting recurring workouts:', insertError);
             return { success: false, error: insertError.message };
-        }
-
-        // Inserir espelhos na agenda
-        const { error: eventError } = await supabase
-            .from('calendar_events')
-            .insert(calendarEventsToInsert);
-
-        if (eventError) {
-            console.error('Error Mirroring to Agenda:', eventError);
         }
     }
 

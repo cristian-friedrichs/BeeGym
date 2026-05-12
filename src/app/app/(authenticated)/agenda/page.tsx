@@ -417,7 +417,9 @@ export default function CalendarPage() {
                     .from('workouts')
                     .select(`
                         id, title, scheduled_at, end_time, type, status,
-                        student:student_id ( full_name )
+                        student:students ( full_name ),
+                        room:rooms ( name ),
+                        instructor:instructors ( name )
                     `)
                     .eq('organization_id', orgId)
                     .gte('scheduled_at', viewStart)
@@ -444,17 +446,17 @@ export default function CalendarPage() {
                         status: row.status || 'Agendado',
                         enrollmentCount: 0,
                         studentName: (row.student as any)?.full_name || undefined,
+                        room: (row.room as any)?.name || undefined,
+                        instructor: (row.instructor as any)?.name || undefined,
                         rawEvent: {
                             ...row,
-                            // Enrich for Modal
                             start_datetime: row.scheduled_at,
                             time: format(start, 'HH:mm'),
                             duration: Math.max(durationMin, 30),
                             eventType: 'WORKOUT',
                             student_name: (row.student as any)?.full_name,
-                            // Default fields for modal compatibility
-                            room: 'Sem local',
-                            instructor: 'Não atribuído',
+                            room: (row.room as any)?.name || 'Sem local',
+                            instructor: (row.instructor as any)?.name || 'Não atribuído',
                             color: WORKOUT_COLOR,
                             iconName: 'dumbbell',
                         },

@@ -111,77 +111,27 @@ export default function WorkoutsPage() {
             // Trigger status transitions for both classes and workouts
             await supabase.rpc('update_class_statuses' as any);
 
-            // 1. Fetch Legacy Workouts
-            const { data: legacyData, error: legacyError } = await (supabase as any)
+            const { data: workoutsData, error: workoutsError } = await (supabase as any)
                 .from('workouts')
-                .select(`*, student:students (id, full_name, avatar_url), room:rooms(name)`)
+                .select(`*, student:students (id, full_name, avatar_url), room:rooms(name), instructor:instructors(name)`)
                 .eq('organization_id', profile.organization_id)
                 .order('scheduled_at', { ascending: false });
 
-            if (legacyError) console.error("Legacy error:", legacyError);
+            if (workoutsError) console.error('Workouts error:', workoutsError);
 
-
-            const { data: modernData, error: modernError } = await (supabase as any)
-                .from('calendar_events')
-                .select(`
-                    *,
-                    room:rooms(name),
-                    instructor:instructors(name),
-                    enrollments:event_enrollments(
-                        student:students(id, full_name, avatar_url)
-                    )
-                `)
-                .eq('organization_id', profile.organization_id)
-                .in('type', ['TRAINING', 'workout'])
-                // .gte('start_datetime', new Date().toISOString()) // Can't filter date here strictly because of "history" view
-                .order('start_datetime', { ascending: true }); // Default sort ASC for upcoming
-
-            if (modernError) console.error("Modern error:", modernError);
-
-            // 3. Normalize & Merge
-            const legacyItems = (legacyData || []).map((w: any) => ({
+            const allWorkouts = (workoutsData || []).map((w: any) => ({
                 ...w,
-                source: 'legacy',
-                // Ensure date fields match for sorting/display
+                source: 'workouts',
                 date: w.scheduled_at,
-                displayTitle: w.title || 'Treino (Legacy)',
+                displayTitle: w.title || 'Treino',
                 studentName: w.student?.full_name,
                 studentAvatar: w.student?.avatar_url,
                 address: w.address,
-                location_type: w.location_type, // Assuming this column exists
+                location_type: w.location_type,
                 room_id: w.room_id,
-                room_name: w.room?.name
+                room_name: w.room?.name,
+                instructor_name: w.instructor?.name,
             }));
-
-            const modernItems = (modernData || []).map((e: any) => {
-                // Get first student from enrollments (assuming individual/group training)
-                const student = e.enrollments?.[0]?.student;
-                return {
-                    id: e.id,
-                    title: e.title,
-                    status: e.status === 'SCHEDULED' ? 'Agendado' : e.status, // Map status
-                    scheduled_at: e.start_datetime,
-                    end_time: e.end_datetime,
-                    type: 'TRAINING', // or e.title?
-                    student: student, // Structure match
-                    source: 'calendar',
-                    // Additional fields for display
-                    displayTitle: e.title || 'Treino',
-                    studentName: student?.full_name || 'Grupo/Sem Aluno',
-                    studentAvatar: student?.avatar_url,
-                    room_name: e.room?.name,
-                    instructor_name: e.instructor?.name,
-                    address: e.address,
-                    location: e.address || e.room?.name || 'Local não definido',
-                    isExternal: !!e.address
-                };
-            });
-
-            const allWorkouts = [...legacyItems, ...modernItems].sort((a, b) => {
-                const dateA = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0;
-                const dateB = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0;
-                return dateB - dateA;
-            });
 
             setWorkouts(allWorkouts);
 
