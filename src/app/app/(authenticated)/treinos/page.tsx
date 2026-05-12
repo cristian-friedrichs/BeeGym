@@ -111,6 +111,7 @@ export default function WorkoutsPage() {
             // Trigger status transitions for both classes and workouts
             await supabase.rpc('update_class_statuses' as any);
 
+            // Individual workouts (workouts table — single student)
             const { data: workoutsData, error: workoutsError } = await (supabase as any)
                 .from('workouts')
                 .select(`*, student:students (id, full_name, avatar_url), room:rooms(name), instructor:instructors(name)`)
@@ -119,7 +120,22 @@ export default function WorkoutsPage() {
 
             if (workoutsError) console.error('Workouts error:', workoutsError);
 
-            const allWorkouts = (workoutsData || []).map((w: any) => ({
+            // Group workouts (calendar_events.type='TRAINING' — many students via event_enrollments)
+            const { data: groupData, error: groupError } = await (supabase as any)
+                .from('calendar_events')
+                .select(`
+                    *,
+                    room:rooms(name),
+                    instructor:instructors(name),
+                    enrollments:event_enrollments(student:students(id, full_name, avatar_url))
+                `)
+                .eq('organization_id', profile.organization_id)
+                .eq('type', 'TRAINING')
+                .order('start_datetime', { ascending: false });
+
+            if (groupError) console.error('Group workouts error:', groupError);
+
+            const individualItems = (workoutsData || []).map((w: any) => ({
                 ...w,
                 source: 'workouts',
                 date: w.scheduled_at,
@@ -132,6 +148,38 @@ export default function WorkoutsPage() {
                 room_name: w.room?.name,
                 instructor_name: w.instructor?.name,
             }));
+
+            const groupItems = (groupData || []).map((e: any) => {
+                const students = (e.enrollments || []).map((en: any) => en.student).filter(Boolean);
+                const firstStudent = students[0];
+                const extraCount = Math.max(0, students.length - 1);
+                return {
+                    id: e.id,
+                    title: e.title,
+                    status: e.status === 'SCHEDULED' ? 'Agendado' : e.status,
+                    scheduled_at: e.start_datetime,
+                    end_time: e.end_datetime,
+                    type: 'TRAINING',
+                    source: 'calendar',
+                    date: e.start_datetime,
+                    displayTitle: e.title || 'Treino em grupo',
+                    studentName: firstStudent ? `${firstStudent.full_name}${extraCount ? ` +${extraCount}` : ''}` : 'Treino em grupo',
+                    studentAvatar: firstStudent?.avatar_url,
+                    student: firstStudent,
+                    participants: students,
+                    room_name: e.room?.name,
+                    instructor_name: e.instructor?.name,
+                    address: e.address,
+                    location: e.address || e.room?.name || 'Local não definido',
+                    isGroup: true,
+                };
+            });
+
+            const allWorkouts = [...individualItems, ...groupItems].sort((a, b) => {
+                const da = a.scheduled_at ? new Date(a.scheduled_at).getTime() : 0;
+                const db = b.scheduled_at ? new Date(b.scheduled_at).getTime() : 0;
+                return db - da;
+            });
 
             setWorkouts(allWorkouts);
 

@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,16 +15,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import {
-    CalendarIcon, Users, Home, Loader2, X, Check, LayoutGrid, User
-} from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Badge } from '@/components/ui/badge';
-import { getClassType } from '@/lib/class-definitions';
 
 interface ClassModalProps {
     open: boolean;
@@ -33,38 +32,26 @@ interface ClassModalProps {
 interface Room { id: string; name: string; capacity: number | null; }
 interface Instructor { id: string; full_name: string; }
 
-const CLASS_TYPES = [
-    { value: 'yoga', label: 'Yoga' },
-    { value: 'pilates', label: 'Pilates' },
-    { value: 'crossfit', label: 'Crossfit' },
-    { value: 'musculacao', label: 'Musculação' },
-    { value: 'spinning', label: 'Spinning' },
-    { value: 'funcional', label: 'Funcional' },
-    { value: 'natacao', label: 'Natação' },
-    { value: 'danca', label: 'Dança' },
-    { value: 'outro', label: 'Outro' },
-];
+const fieldCls = 'h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0';
+const labelCls = 'text-sm font-medium text-slate-700';
 
 export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initialTime, eventId }: ClassModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
     const [loading, setLoading] = useState(false);
 
-    // Data
     const [rooms, setRooms] = useState<Room[]>([]);
     const [instructors, setInstructors] = useState<Instructor[]>([]);
     const [templates, setTemplates] = useState<any[]>([]);
 
-    // Form State
-    const [classType, setClassType] = useState('');
     const [title, setTitle] = useState('');
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
     const [selectedRoom, setSelectedRoom] = useState('');
     const [selectedInstructor, setSelectedInstructor] = useState('');
     const [capacity, setCapacity] = useState('');
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [time, setTime] = useState('08:00');
     const [duration, setDuration] = useState('60');
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -77,11 +64,10 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
 
     useEffect(() => {
         if (!open) return;
-        const now = initialDate || new Date();
-        setDate(now);
+        setDate(initialDate || new Date());
         setTime(initialTime || '08:00');
         setTitle('');
-        setClassType('');
+        setSelectedTemplateId(null);
         setSelectedRoom('');
         setSelectedInstructor('');
         setCapacity('');
@@ -155,200 +141,179 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
         }
     }
 
-    const selectedInstructorName = instructors.find(i => i.id === selectedInstructor)?.full_name;
-
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden">
 
-                {/* Header — same premium pattern as WorkoutModal */}
-                <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
-                            <LayoutGrid className="h-6 w-6 text-bee-amber" />
-                        </div>
-                        <div className="text-left">
-                            <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
-                                Nova Aula
-                            </SheetTitle>
-                            <p className="text-slate-400 font-medium text-xs">Agende uma aula para a turma</p>
-                        </div>
-                    </div>
-                </SheetHeader>
+                {/* Header */}
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                        Nova Aula
+                    </DialogTitle>
+                    <p className="text-sm text-slate-500 mt-0.5">Agende uma aula coletiva para sua turma.</p>
+                </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Body */}
+                <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
 
-                    {/* Tipo & Nome */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Aula *</Label>
-                            <Select 
-                                value={selectedTemplateId || ''} 
-                                onValueChange={v => { 
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Modalidade</Label>
+                            <Select
+                                value={selectedTemplateId || ''}
+                                onValueChange={v => {
                                     setSelectedTemplateId(v);
                                     const template = templates.find(t => t.id === v);
                                     if (template) {
                                         setTitle(template.title);
-                                        if (template.duration_minutes) {
-                                            setDuration(template.duration_minutes.toString());
-                                        }
-                                        // Se o template tivesse capacidade, setaríamos aqui também
+                                        if (template.duration_minutes) setDuration(template.duration_minutes.toString());
                                     }
                                 }}
                             >
-                                <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
-                                    <SelectValue placeholder="Selecione..." />
+                                <SelectTrigger className={fieldCls}>
+                                    <SelectValue placeholder="Selecione…" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                <SelectContent>
                                     {templates.map(t => (
-                                        <SelectItem key={t.id} value={t.id} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
-                                            {t.title}
-                                        </SelectItem>
+                                        <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
                                     ))}
                                     {templates.length === 0 && (
-                                        <div className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhuma modalidade cadastrada.</div>
+                                        <div className="px-4 py-3 text-sm text-slate-400 text-center">Nenhuma modalidade cadastrada.</div>
                                     )}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome da Aula *</Label>
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Nome da aula *</Label>
                             <Input
                                 placeholder="Ex: Yoga Matinal"
                                 value={title}
                                 onChange={e => setTitle(e.target.value)}
-                                className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                className={fieldCls}
                             />
                         </div>
                     </div>
 
-                    {/* Instrutor */}
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Instrutor *</Label>
+                    <div className="space-y-1.5">
+                        <Label className={labelCls}>Instrutor *</Label>
                         <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                            <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
-                                <SelectValue placeholder="Selecione..." />
+                            <SelectTrigger className={fieldCls}>
+                                <SelectValue placeholder="Selecione…" />
                             </SelectTrigger>
-                            <SelectContent className="max-h-60 rounded-2xl border-slate-100 shadow-xl">
+                            <SelectContent>
                                 {instructors.map(i => (
-                                    <SelectItem key={i.id} value={i.id} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-4 w-4 text-slate-400" />
-                                            <span>{i.full_name}</span>
-                                        </div>
-                                    </SelectItem>
+                                    <SelectItem key={i.id} value={i.id}>{i.full_name}</SelectItem>
                                 ))}
                                 {instructors.length === 0 && (
-                                    <div className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhum instrutor encontrado.</div>
+                                    <div className="px-4 py-3 text-sm text-slate-400 text-center">Nenhum instrutor encontrado.</div>
                                 )}
                             </SelectContent>
                         </Select>
                     </div>
 
-                    {/* Sala & Capacidade */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Sala</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Sala</Label>
                             <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                                <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
-                                    <SelectValue placeholder="Selecione..." />
+                                <SelectTrigger className={fieldCls}>
+                                    <SelectValue placeholder="Selecione…" />
                                 </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                <SelectContent>
                                     {rooms.map(r => (
-                                        <SelectItem key={r.id} value={r.id} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
-                                            {r.name} {r.capacity ? `(${r.capacity})` : ''}
+                                        <SelectItem key={r.id} value={r.id}>
+                                            {r.name}{r.capacity ? ` (${r.capacity})` : ''}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Capacidade *</Label>
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Capacidade *</Label>
                             <Input
                                 type="number"
                                 min="1"
                                 placeholder="Ex: 20"
                                 value={capacity}
                                 onChange={e => setCapacity(e.target.value)}
-                                className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                className={fieldCls}
                             />
                         </div>
                     </div>
 
-                    {/* Data & Horário */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data *</Label>
+                    <hr className="border-slate-100" />
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-1 space-y-1.5">
+                            <Label className={labelCls}>Data *</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className={cn('w-full h-11 justify-start text-left font-semibold border-slate-100 bg-slate-50/50 rounded-2xl px-5 hover:bg-slate-100/50', !date && 'text-muted-foreground')}
+                                        className={cn(
+                                            fieldCls,
+                                            'w-full justify-start font-normal',
+                                            !date && 'text-slate-400'
+                                        )}
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-bee-amber" />
-                                        {date ? format(date, 'P', { locale: ptBR }) : <span>Selecione...</span>}
+                                        <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+                                        {date ? format(date, 'P', { locale: ptBR }) : 'Selecione…'}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl border-slate-100 overflow-hidden" align="start">
-                                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus locale={ptBR} className="p-3" />
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={date} onSelect={setDate} initialFocus locale={ptBR} />
                                 </PopoverContent>
                             </Popover>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Horário *</Label>
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Horário *</Label>
                             <Select value={time} onValueChange={setTime}>
-                                <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                <SelectTrigger className={fieldCls}>
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-60 rounded-2xl border-slate-100 shadow-xl">
-                                    {timeSlots.map(t => <SelectItem key={t} value={t} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">{t}</SelectItem>)}
+                                <SelectContent className="max-h-56">
+                                    {timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Duração</Label>
+                            <Select value={duration} onValueChange={setDuration}>
+                                <SelectTrigger className={fieldCls}>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="30">30 min</SelectItem>
+                                    <SelectItem value="45">45 min</SelectItem>
+                                    <SelectItem value="60">1 hora</SelectItem>
+                                    <SelectItem value="90">1h 30min</SelectItem>
+                                    <SelectItem value="120">2 horas</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    {/* Duração */}
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duração (min) *</Label>
-                        <Select value={duration} onValueChange={setDuration}>
-                            <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                                {['30', '45', '60', '90', '120'].map(d => (
-                                    <SelectItem key={d} value={d} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
-                                        {d === '30' ? '30 min' : d === '45' ? '45 min' : d === '60' ? '1 hora' : d === '90' ? '1h 30min' : '2 horas'}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                 </div>
 
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                {/* Footer */}
+                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                     <Button
-                        type="button"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                        className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
                     >
-                        <X className="w-4 h-4 mr-2" /> Cancelar
+                        Cancelar
                     </Button>
                     <Button
                         onClick={handleSave}
                         disabled={loading}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                        className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
                     >
-                        {loading ? (
-                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando...</>
-                        ) : (
-                            <><Check className="mr-2 h-4 w-4 stroke-[3px]" />Criar Aula</>
-                        )}
+                        {loading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Criando…</> : 'Criar aula'}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </div>
+
+            </DialogContent>
+        </Dialog>
     );
 }

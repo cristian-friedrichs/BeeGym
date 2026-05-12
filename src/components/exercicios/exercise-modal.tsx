@@ -4,20 +4,16 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-    SheetFooter
-} from '@/components/ui/sheet';
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2, Dumbbell, Check, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 
 interface ExerciseModalProps {
     isOpen: boolean;
@@ -25,6 +21,9 @@ interface ExerciseModalProps {
     onSuccess: () => void;
     exerciseToEdit?: any;
 }
+
+const fieldCls = 'h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0';
+const labelCls = 'text-sm font-medium text-slate-700';
 
 export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: ExerciseModalProps) {
     const supabase = createClient();
@@ -34,7 +33,7 @@ export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: Ex
     const [formData, setFormData] = useState({
         name: '',
         category: 'Musculação',
-        target_muscle: 'Peito',
+        target_muscle: '',
         tags: '',
         difficulty: 'Iniciante'
     });
@@ -44,12 +43,12 @@ export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: Ex
             setFormData({
                 name: exerciseToEdit.name || '',
                 category: exerciseToEdit.category || 'Musculação',
-                target_muscle: exerciseToEdit.target_muscle || 'Peito',
+                target_muscle: exerciseToEdit.target_muscle || '',
                 tags: exerciseToEdit.tags ? exerciseToEdit.tags.join(', ') : '',
                 difficulty: exerciseToEdit.difficulty || 'Iniciante'
             });
         } else {
-            setFormData({ name: '', category: 'Musculação', target_muscle: 'Peito', tags: '', difficulty: 'Iniciante' });
+            setFormData({ name: '', category: 'Musculação', target_muscle: '', tags: '', difficulty: 'Iniciante' });
         }
     }, [exerciseToEdit, isOpen]);
 
@@ -103,129 +102,118 @@ export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: Ex
     };
 
     return (
-        <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
-                <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
-                            <Dumbbell className="h-6 w-6 text-bee-amber" />
-                        </div>
-                        <div className="text-left">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
-                                    {exerciseToEdit ? 'Editar Exercício' : 'Novo Exercício'}
-                                </SheetTitle>
-                                <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tight h-5 px-2 rounded-full">
-                                    Biblioteca
-                                </Badge>
-                            </div>
-                            <SheetDescription className="text-slate-400 font-medium text-xs">
-                                {exerciseToEdit ? 'Atualize as informações do exercício.' : 'Cadastre um novo exercício na biblioteca.'}
-                            </SheetDescription>
-                        </div>
-                    </div>
-                </SheetHeader>
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="max-w-[520px] p-0 gap-0 rounded-2xl overflow-hidden">
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    <form id="exercise-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome do Exercício</Label>
+                {/* Header */}
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                        {exerciseToEdit ? 'Editar Exercício' : 'Novo Exercício'}
+                    </DialogTitle>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                        {exerciseToEdit ? 'Atualize as informações do exercício.' : 'Cadastre um novo exercício na biblioteca.'}
+                    </p>
+                </DialogHeader>
+
+                {/* Body */}
+                <form id="exercise-form" onSubmit={handleSubmit}>
+                    <div className="px-6 py-5 space-y-4">
+
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Nome do exercício *</Label>
                             <Input
                                 required
                                 type="text"
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                className={fieldCls}
                                 placeholder="Ex: Supino Reto"
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo / Categoria</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Categoria</Label>
                                 <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
-                                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                    <SelectTrigger className={fieldCls}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                                        <SelectItem value="Musculação" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Musculação</SelectItem>
-                                        <SelectItem value="Crossfit" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Crossfit</SelectItem>
-                                        <SelectItem value="Cardio" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Cardio</SelectItem>
-                                        <SelectItem value="Mobilidade" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Mobilidade</SelectItem>
-                                        <SelectItem value="Livre" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Livre</SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="Musculação">Musculação</SelectItem>
+                                        <SelectItem value="Crossfit">Crossfit</SelectItem>
+                                        <SelectItem value="Cardio">Cardio</SelectItem>
+                                        <SelectItem value="Mobilidade">Mobilidade</SelectItem>
+                                        <SelectItem value="Livre">Livre</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Grupo Muscular</Label>
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Grupo muscular *</Label>
                                 <Input
                                     required
                                     type="text"
                                     value={formData.target_muscle}
                                     onChange={e => setFormData({ ...formData, target_muscle: e.target.value })}
-                                    className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
-                                    placeholder="Ex: Peito, Costas..."
+                                    className={fieldCls}
+                                    placeholder="Ex: Peito, Costas…"
                                 />
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Dificuldade</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Dificuldade</Label>
                                 <Select value={formData.difficulty} onValueChange={(v) => setFormData({ ...formData, difficulty: v })}>
-                                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                    <SelectTrigger className={fieldCls}>
                                         <SelectValue />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                                        <SelectItem value="Iniciante" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Iniciante</SelectItem>
-                                        <SelectItem value="Intermediário" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Intermediário</SelectItem>
-                                        <SelectItem value="Avançado" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Avançado</SelectItem>
+                                    <SelectContent>
+                                        <SelectItem value="Iniciante">Iniciante</SelectItem>
+                                        <SelectItem value="Intermediário">Intermediário</SelectItem>
+                                        <SelectItem value="Avançado">Avançado</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Etiquetas</Label>
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Etiquetas</Label>
                                 <Input
                                     type="text"
                                     value={formData.tags}
                                     onChange={e => setFormData({ ...formData, tags: e.target.value })}
-                                    className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
-                                    placeholder="Ex: solo, barra..."
+                                    className={fieldCls}
+                                    placeholder="Ex: solo, barra…"
                                 />
                             </div>
                         </div>
-                    </form>
-                </div>
 
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                    </div>
+                </form>
+
+                {/* Footer */}
+                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                     <Button
                         type="button"
-                        variant="ghost"
+                        variant="outline"
                         onClick={onClose}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                        className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-700 text-sm font-medium"
                     >
-                        <X className="w-4 h-4 mr-2" /> Cancelar
+                        Cancelar
                     </Button>
                     <Button
                         form="exercise-form"
                         type="submit"
                         disabled={loading}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                        className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
                     >
                         {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processando...
-                            </>
+                            <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
                         ) : (
-                            <>
-                                <Check className="mr-2 h-4 w-4 stroke-[3px]" />
-                                {exerciseToEdit ? 'Salvar Alterações' : 'Criar Exercício'}
-                            </>
+                            exerciseToEdit ? 'Salvar alterações' : 'Criar exercício'
                         )}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </div>
+
+            </DialogContent>
+        </Dialog>
     );
 }

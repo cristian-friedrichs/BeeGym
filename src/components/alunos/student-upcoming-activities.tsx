@@ -68,10 +68,10 @@ export function StudentUpcomingActivities({ studentId }: { studentId: string }) 
                 instructor: null,
             }));
 
-            // 2. Future / today class enrollments via event_enrollments → calendar_events
+            // 2. Future / today enrollments — both classes (CLASS) and group workouts (TRAINING)
             const { data: enrollments } = await (supabase as any)
                 .from('event_enrollments')
-                .select('id, status, calendar_events(id, title, start_datetime, end_datetime, instructor_name, status)')
+                .select('id, status, calendar_events(id, title, type, start_datetime, end_datetime, instructor_name, status)')
                 .eq('student_id', studentId)
                 .gte('calendar_events.start_datetime', now.split('T')[0])
                 .not('calendar_events', 'is', null);
@@ -81,7 +81,7 @@ export function StudentUpcomingActivities({ studentId }: { studentId: string }) 
                 .map((e: any) => ({
                     id: e.id,
                     title: e.calendar_events.title,
-                    type: 'class' as const,
+                    type: e.calendar_events.type === 'TRAINING' ? ('workout' as const) : ('class' as const),
                     scheduled_at: e.calendar_events.start_datetime,
                     end_time: e.calendar_events.end_datetime,
                     status: e.status || e.calendar_events.status || 'Agendado',

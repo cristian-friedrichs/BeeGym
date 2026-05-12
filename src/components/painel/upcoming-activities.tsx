@@ -63,22 +63,22 @@ export function UpcomingActivities() {
 
             if (wError) console.error("Erro Treinos:", wError);
 
-            // 2. Busca TODAS as Aulas do dia (calendar_events com type = 'CLASS')
+            // 2. Busca Aulas E Treinos em grupo do dia (calendar_events: CLASS = aula aberta, TRAINING = treino em grupo)
             const { data: classes, error: cError } = await supabase
                 .from('calendar_events')
                 .select(`
-                    id, 
-                    title, 
-                    start_datetime, 
+                    id,
+                    title,
+                    start_datetime,
                     end_datetime,
-                    status, 
+                    status,
                     type,
                     capacity,
-                    instructor:instructors(name), 
+                    instructor:instructors(name),
                     enrollments:event_enrollments(count),
                     template:class_template_id(icon, color, title)
                 `)
-                .eq('type', 'CLASS')
+                .in('type', ['CLASS', 'TRAINING'])
                 .gte('start_datetime', todayStart.toISOString())
                 .lte('start_datetime', todayEnd.toISOString())
                 .order('start_datetime', { ascending: true });
@@ -114,19 +114,20 @@ export function UpcomingActivities() {
                 classes.forEach((c: any) => {
                     const instructorName = c.instructor?.name || 'Sem Instrutor';
                     const enrollmentsCount = c.enrollments && c.enrollments[0] ? c.enrollments[0].count : 0;
+                    const isTraining = c.type === 'TRAINING';
 
                     combined.push({
                         id: c.id,
-                        type: 'class',
+                        type: isTraining ? 'workout' : 'class',
                         title: c.title,
                         time: c.start_datetime,
                         person: instructorName,
-                        capacity: `${enrollmentsCount}/${c.capacity || 10}`,
+                        capacity: c.capacity ? `${enrollmentsCount}/${c.capacity}` : `${enrollmentsCount}`,
                         status: c.status,
                         raw: {
                             ...c,
                             instructor: c.instructor?.name,
-                            eventType: 'CLASS'
+                            eventType: c.type
                         }
                     });
                 });

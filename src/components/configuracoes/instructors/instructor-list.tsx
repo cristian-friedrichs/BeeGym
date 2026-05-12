@@ -87,7 +87,7 @@ export function InstructorList({ instructors, units, roles }: Props) {
                         className="bg-bee-amber hover:bg-amber-500 text-deep-midnight font-bold h-9 px-4 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] text-[11px] uppercase tracking-wider"
                     >
                         <Plus className="h-4 w-4 mr-2" />
-                        Novo Instrutor
+                        Adicionar Instrutor(a)
                     </Button>
                 }
             />

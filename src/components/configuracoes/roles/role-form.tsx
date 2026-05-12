@@ -119,146 +119,66 @@ export function RoleForm({ onSubmit, initialData, isLoading: externalIsLoading, 
 
     return (
         <Form {...form}>
-            <form id={formId} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-                <div className="grid gap-8 p-1">
-                    {/* Identificação do Perfil */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
-                            <div className="h-2 w-2 rounded-full bg-bee-amber shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identificação do Perfil</h3>
-                        </div>
+            <form id={formId} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
 
-                        <div className="grid gap-5">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-2">
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Nome do Perfil</FormLabel>
-                                        <FormControl>
-                                            <div className="group relative transition-all">
-                                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-bee-amber transition-colors">
-                                                    <Shield className="h-4 w-4" />
-                                                </div>
-                                                <Input
-                                                    placeholder='Ex: "Recepção", "Estagiário"'
-                                                    className="pl-11 h-12 bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-medium placeholder:text-slate-400"
-                                                    {...field}
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage className="text-[10px] font-bold text-red-500 ml-1" />
-                                    </FormItem>
-                                )}
-                            />
+                <FormField control={form.control} name="name" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-sm font-medium text-slate-700">Nome do perfil *</FormLabel>
+                        <FormControl>
+                            <Input placeholder='Ex: Recepção, Estagiário…' className="h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
 
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-2">
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Descrição (Opcional)</FormLabel>
-                                        <FormControl>
-                                            <div className="group relative transition-all">
-                                                <div className="absolute left-4 top-4 text-slate-400 group-focus-within:text-bee-amber transition-colors">
-                                                    <AlignLeft className="h-4 w-4" />
-                                                </div>
-                                                <Textarea
-                                                    placeholder="Descreva brevemente o que este perfil pode fazer..."
-                                                    className="pl-11 min-h-[80px] bg-slate-50/50 border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-medium placeholder:text-slate-400 resize-none py-4"
-                                                    {...field}
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage className="text-[10px] font-bold text-red-500 ml-1" />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </div>
+                <FormField control={form.control} name="description" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-sm font-medium text-slate-700">Descrição</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Descreva brevemente o que este perfil pode fazer…" className="rounded-xl border-slate-200 bg-white text-sm resize-none placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
 
-                    {/* Matriz de Permissões */}
-                    <div className="space-y-6 pb-10">
-                        <div className="flex items-center gap-3 pb-2 border-b border-slate-50">
-                            <div className="h-2 w-2 rounded-full bg-bee-amber shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
-                            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Matriz de Permissões</h3>
-                        </div>
+                <hr className="border-slate-100" />
+                <p className="text-sm font-semibold text-slate-700">Permissões</p>
 
-                        <div className="grid gap-4">
-                            {PERMISSION_MODULES.map((module) => {
-                                const allEnabled = isModuleFullyEnabled(module.key);
-                                return (
-                                    <Card key={module.key} className="overflow-hidden border-slate-100 shadow-sm rounded-3xl transition-all hover:shadow-md group">
-                                        <div className="p-5 bg-slate-50/50 group-hover:bg-white transition-colors border-b border-slate-100">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-sm ring-1 ring-slate-100 group-hover:ring-bee-amber/20 group-hover:bg-bee-amber/5 transition-all">
-                                                        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-bee-amber transition-colors" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-sm font-black text-slate-900 leading-tight tracking-tight">
-                                                            {module.label}
-                                                        </h4>
-                                                        <p className="text-[11px] text-slate-500 font-medium">
-                                                            {module.description}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-2xl ring-1 ring-slate-100">
-                                                    <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Todo Módulo</span>
-                                                    <Switch
-                                                        checked={allEnabled}
-                                                        onCheckedChange={(val) => toggleAllModule(module.key, val)}
-                                                        className="data-[state=checked]:bg-bee-amber"
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <CardContent className="p-6 bg-white">
-                                            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                                                {module.actions.map((action) => {
-                                                    const checked = (permissions[module.key] as any)?.[action.key] === true;
-                                                    return (
-                                                        <label
-                                                            key={action.key}
-                                                            className="flex items-center justify-between p-3 rounded-2xl bg-white ring-1 ring-slate-100 hover:ring-bee-amber/20 hover:bg-bee-amber/[0.02] cursor-pointer transition-all group/item"
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`h-2 w-2 rounded-full transition-all ${checked ? 'bg-bee-amber scale-125' : 'bg-slate-200 group-hover/item:bg-slate-300'}`} />
-                                                                <span className="text-[11px] font-bold text-slate-700">{action.label}</span>
-                                                            </div>
-                                                            <Switch
-                                                                checked={checked}
-                                                                onCheckedChange={(val) =>
-                                                                    togglePermission(module.key, action.key, val)
-                                                                }
-                                                                className="scale-90 data-[state=checked]:bg-bee-amber"
-                                                            />
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </div>
+                <div className="space-y-3">
+                    {PERMISSION_MODULES.map((module) => {
+                        const allEnabled = isModuleFullyEnabled(module.key);
+                        return (
+                            <Card key={module.key} className="overflow-hidden border-slate-200 shadow-none rounded-xl">
+                                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-700">{module.label}</p>
+                                        <p className="text-xs text-slate-400">{module.description}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-400">Todos</span>
+                                        <Switch checked={allEnabled} onCheckedChange={val => toggleAllModule(module.key, val)} className="data-[state=checked]:bg-bee-amber" />
+                                    </div>
+                                </div>
+                                <CardContent className="px-4 py-3 grid grid-cols-2 gap-2">
+                                    {module.actions.map((action) => {
+                                        const checked = (permissions[module.key] as any)?.[action.key] === true;
+                                        return (
+                                            <label key={action.key} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:border-bee-amber/30 transition-colors">
+                                                <span className="text-xs font-medium text-slate-600">{action.label}</span>
+                                                <Switch checked={checked} onCheckedChange={val => togglePermission(module.key, action.key, val)} className="scale-90 data-[state=checked]:bg-bee-amber" />
+                                            </label>
+                                        );
+                                    })}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
 
                 {showButtons && (
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Salvando...
-                                </>
-                            ) : initialData ? (
-                                'Salvar Alterações'
-                            ) : (
-                                'Criar Perfil'
-                            )}
+                    <div className="flex justify-end pt-2">
+                        <Button type="submit" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                            {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</> : initialData ? 'Salvar alterações' : 'Criar perfil'}
                         </Button>
                     </div>
                 )}
