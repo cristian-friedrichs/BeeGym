@@ -44,6 +44,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const [availableStudents, setAvailableStudents] = useState<{ id: string, name: string }[]>([]);
     const [openCommand, setOpenCommand] = useState(false);
     const studentSearchRef = useRef<HTMLDivElement>(null);
+    const [studentSearch, setStudentSearch] = useState("");
 
     useEffect(() => {
         if (!openCommand) return;
@@ -429,55 +430,61 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Aluno</Label>
-                                    <div ref={studentSearchRef}>
-                                        <Command className="overflow-visible bg-transparent">
-                                            <div className="group border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 flex items-center transition-all focus-within:ring-2 focus-within:ring-bee-amber/20 focus-within:border-bee-amber/30">
-                                                <div className="flex gap-1 flex-wrap items-center w-full">
-                                                    {selectedStudentId && (
-                                                        <Badge variant="secondary" className="bg-bee-amber/10 text-bee-amber border-none font-bold">
-                                                            {availableStudents.find(s => s.id === selectedStudentId)?.name}
-                                                            {!workoutToEdit && (
-                                                                <button onClick={(e) => { e.preventDefault(); setSelectedStudentId(""); }} className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                                                                    <X className="h-3 w-3 text-bee-amber hover:text-bee-amber/80" />
-                                                                </button>
-                                                            )}
-                                                        </Badge>
+                                    <div ref={studentSearchRef} className="relative">
+                                        {selectedStudentId ? (
+                                            <div className="group border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 flex items-center">
+                                                <Badge variant="secondary" className="bg-bee-amber/10 text-bee-amber border-none font-bold">
+                                                    {availableStudents.find(s => s.id === selectedStudentId)?.name}
+                                                    {!workoutToEdit && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setSelectedStudentId(""); setStudentSearch(""); }}
+                                                            className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                        >
+                                                            <X className="h-3 w-3 text-bee-amber hover:text-bee-amber/80" />
+                                                        </button>
                                                     )}
-                                                    {!selectedStudentId && (
-                                                        <CommandInput
-                                                            placeholder="Buscar aluno..."
-                                                            className="bg-transparent outline-none placeholder:text-slate-400 flex-1 h-full border-none focus:ring-0"
-                                                            onFocus={() => { if (!workoutToEdit) setOpenCommand(true); }}
-                                                            onValueChange={() => { if (!workoutToEdit) setOpenCommand(true); }}
-                                                            disabled={!!workoutToEdit}
-                                                        />
+                                                </Badge>
+                                            </div>
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                placeholder="Buscar aluno..."
+                                                value={studentSearch ?? ""}
+                                                onChange={(e) => { setStudentSearch(e.target.value); setOpenCommand(true); }}
+                                                onFocus={() => { if (!workoutToEdit) setOpenCommand(true); }}
+                                                onBlur={() => setTimeout(() => setOpenCommand(false), 250)}
+                                                disabled={!!workoutToEdit}
+                                                className="w-full border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 outline-none placeholder:text-slate-400 transition-all focus:ring-2 focus:ring-bee-amber/20 focus:border-bee-amber/30"
+                                            />
+                                        )}
+                                        {openCommand && !selectedStudentId && (
+                                            <div
+                                                className="absolute w-full z-50 mt-2 rounded-2xl border border-slate-100 bg-white shadow-2xl overflow-hidden"
+                                                onMouseDown={(e) => e.preventDefault()}
+                                            >
+                                                <div className="max-h-[200px] overflow-y-auto">
+                                                    {availableStudents
+                                                        .filter(s => !studentSearch || s.name.toLowerCase().includes((studentSearch ?? "").toLowerCase()))
+                                                        .length === 0 ? (
+                                                        <p className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhum aluno encontrado.</p>
+                                                    ) : (
+                                                        availableStudents
+                                                            .filter(s => !studentSearch || s.name.toLowerCase().includes((studentSearch ?? "").toLowerCase()))
+                                                            .map(student => (
+                                                                <div
+                                                                    key={student.id}
+                                                                    onClick={() => { setSelectedStudentId(student.id); setOpenCommand(false); setStudentSearch(""); }}
+                                                                    className="flex items-center gap-2 cursor-pointer p-3 hover:bg-bee-amber/5 transition-colors"
+                                                                >
+                                                                    <User className="h-4 w-4 text-slate-400" />
+                                                                    <span className="font-semibold text-slate-700">{student.name}</span>
+                                                                </div>
+                                                            ))
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="relative">
-                                                {openCommand && !selectedStudentId && (
-                                                    <div className="absolute w-full z-50 mt-2 rounded-2xl border border-slate-100 bg-white text-popover-foreground shadow-2xl outline-none animate-in fade-in slide-in-from-top-1 overflow-hidden">
-                                                        <CommandList className="max-h-[200px] overflow-y-auto">
-                                                            <CommandEmpty className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhum aluno encontrado.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {availableStudents.map(student => (
-                                                                    <CommandItem
-                                                                        key={student.id}
-                                                                        value={student.name}
-                                                                        onMouseDown={(e) => e.preventDefault()}
-                                                                        onSelect={() => { setSelectedStudentId(student.id); setOpenCommand(false); }}
-                                                                        className="flex items-center gap-2 cursor-pointer p-3 hover:bg-slate-50 focus:bg-bee-amber/5"
-                                                                    >
-                                                                        <User className="h-4 w-4 text-slate-400" />
-                                                                        <span className="font-semibold text-slate-700">{student.name}</span>
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Command>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
