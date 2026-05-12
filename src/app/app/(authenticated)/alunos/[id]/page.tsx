@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MedicalRecordModal } from "@/components/alunos/medical-record-modal";
 import { MedicalRecordCard } from "@/components/alunos/medical-record-card";
 import { MeasurementEvolutionChart } from "@/components/alunos/measurement-evolution-chart";
+import { StudentUpcomingActivities } from "@/components/alunos/student-upcoming-activities";
 
 export default function StudentDetailsPage() {
     const supabase = createClient();
@@ -211,6 +212,9 @@ export default function StudentDetailsPage() {
                     />
                 </div>
             </div>
+
+            {/* Upcoming Activities */}
+            <StudentUpcomingActivities studentId={id} />
 
             {/* List Section */}
             <div className="flex-1 min-h-[400px]">
