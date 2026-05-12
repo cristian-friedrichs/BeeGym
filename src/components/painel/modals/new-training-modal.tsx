@@ -302,7 +302,7 @@ export function NewTrainingModal({
                 sd.setHours(hours, minutes, 0, 0);
                 const ed = new Date(sd);
                 ed.setMinutes(ed.getMinutes() + parseInt(selectedDuration));
-                return { start: format(sd, "yyyy-MM-dd'T'HH:mm:ss"), end: format(ed, "yyyy-MM-dd'T'HH:mm:ss") };
+                return { start: sd.toISOString(), end: ed.toISOString() };
             };
 
             // --- INDIVIDUAL MODE (WORKOUTS TABLE) ---

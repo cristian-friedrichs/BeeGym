@@ -53,6 +53,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     // Data
     const [rooms, setRooms] = useState<Room[]>([]);
     const [instructors, setInstructors] = useState<Instructor[]>([]);
+    const [templates, setTemplates] = useState<any[]>([]);
 
     // Form State
     const [classType, setClassType] = useState('');
@@ -63,6 +64,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     const [date, setDate] = useState<Date | undefined>(undefined);
     const [time, setTime] = useState('08:00');
     const [duration, setDuration] = useState('60');
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -95,13 +97,15 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
             if (!(profile as any)?.organization_id) return;
             const orgId = (profile as any).organization_id;
 
-            const [{ data: roomsData }, { data: instructorsData }] = await Promise.all([
+            const [{ data: roomsData }, { data: instructorsData }, { data: templatesData }] = await Promise.all([
                 (supabase as any).from('rooms').select('id, name, capacity').eq('organization_id', orgId).order('name'),
                 (supabase as any).from('instructors').select('id, name').eq('organization_id', orgId).order('name'),
+                (supabase as any).from('class_templates').select('*').eq('organization_id', orgId).order('title'),
             ]);
 
             if (roomsData) setRooms(roomsData);
             if (instructorsData) setInstructors(instructorsData.map((i: any) => ({ id: i.id, full_name: i.name })));
+            if (templatesData) setTemplates(templatesData);
         } catch (err) {
             console.error('ClassModal fetchData error:', err);
         }
@@ -130,6 +134,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 organization_id: orgId,
                 instructor_id: selectedInstructor || null,
                 room_id: selectedRoom || null,
+                class_template_id: selectedTemplateId || null,
                 start_datetime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
                 end_datetime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
                 capacity: parseInt(capacity) || null,
@@ -177,16 +182,32 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Tipo de Aula *</Label>
-                            <Select value={classType} onValueChange={v => { setClassType(v); if (!title) setTitle(CLASS_TYPES.find(t => t.value === v)?.label || ''); }}>
+                            <Select 
+                                value={selectedTemplateId || ''} 
+                                onValueChange={v => { 
+                                    setSelectedTemplateId(v);
+                                    const template = templates.find(t => t.id === v);
+                                    if (template) {
+                                        setTitle(template.title);
+                                        if (template.duration_minutes) {
+                                            setDuration(template.duration_minutes.toString());
+                                        }
+                                        // Se o template tivesse capacidade, setaríamos aqui também
+                                    }
+                                }}
+                            >
                                 <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
                                     <SelectValue placeholder="Selecione..." />
                                 </SelectTrigger>
                                 <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                                    {CLASS_TYPES.map(t => (
-                                        <SelectItem key={t.value} value={t.value} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
-                                            {t.label}
+                                    {templates.map(t => (
+                                        <SelectItem key={t.id} value={t.id} className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">
+                                            {t.title}
                                         </SelectItem>
                                     ))}
+                                    {templates.length === 0 && (
+                                        <div className="p-4 text-xs font-semibold text-slate-400 text-center">Nenhuma modalidade cadastrada.</div>
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>

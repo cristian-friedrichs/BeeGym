@@ -204,8 +204,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 title: resolvedTitle ?? title,
                 type,
                 status: 'Agendado',
-                scheduled_at: format(current, "yyyy-MM-dd'T'HH:mm:ss"),
-                end_time: format(addMinutes(current, parseInt(duration)), "yyyy-MM-dd'T'HH:mm:ss"),
+                scheduled_at: current.toISOString(),
+                end_time: addMinutes(current, parseInt(duration)).toISOString(),
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
@@ -241,8 +241,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             const payload = {
                 title: effectiveTitle,
                 type,
-                scheduled_at: format(scheduledDate, "yyyy-MM-dd'T'HH:mm:ss"),
-                end_time: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
+                scheduled_at: scheduledDate.toISOString(),
+                end_time: endDateTime.toISOString(),
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
@@ -268,7 +268,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
             if (!ignoreOverbooking) {
                 const { data: isOverbooked } = await (supabase as any).rpc('check_overbooking', {
-                    p_start_time: format(scheduledDate, "yyyy-MM-dd'T'HH:mm:ss"), p_end_time: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"), p_org_id: profile?.organization_id
+                    p_start_time: scheduledDate.toISOString(), p_end_time: endDateTime.toISOString(), p_org_id: profile?.organization_id
                 });
                 if (isOverbooked) {
                     toast({ title: "Conflito de Horário!", description: "Marque 'Forçar Agendamento' para prosseguir.", variant: "destructive" });
@@ -286,8 +286,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                     title: effectiveTitle,
                     type,
                     status: 'Agendado',
-                    scheduled_at: format(scheduledDate, "yyyy-MM-dd'T'HH:mm:ss"),
-                    end_time: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
+                    scheduled_at: scheduledDate.toISOString(),
+                    end_time: endDateTime.toISOString(),
                     is_makeup: isMakeup,
                     location_type: locationType,
                     location_details: locationDetails,
