@@ -299,8 +299,8 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     room_id: (selectedRoom && selectedRoom !== '_clear') ? selectedRoom : null,
                     instructor_id: selectedInstructor,
                     organization_id: userData.organization_id,
-                    start_datetime: startDateTime.toISOString(),
-                    end_datetime: endDateTime.toISOString(),
+                    start_datetime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
+                    end_datetime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
                     capacity: capacityNum,
                     status: 'SCHEDULED',
                     type: 'CLASS', // Always 'CLASS' — modality is stored in class_template_id relation
@@ -312,8 +312,8 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
             const sortedStarts = eventsToInsert.map(e => new Date(e.start_datetime).getTime()).sort((a, b) => a - b);
             const sortedEnds = eventsToInsert.map(e => new Date(e.end_datetime).getTime()).sort((a, b) => a - b);
 
-            const minStart = new Date(sortedStarts[0]).toISOString();
-            const maxEnd = new Date(sortedEnds[sortedEnds.length - 1]).toISOString();
+            const minStart = format(new Date(sortedStarts[0]), "yyyy-MM-dd'T'HH:mm:ss");
+            const maxEnd = format(new Date(sortedEnds[sortedEnds.length - 1]), "yyyy-MM-dd'T'HH:mm:ss");
 
             // 2. Fetch existing events in this range
             const { data: existingEvents, error: conflictError } = await (supabase as any)

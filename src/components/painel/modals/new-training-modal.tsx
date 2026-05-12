@@ -302,7 +302,7 @@ export function NewTrainingModal({
                 sd.setHours(hours, minutes, 0, 0);
                 const ed = new Date(sd);
                 ed.setMinutes(ed.getMinutes() + parseInt(selectedDuration));
-                return { start: sd.toISOString(), end: ed.toISOString() };
+                return { start: format(sd, "yyyy-MM-dd'T'HH:mm:ss"), end: format(ed, "yyyy-MM-dd'T'HH:mm:ss") };
             };
 
             // --- INDIVIDUAL MODE (WORKOUTS TABLE) ---
@@ -375,7 +375,7 @@ export function NewTrainingModal({
                     } else {
                         // Plan limit guard (skip for makeup or force override)
                         if (!isMakeup && !forceSchedule) {
-                            const dateStr = selectedDate.toISOString().split('T')[0];
+                            const dateStr = format(selectedDate, 'yyyy-MM-dd');
                             const limitCheck = await checkStudentScheduleLimits(selectedStudent, dateStr);
                             if (!limitCheck.allowed) {
                                 throw new Error(limitCheck.message);

@@ -149,7 +149,7 @@ export function NewClassModal({ setIsOpen }: { setIsOpen: (open: boolean) => voi
 
     const newCalendarClass = {
       id: Date.now(),
-      date: date.toISOString(),
+      date: format(date, "yyyy-MM-dd'T'HH:mm:ss"),
       time: time,
       duration: Number(duration),
       client: clientName,
