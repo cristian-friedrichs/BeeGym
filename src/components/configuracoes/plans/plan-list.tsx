@@ -19,15 +19,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-    SheetFooter,
-} from '@/components/ui/sheet';
-import { MoreVertical, Edit, Power, PowerOff, Plus, Clock, CreditCard, X, Loader2, Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { MoreVertical, Edit, Power, PowerOff, Plus, Clock, CreditCard, Loader2 } from 'lucide-react';
 import { PlanForm, PlanFormValues } from './plan-form';
 import { createPlanAction, updatePlanAction, togglePlanStatusAction } from '@/actions/plans';
 import { useToast } from '@/hooks/use-toast';
@@ -276,43 +269,43 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
                     </div>
                 </CardContent>
 
-                {/* Add Sidebar */}
-                <Sheet open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                    <SheetContent side="right" className="sm:max-w-[520px] p-0 flex flex-col gap-0">
-                        <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                            <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Novo Plano</SheetTitle>
-                            <SheetDescription className="text-sm text-slate-500 mt-0.5">Configure as regras de acesso e cobrança.</SheetDescription>
-                        </SheetHeader>
-                        <div className="flex-1 overflow-y-auto px-6 py-5">
+                {/* Add Dialog */}
+                <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                    <DialogContent className="max-w-[560px] p-0 gap-0 rounded-2xl overflow-hidden">
+                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                            <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Novo Plano</DialogTitle>
+                            <p className="text-sm text-slate-500 mt-0.5">Configure as regras de acesso e cobrança.</p>
+                        </DialogHeader>
+                        <div className="px-6 py-5 max-h-[72vh] overflow-y-auto">
                             <PlanForm formId="add-plan-form" onSubmit={handleAddPlan} isLoading={isLoading} showButtons={false} />
                         </div>
-                        <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                            <Button type="submit" form="add-plan-form" disabled={isLoading} className="flex-1 h-9 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                            <Button type="submit" form="add-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
                                 {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Criando…</> : 'Criar plano'}
                             </Button>
-                        </SheetFooter>
-                    </SheetContent>
-                </Sheet>
+                        </div>
+                    </DialogContent>
+                </Dialog>
 
-                {/* Edit Sidebar */}
-                <Sheet open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
-                    <SheetContent side="right" className="sm:max-w-[520px] p-0 flex flex-col gap-0">
-                        <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                            <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">{editingPlan?.name || 'Editar Plano'}</SheetTitle>
-                            <SheetDescription className="text-sm text-slate-500 mt-0.5">Atualize as informações de venda.</SheetDescription>
-                        </SheetHeader>
-                        <div className="flex-1 overflow-y-auto px-6 py-5">
+                {/* Edit Dialog */}
+                <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
+                    <DialogContent className="max-w-[560px] p-0 gap-0 rounded-2xl overflow-hidden">
+                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                            <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">{editingPlan?.name || 'Editar Plano'}</DialogTitle>
+                            <p className="text-sm text-slate-500 mt-0.5">Atualize as informações de venda.</p>
+                        </DialogHeader>
+                        <div className="px-6 py-5 max-h-[72vh] overflow-y-auto">
                             {editingPlan && <PlanForm formId="edit-plan-form" initialData={editingPlan} onSubmit={handleEditPlan} isLoading={isLoading} showButtons={false} />}
                         </div>
-                        <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <Button variant="outline" onClick={() => setEditingPlan(null)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                            <Button type="submit" form="edit-plan-form" disabled={isLoading} className="flex-1 h-9 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                            <Button type="submit" form="edit-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
                                 {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</> : 'Salvar alterações'}
                             </Button>
-                        </SheetFooter>
-                    </SheetContent>
-                </Sheet>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </Card>
         </div>
     );

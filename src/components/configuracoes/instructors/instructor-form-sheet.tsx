@@ -6,7 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -91,50 +96,39 @@ export function InstructorFormSheet({ open, onOpenChange, mode, units, roles, in
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="sm:max-w-[520px] p-0 flex flex-col gap-0">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[540px] p-0 gap-0 rounded-2xl overflow-hidden">
 
-                {/* Header */}
-                <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                    <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
                         {mode === 'create' ? 'Adicionar Instrutor(a)' : (instructor?.name ?? 'Editar Instrutor')}
-                    </SheetTitle>
+                    </DialogTitle>
                     <p className="text-sm text-slate-500 mt-0.5">
                         {mode === 'create' ? 'Cadastre um instrutor com ou sem acesso ao sistema.' : 'Atualize os dados deste instrutor.'}
                     </p>
-                </SheetHeader>
+                </DialogHeader>
 
                 <Form {...form}>
-                    <form id="instructor-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
-                        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+                    <form id="instructor-form" onSubmit={form.handleSubmit(onSubmit)}>
+                        <div className="px-6 py-5 space-y-4 max-h-[65vh] overflow-y-auto">
 
-                            <FormField
-                                control={form.control}
-                                name="fullName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={labelCls}>Nome completo *</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ex: Marcos Andrade" className={fieldCls} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormField control={form.control} name="fullName" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={labelCls}>Nome completo *</FormLabel>
+                                    <FormControl><Input placeholder="Ex: Marcos Andrade" className={fieldCls} {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
 
-                            <FormField
-                                control={form.control}
-                                name="bio"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={labelCls}>Bio / Especialidades</FormLabel>
-                                        <FormControl>
-                                            <Textarea placeholder="Ex: Especialista em musculação, 10 anos de experiência…" className="rounded-xl border-slate-200 bg-white text-sm resize-none placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                            <FormField control={form.control} name="bio" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className={labelCls}>Bio / Especialidades</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Ex: Especialista em musculação, 10 anos de experiência…" className="rounded-xl border-slate-200 bg-white text-sm resize-none placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
 
                             {units.length > 0 && (
                                 <div className="space-y-2">
@@ -157,83 +151,59 @@ export function InstructorFormSheet({ open, onOpenChange, mode, units, roles, in
                             {mode === 'create' && (
                                 <div className="space-y-4 pt-2">
                                     <hr className="border-slate-100" />
-                                    <FormField
-                                        control={form.control}
-                                        name="hasSystemAccess"
-                                        render={({ field }) => (
-                                            <FormItem className="flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                                                <FormControl>
-                                                    <Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-bee-amber mt-0.5" />
-                                                </FormControl>
-                                                <div>
-                                                    <FormLabel className="text-sm font-medium text-slate-700 flex items-center gap-1.5 mb-0.5">
-                                                        <ShieldCheck className="h-4 w-4 text-bee-amber" />
-                                                        Acesso ao sistema
-                                                    </FormLabel>
-                                                    <FormDescription className="text-xs text-slate-400">
-                                                        Cria um usuário com e-mail e senha para entrar no app.
-                                                    </FormDescription>
-                                                </div>
-                                            </FormItem>
-                                        )}
-                                    />
+                                    <FormField control={form.control} name="hasSystemAccess" render={({ field }) => (
+                                        <FormItem className="flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
+                                            <FormControl>
+                                                <Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-bee-amber mt-0.5" />
+                                            </FormControl>
+                                            <div>
+                                                <FormLabel className="text-sm font-medium text-slate-700 flex items-center gap-1.5 mb-0.5">
+                                                    <ShieldCheck className="h-4 w-4 text-bee-amber" /> Acesso ao sistema
+                                                </FormLabel>
+                                                <FormDescription className="text-xs text-slate-400">Cria um usuário com e-mail e senha para entrar no app.</FormDescription>
+                                            </div>
+                                        </FormItem>
+                                    )} />
 
                                     {hasSystemAccess && (
                                         <div className="space-y-4 animate-in fade-in duration-200">
-                                            <FormField
-                                                control={form.control}
-                                                name="email"
-                                                render={({ field }) => (
+                                            <FormField control={form.control} name="email" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className={labelCls}>E-mail de acesso *</FormLabel>
+                                                    <FormControl>
+                                                        <div className="relative">
+                                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                            <Input type="email" placeholder="instrutor@exemplo.com" className={cn(fieldCls, 'pl-9')} {...field} />
+                                                        </div>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <FormField control={form.control} name="password" render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className={labelCls}>E-mail de acesso *</FormLabel>
+                                                        <FormLabel className={labelCls}>Senha temporária *</FormLabel>
                                                         <FormControl>
                                                             <div className="relative">
-                                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                                <Input type="email" placeholder="instrutor@exemplo.com" className={cn(fieldCls, 'pl-9')} {...field} />
+                                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                                <Input type="password" placeholder="Mín. 6 caracteres" className={cn(fieldCls, 'pl-9')} {...field} />
                                                             </div>
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
-                                                )}
-                                            />
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="password"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel className={labelCls}>Senha temporária *</FormLabel>
-                                                            <FormControl>
-                                                                <div className="relative">
-                                                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                                    <Input type="password" placeholder="Mín. 6 caracteres" className={cn(fieldCls, 'pl-9')} {...field} />
-                                                                </div>
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                <FormField
-                                                    control={form.control}
-                                                    name="roleId"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel className={labelCls}>Perfil de acesso *</FormLabel>
-                                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                                <FormControl>
-                                                                    <SelectTrigger className={fieldCls}>
-                                                                        <SelectValue placeholder={roles.length === 0 ? 'Nenhum perfil' : 'Selecione…'} />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                                )} />
+                                                <FormField control={form.control} name="roleId" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className={labelCls}>Perfil de acesso *</FormLabel>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
+                                                            <FormControl><SelectTrigger className={fieldCls}><SelectValue placeholder={roles.length === 0 ? 'Nenhum perfil' : 'Selecione…'} /></SelectTrigger></FormControl>
+                                                            <SelectContent>
+                                                                {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
                                             </div>
                                         </div>
                                     )}
@@ -242,29 +212,27 @@ export function InstructorFormSheet({ open, onOpenChange, mode, units, roles, in
 
                             {mode === 'edit' && (
                                 <p className="text-xs text-slate-400 pt-2 border-t border-slate-100">
-                                    Para alterar acesso ao sistema (e-mail/senha/perfil), edite o membro pela página <strong>Equipe</strong>.
+                                    Para alterar acesso ao sistema, edite o membro pela página <strong>Equipe</strong>.
                                 </p>
                             )}
-
                         </div>
 
-                        {/* Footer */}
-                        <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}
                                 className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">
                                 Cancelar
                             </Button>
                             <Button type="submit" disabled={isSubmitting}
-                                className="flex-1 h-9 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                                className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
                                 {isSubmitting
                                     ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
                                     : mode === 'create' ? 'Cadastrar instrutor' : 'Salvar alterações'
                                 }
                             </Button>
-                        </SheetFooter>
+                        </div>
                     </form>
                 </Form>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 }

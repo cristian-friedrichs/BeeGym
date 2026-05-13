@@ -18,15 +18,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-    SheetFooter,
-} from '@/components/ui/sheet';
-import { Save, X, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MoreVertical, Edit, Trash2, Plus, Users, Layout, AlertTriangle } from 'lucide-react';
 import { RoomForm, RoomFormValues } from './room-form';
@@ -214,64 +207,62 @@ export function RoomList({ rooms: initialRooms, units }: RoomListProps) {
                 </Table>
             </Card>
 
-            {/* Add Sidebar */}
-            <Sheet open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                <SheetContent side="right" className="sm:max-w-[480px] p-0 flex flex-col gap-0">
-                    <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                        <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Nova Sala</SheetTitle>
-                        <SheetDescription className="text-sm text-slate-500 mt-0.5">
-                            {currentUnit ? `Unidade: ${currentUnit.name}` : 'Defina o espaço para aulas e treinos.'}
-                        </SheetDescription>
-                    </SheetHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-5">
+            {/* Add Dialog */}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+                <DialogContent className="max-w-[520px] p-0 gap-0 rounded-2xl overflow-hidden">
+                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Nova Sala</DialogTitle>
+                        <p className="text-sm text-slate-500 mt-0.5">{currentUnit ? `Unidade: ${currentUnit.name}` : 'Defina o espaço para aulas e treinos.'}</p>
+                    </DialogHeader>
+                    <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">
                         <RoomForm formId="add-room-form" units={units} onSubmit={handleAddRoom} isLoading={isLoading} showButtons={false} />
                     </div>
-                    <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                         <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                        <Button type="submit" form="add-room-form" disabled={isLoading || units.length === 0} className="flex-1 h-9 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                        <Button type="submit" form="add-room-form" disabled={isLoading || units.length === 0} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
                             {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</> : 'Salvar sala'}
                         </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-            {/* Edit Sidebar */}
-            <Sheet open={!!editingRoom} onOpenChange={(open) => !open && setEditingRoom(null)}>
-                <SheetContent side="right" className="sm:max-w-[480px] p-0 flex flex-col gap-0">
-                    <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                        <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">{editingRoom?.name || 'Editar Sala'}</SheetTitle>
-                        <SheetDescription className="text-sm text-slate-500 mt-0.5">Atualize as informações deste espaço.</SheetDescription>
-                    </SheetHeader>
-                    <div className="flex-1 overflow-y-auto px-6 py-5">
+            {/* Edit Dialog */}
+            <Dialog open={!!editingRoom} onOpenChange={(open) => !open && setEditingRoom(null)}>
+                <DialogContent className="max-w-[520px] p-0 gap-0 rounded-2xl overflow-hidden">
+                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">{editingRoom?.name || 'Editar Sala'}</DialogTitle>
+                        <p className="text-sm text-slate-500 mt-0.5">Atualize as informações deste espaço.</p>
+                    </DialogHeader>
+                    <div className="px-6 py-5 max-h-[65vh] overflow-y-auto">
                         {editingRoom && <RoomForm formId="edit-room-form" initialData={editingRoom} units={units} onSubmit={handleUpdateRoom} isLoading={isLoading} showButtons={false} />}
                     </div>
-                    <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                         <Button variant="outline" onClick={() => setEditingRoom(null)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                        <Button type="submit" form="edit-room-form" disabled={isLoading} className="flex-1 h-9 rounded-full bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
+                        <Button type="submit" form="edit-room-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
                             {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</> : 'Salvar alterações'}
                         </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-            {/* Delete Sidebar */}
-            <Sheet open={!!deletingRoomId} onOpenChange={(open) => !open && setDeletingRoomId(null)}>
-                <SheetContent side="right" className="sm:max-w-[400px] p-0 flex flex-col gap-0">
-                    <SheetHeader className="px-6 pt-5 pb-4 border-b border-slate-100 flex-none">
-                        <SheetTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Excluir sala</SheetTitle>
-                        <SheetDescription className="text-sm text-slate-500 mt-0.5">Esta ação é permanente e irreversível.</SheetDescription>
-                    </SheetHeader>
-                    <div className="flex-1 px-6 py-5">
+            {/* Delete Dialog */}
+            <Dialog open={!!deletingRoomId} onOpenChange={(open) => !open && setDeletingRoomId(null)}>
+                <DialogContent className="max-w-[400px] p-0 gap-0 rounded-2xl overflow-hidden">
+                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Excluir sala</DialogTitle>
+                        <p className="text-sm text-slate-500 mt-0.5">Esta ação é permanente e irreversível.</p>
+                    </DialogHeader>
+                    <div className="px-6 py-5">
                         <p className="text-sm text-slate-600 leading-relaxed">Tem certeza que deseja excluir esta sala? Esta ação não pode ser desfeita e removerá permanentemente os agendamentos vinculados.</p>
                     </div>
-                    <SheetFooter className="px-6 pb-5 pt-4 border-t border-slate-100 flex-none gap-2 flex-row">
+                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                         <Button variant="outline" onClick={() => setDeletingRoomId(null)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                        <Button onClick={handleDeleteRoom} disabled={isLoading} className="flex-1 h-9 rounded-full bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm">
+                        <Button onClick={handleDeleteRoom} disabled={isLoading} className="h-9 rounded-full px-6 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm shadow-sm">
                             {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Excluindo…</> : 'Sim, excluir'}
                         </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
