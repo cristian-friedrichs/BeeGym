@@ -15,6 +15,7 @@ export interface UpgradeSubscriptionInput {
   newPlanTier: string;   // 'STARTER' | 'PLUS' | 'STUDIO' | 'PRO' | 'ENTERPRISE'
   userEmail?: string;    // Optional: pre-fill Kiwify checkout
   userName?: string;     // Optional: pre-fill Kiwify checkout
+  returnBaseUrl?: string; // Optional: base URL for post-payment redirect (e.g. https://app.beegym.com.br)
 }
 
 export interface UpgradeResult {
@@ -61,7 +62,7 @@ export class UpgradeSubscriptionUseCase {
       };
     }
 
-    // 5. Build Kiwify checkout URL with pre-filled customer data
+    // 5. Build Kiwify checkout URL with pre-filled customer data + return URL
     const baseUrl = KIWIFY_CHECKOUT[tier];
     if (!baseUrl) {
       throw new Error(`URL de checkout não configurada para o plano ${tier}.`);
@@ -69,12 +70,12 @@ export class UpgradeSubscriptionUseCase {
 
     const checkoutUrl = new URL(baseUrl);
     if (input.userEmail) checkoutUrl.searchParams.append('email', input.userEmail);
-    if (input.userName)  checkoutUrl.searchParams.append('name', input.userName);
+    if (input.userName)  checkoutUrl.searchParams.append('name',  input.userName);
 
     return {
       action: 'redirect',
       url: checkoutUrl.toString(),
-      message: `Redirecionando para o checkout do plano ${tier}. Após o pagamento, seu plano será atualizado automaticamente.`,
+      message: `Redirecionando para o checkout do plano ${tier}. Seu plano será atualizado automaticamente após a confirmação do pagamento.`,
       newPlanTier: tier,
     };
   }

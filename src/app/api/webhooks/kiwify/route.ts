@@ -135,14 +135,18 @@ export async function POST(req: Request) {
 
     const isWaitingPayment = orderStatus === 'waiting_payment';
 
+    // Only treat as canceled when there's an explicit subscription-level cancellation,
+    // refund or chargeback. A refused order (compra_recusada) is NOT a cancellation —
+    // it's a failed payment attempt and must never revoke an existing active subscription.
     const isCanceled =
       eventType === 'subscription_canceled' ||
       eventType === 'order_refunded' ||
       eventType === 'chargeback' ||
       orderStatus === 'refunded' ||
       orderStatus === 'chargeback' ||
-      orderStatus === 'canceled' ||
-      orderStatus === 'refused';
+      orderStatus === 'canceled';
+    // NOTE: orderStatus === 'refused' intentionally excluded — refused = payment attempt
+    // failed, not a cancellation. User keeps their current subscription.
 
     const isLate = eventType === 'subscription_late' || orderStatus === 'past_due';
 
@@ -192,6 +196,27 @@ export async function POST(req: Request) {
     const orgId = profile?.organization_id ?? null;
 
     if (orgId) {
+      // Guard: if org already has an ACTIVE subscription, never downgrade to PENDING
+      // (happens when an existing subscriber initiates a Pix/boleto for an upgrade and
+      // Kiwify fires pix_gerado/boleto_gerado before payment is confirmed).
+      if (isWaitingPayment) {
+        const { data: existingSub } = await supabaseAdmin
+          .from('saas_subscriptions')
+          .select('status')
+          .eq('organization_id', orgId)
+          .maybeSingle();
+
+        const alreadyActive = ['ACTIVE', 'TRIAL'].includes(existingSub?.status ?? '');
+        if (alreadyActive) {
+          console.log(`[Kiwify] Org ${orgId} already ACTIVE — skipping PENDING downgrade for waiting_payment event.`);
+          // Still log the webhook but don't touch subscription status
+          await supabaseAdmin.from('webhook_logs').insert({
+            email, event_type: eventType, payload: body, created_at: new Date().toISOString(),
+          });
+          return NextResponse.json({ message: 'Skipped: org already active', email, event: eventType }, { status: 200 });
+        }
+      }
+
       // 8a. Update organizations
       const orgUpdate: Record<string, unknown> = {
         subscription_status: subscriptionStatus,

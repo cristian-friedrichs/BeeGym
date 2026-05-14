@@ -33,12 +33,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Organização não encontrada' }, { status: 400 });
         }
 
+        const origin = req.headers.get('origin') || req.headers.get('referer')?.split('/app')[0] || '';
+
         const useCase = new UpgradeSubscriptionUseCase();
         const result = await useCase.execute({
             organizationId,
             newPlanTier: tier,
             userEmail: user.email,
             userName: user.user_metadata?.full_name || user.user_metadata?.name,
+            returnBaseUrl: origin,
         });
 
         return NextResponse.json(result);

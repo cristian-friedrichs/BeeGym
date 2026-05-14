@@ -3,21 +3,12 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-    User,
-    Bell,
     Settings,
     Users,
     Shield,
     GraduationCap,
-    Building2,
     CreditCard,
-    CalendarDays,
     DoorOpen,
-    Dumbbell,
-    Activity,
-    Wallet,
-    MessageSquare,
-    BarChart3,
     ScrollText,
     Crown,
     Lock,
@@ -43,11 +34,8 @@ const menuItems: MenuItem[] = [
     { label: 'Equipe', href: '/app/configuracoes/team', icon: Users, feature: 'multiplos_usuarios' },
     { label: 'Instrutores', href: '/app/configuracoes/instructors', icon: GraduationCap },
     { label: 'Perfis de Acesso', href: '/app/configuracoes/roles', icon: Shield, feature: 'multiplos_usuarios' },
-    { label: 'Unidades', href: '/app/configuracoes/units', icon: Building2, feature: 'multipropriedade' },
     { label: 'Planos', href: '/app/configuracoes/plans', icon: CreditCard },
     { label: 'Salas', href: '/app/configuracoes/rooms', icon: DoorOpen, feature: 'salas' },
-    { label: 'Frequência', href: '/app/configuracoes/attendance', icon: Activity },
-    { label: 'Financeiro', href: '/app/configuracoes/financial', icon: Wallet, feature: 'automacao_cobranca' },
     { label: 'Suporte', href: '/app/configuracoes/suporte', icon: LifeBuoy },
     { label: 'Logs do Sistema', href: '/app/configuracoes/logs', icon: ScrollText },
 ];

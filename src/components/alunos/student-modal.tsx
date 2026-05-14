@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, User, Camera, Check } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useStudentLimit } from '@/hooks/useStudentLimit';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { UpgradePromptModal } from '@/components/ui/upgrade-prompt-modal';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [showDiscardDialog, setShowDiscardDialog] = useState(false);
     const { maxStudents } = useSubscription();
+    const { hasReachedLimit, canAddStudent } = useStudentLimit();
     const { organizationId, user: authUser } = useAuth();
 
     const [formData, setFormData] = useState({
@@ -194,6 +196,17 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             return;
         }
 
+        // Block creating a new ACTIVE student if limit is reached
+        const willBeActive = formData.active !== false;
+        if (!studentToEdit && willBeActive && hasReachedLimit) {
+            toast({
+                title: 'Limite de alunos atingido',
+                description: `Seu plano permite até ${maxStudents} alunos ativos. Inative alunos antigos ou faça upgrade do plano.`,
+                variant: 'destructive',
+            });
+            return;
+        }
+
         setLoading(true);
         try {
             if (!authUser) throw new Error('Não autenticado');
@@ -220,7 +233,17 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             onSuccess();
             onOpenChange(false);
         } catch (error: any) {
-            toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+            const msg: string = error?.message ?? '';
+            if (msg.includes('student_limit_exceeded')) {
+                const limit = msg.split('|')[1] ?? maxStudents;
+                toast({
+                    title: 'Limite de alunos atingido',
+                    description: `Seu plano permite até ${limit} alunos ativos. Inative alunos antigos ou faça upgrade.`,
+                    variant: 'destructive',
+                });
+            } else {
+                toast({ title: 'Erro ao salvar', description: msg, variant: 'destructive' });
+            }
         } finally {
             setLoading(false);
         }

@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from '@/components/ui/dialog';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useStudentLimit } from '@/hooks/useStudentLimit';
 import { PlanFeature, BEEGYM_PLANS, BeeGymPlan } from '@/config/plans';
-import { Crown, Check, CheckCircle2, AlertTriangle, ArrowRight, Loader2, CreditCard, CalendarDays, ShieldCheck } from 'lucide-react';
+import { Crown, Check, CheckCircle2, AlertTriangle, ArrowRight, Loader2, CreditCard, CalendarDays, ShieldCheck, TrendingUp, TrendingDown, PartyPopper, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,10 +24,26 @@ export default function SubscriptionPage() {
     const { plan, isActive, status, loading: subLoading, metodo, proximoVencimento, displayFeatures, effectivePrice } = useSubscription();
     const { activeCount, maxStudents, isUnlimited, loading: limitLoading } = useStudentLimit();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
 
     // Mode: 'overview' | 'upgrade' | 'downgrade' | 'cancel'
     const [mode, setMode] = useState<'overview' | 'plans' | 'cancel'>('overview');
     const [isCanceling, setIsCanceling] = useState(false);
+    const [upgradeSuccess, setUpgradeSuccess] = useState<string | null>(null);
+
+    // Detect return from Kiwify checkout (?upgraded=PLUS)
+    useEffect(() => {
+        const upgraded = searchParams.get('upgraded');
+        if (upgraded) {
+            setUpgradeSuccess(upgraded);
+            // Clean URL without reload
+            window.history.replaceState({}, '', window.location.pathname);
+            toast({
+                title: '🎉 Upgrade realizado!',
+                description: `Seu plano está sendo atualizado para ${upgraded}. Pode levar alguns instantes.`,
+            });
+        }
+    }, []);
 
     const isTestPlan = ['TESTE', 'TESTE_MANUAL', 'MANUAL_ADMIN'].includes(metodo || '') || ['teste', 'demo'].includes(status?.toLowerCase() || '');
 
@@ -67,7 +91,18 @@ export default function SubscriptionPage() {
 
     const usagePercentage = isUnlimited ? 0 : Math.round((activeCount / (maxStudents as number)) * 100);
 
-    return (
+    return (<>
+        {/* Post-payment success banner */}
+        {upgradeSuccess && (
+            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 mb-4">
+                <PartyPopper className="h-5 w-5 text-emerald-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-emerald-800">Pagamento recebido pelo Kiwify!</p>
+                    <p className="text-xs text-emerald-600 mt-0.5">Seu plano <span className="font-bold">{upgradeSuccess}</span> será ativado em instantes após a confirmação do webhook. Atualize a página em alguns segundos.</p>
+                </div>
+                <button onClick={() => setUpgradeSuccess(null)} className="text-emerald-400 hover:text-emerald-600 text-lg font-bold shrink-0">×</button>
+            </div>
+        )}
         <div className="space-y-8 max-w-5xl">
             <SectionHeader
                 title="Meu Plano & Assinatura"
@@ -235,7 +270,7 @@ export default function SubscriptionPage() {
                 </div>
             </div>
         </div>
-    );
+    </>);
 }
 
 // ---- Sub-View for Plan Upgrades ----
@@ -257,29 +292,67 @@ function PlanSelectionView({
     const { activeCount } = useStudentLimit();
 
     const [isUpgrading, setIsUpgrading] = useState<string | null>(null);
+    const [pendingPlan, setPendingPlan] = useState<{ plan: BeeGymPlan; index: number } | null>(null);
+    const [awaitingTier, setAwaitingTier] = useState<string | null>(null); // tier being paid on Kiwify
+    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-    const handleSelectPlan = async (plan: BeeGymPlan, index: number) => {
+    // When user opens Kiwify in new tab, poll for subscription change on visibility return
+    useEffect(() => {
+        if (!awaitingTier) return;
+
+        const handleVisibility = () => {
+            if (document.visibilityState !== 'visible') return;
+            // Start polling every 3s for up to 2 minutes
+            let attempts = 0;
+            pollRef.current = setInterval(async () => {
+                attempts++;
+                try {
+                    const res = await fetch('/api/subscription/status', { cache: 'no-store' });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (data.plan_tier === awaitingTier && data.status === 'ACTIVE') {
+                        clearInterval(pollRef.current!);
+                        setAwaitingTier(null);
+                        toast({ title: '🎉 Plano atualizado!', description: `Bem-vindo ao plano ${awaitingTier}!` });
+                        // Hard reload to refresh subscription context
+                        window.location.reload();
+                    }
+                } catch {}
+                if (attempts >= 40) { // 2 min max
+                    clearInterval(pollRef.current!);
+                    setAwaitingTier(null);
+                }
+            }, 3000);
+        };
+
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibility);
+            if (pollRef.current) clearInterval(pollRef.current);
+        };
+    }, [awaitingTier]);
+
+    const handleSelectPlan = (plan: BeeGymPlan, index: number) => {
         if (index === currentIndex) return;
 
         const isDowngrade = index < currentIndex;
 
-        // Block downgrade if they have too many active students
         if (isDowngrade && plan.max_students !== null && activeCount > plan.max_students) {
             toast({
                 title: "Downgrade bloqueado",
                 description: `Você tem ${activeCount} alunos ativos. O plano ${plan.name} permite apenas ${plan.max_students}. Inative alunos primeiro.`,
-                variant: "destructive"
+                variant: "destructive",
             });
             return;
         }
 
-        const isUpgrade = index > currentIndex;
-        const confirmMsg = isUpgrade
-            ? `Confirmar mudança para o plano ${plan.name}?`
-            : `Confirmar downgrade para o plano ${plan.name}?`;
+        setPendingPlan({ plan, index });
+    };
 
-        if (!confirm(confirmMsg)) return;
-
+    const confirmPlanChange = async () => {
+        if (!pendingPlan) return;
+        const { plan } = pendingPlan;
+        setPendingPlan(null);
         setIsUpgrading(plan.id);
 
         try {
@@ -287,45 +360,158 @@ function PlanSelectionView({
             const res = await fetch('/api/subscription/upgrade', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tier: tierStr })
+                body: JSON.stringify({ tier: tierStr }),
             });
 
             const data = await res.json();
-
             if (!res.ok) throw new Error(data.error || 'Erro ao alterar plano');
 
             if (data.action === 'redirect' && data.url) {
-                // Open Kiwify checkout in the same tab so the user can complete payment
-                window.location.href = data.url;
-                return; // navigation happening — keep loading state
-            }
-
-            if (data.action === 'contact') {
-                toast({
-                    title: `Plano ${plan.name}`,
-                    description: data.message,
-                });
+                // Open Kiwify in new tab — BeeGym stays open to detect payment return
+                window.open(data.url, '_blank', 'noopener,noreferrer');
+                setAwaitingTier(tierStr);
                 return;
             }
 
-            // Unexpected success response
-            toast({
-                title: "Solicitação enviada",
-                description: data.message || `Solicitação para o plano ${plan.name} recebida.`,
-            });
+            if (data.action === 'contact') {
+                toast({ title: `Plano ${plan.name}`, description: data.message });
+                return;
+            }
 
+            toast({ title: "Solicitação enviada", description: data.message });
         } catch (error: any) {
-            toast({
-                title: "Erro ao atualizar plano",
-                description: error.message,
-                variant: "destructive"
-            });
+            toast({ title: "Erro ao atualizar plano", description: error.message, variant: "destructive" });
         } finally {
             setIsUpgrading(null);
         }
-    }
+    };
 
-    return (
+    const isUpgradeAction = pendingPlan ? pendingPlan.index > currentIndex : false;
+
+    return (<>
+        {/* Awaiting Kiwify payment banner */}
+        {awaitingTier && (
+            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-4">
+                <Loader2 className="h-5 w-5 text-bee-amber animate-spin shrink-0" />
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-amber-800">Aguardando confirmação do pagamento...</p>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                        Conclua o pagamento na aba Kiwify. Esta página atualizará automaticamente após a confirmação.
+                    </p>
+                </div>
+                <button onClick={() => { setAwaitingTier(null); if (pollRef.current) clearInterval(pollRef.current); }} className="text-amber-400 hover:text-amber-600 text-lg font-bold shrink-0">×</button>
+            </div>
+        )}
+
+        <>
+        {/* ── Confirmation Dialog ──────────────────────────────────────── */}
+        <Dialog open={!!pendingPlan} onOpenChange={(open) => !open && setPendingPlan(null)}>
+            <DialogContent className="sm:max-w-sm p-0 overflow-hidden rounded-3xl border-0 shadow-2xl">
+                <DialogHeader className="px-7 pt-7 pb-5 border-b border-slate-100">
+                    <div className="flex items-center gap-4">
+                        <div className={cn(
+                            "h-11 w-11 rounded-2xl flex items-center justify-center shrink-0",
+                            isUpgradeAction ? "bg-bee-amber/15 border border-bee-amber/25" : "bg-slate-100"
+                        )}>
+                            {isUpgradeAction
+                                ? <TrendingUp className="h-5 w-5 text-bee-amber" />
+                                : <TrendingDown className="h-5 w-5 text-slate-500" />
+                            }
+                        </div>
+                        <div>
+                            <DialogTitle className="text-base font-black font-display text-slate-900 leading-tight">
+                                {isUpgradeAction ? 'Confirmar Upgrade' : 'Confirmar Downgrade'}
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-400 mt-0.5">
+                                Plano <span className="font-bold text-slate-600">{pendingPlan?.plan.name}</span>
+                                {' · '}
+                                {pendingPlan?.plan.price
+                                    ? `R$ ${pendingPlan.plan.price.toFixed(2).replace('.', ',')}/mês`
+                                    : 'Contato comercial'}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <div className="px-7 py-5 space-y-4">
+                    {/* Pricing detail */}
+                    {isUpgradeAction && pendingPlan?.plan.price && (
+                        <div className="bg-slate-50 rounded-2xl p-4 space-y-2">
+                            {pendingPlan.plan.promo_price && (
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-slate-500">1º mês (promo)</span>
+                                    <span className="font-black text-bee-amber">
+                                        R$ {pendingPlan.plan.promo_price.toFixed(2).replace('.', ',')}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-slate-500">Renovação mensal</span>
+                                <span className="font-bold text-slate-800">
+                                    R$ {pendingPlan.plan.price.toFixed(2).replace('.', ',')}/mês
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm border-t border-slate-200 pt-2 mt-1">
+                                <span className="text-slate-500">Alunos ativos</span>
+                                <span className="font-bold text-slate-800">
+                                    {pendingPlan.plan.max_students === null ? 'Ilimitados' : `Até ${pendingPlan.plan.max_students}`}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Flow instructions */}
+                    {isUpgradeAction && (
+                        <div className="space-y-2">
+                            {[
+                                'Você será redirecionado ao checkout Kiwify',
+                                'Conclua o pagamento com os dados corretos',
+                                'Seu plano BeeGym atualiza automaticamente',
+                            ].map((step, i) => (
+                                <div key={i} className="flex items-center gap-2.5 text-xs text-slate-600">
+                                    <span className="h-5 w-5 rounded-full bg-bee-amber/20 text-bee-amber font-black text-[10px] flex items-center justify-center shrink-0">
+                                        {i + 1}
+                                    </span>
+                                    {step}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {!isUpgradeAction && (
+                        <p className="text-sm text-slate-600">
+                            Você está fazendo <span className="font-bold text-slate-800">downgrade</span> para um plano com menos recursos e limite de alunos. Confirma a mudança?
+                        </p>
+                    )}
+
+                    <div className="space-y-2 pt-1">
+                        <button
+                            onClick={confirmPlanChange}
+                            disabled={isUpgrading !== null}
+                            className={cn(
+                                "w-full h-11 font-bold text-sm rounded-full flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 active:scale-95 shadow-sm disabled:opacity-50",
+                                isUpgradeAction
+                                    ? "bg-bee-amber hover:bg-amber-500 text-bee-midnight"
+                                    : "bg-slate-800 hover:bg-slate-700 text-white"
+                            )}
+                        >
+                            {isUpgrading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                                isUpgradeAction
+                                    ? <><ExternalLink className="h-4 w-4" /> Ir para o Checkout Kiwify</>
+                                    : <><Check className="h-4 w-4" /> Confirmar Downgrade</>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setPendingPlan(null)}
+                            className="w-full h-10 text-slate-400 hover:text-slate-600 text-sm font-semibold rounded-full transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
         <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="outline" onClick={onBack} size="sm" className="font-bold shadow-sm rounded-full transition-all hover:-translate-y-0.5 active:scale-95">
@@ -424,5 +610,7 @@ function PlanSelectionView({
                 })}
             </div>
         </div>
+        </>
+        </>
     );
 }

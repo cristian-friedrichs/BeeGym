@@ -27,6 +27,7 @@ import {
   LifeBuoy
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { GlobalSearch } from './global-search'
 import { useToast } from "@/hooks/use-toast"
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -342,70 +343,16 @@ export function Header({ className }: { className?: string }) {
       className
     )}>
       <div className="flex-1 md:flex-none w-full max-w-md">
-        <div className="relative hidden md:block w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border-none rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#0B0F1A] transition-all placeholder:text-slate-400 font-medium font-sans focus:bg-white"
-          />
-        </div>
+        <GlobalSearch />
       </div>
 
       <div className="flex items-center gap-1 md:gap-2">
-        {mounted && (
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-1">
-                  <Globe className="h-5 w-5" />
-                  <span className="text-xs font-bold">{language}</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel className="font-display font-bold text-deep-midnight">{t.language}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={language} onValueChange={(v) => handleLanguageChange(v as any)}>
-                  <DropdownMenuRadioItem value="PT">Português</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="US">English (US)</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="ES">Español</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
-        )}
 
-        {/* Fallback space-holder for non-mounted state to prevent layout shift */}
-        {!mounted && (
-          <div className="flex gap-1 md:gap-2">
-            <div className="w-9 h-9" />
-            <div className="w-9 h-9" />
-          </div>
-        )}
-
-        {hasMultipleUnits ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-2">
-                <Building className="h-5 w-5" />
-                <span className="text-xs font-bold max-w-[100px] truncate">{displayUnitName}</span>
-                <ChevronDown className="h-3 w-3 opacity-50" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel className="font-display font-bold text-deep-midnight">Alternar Unidade</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={currentUnitId || ''} onValueChange={handleUnitChange}>
-                {units.map(unit => <DropdownMenuRadioItem key={unit.id} value={unit.id}>{unit.name}</DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="flex items-center gap-2 px-2 py-1 text-muted-foreground">
-            <Building className="h-5 w-5" />
-            <span className="text-xs font-bold max-w-[100px] truncate">{displayUnitName}</span>
-          </div>
-        )}
+        {/* Org name — read-only, no unit switcher (single-unit MVP) */}
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full text-slate-600 border border-slate-200">
+          <Building className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+          <span className="text-xs font-bold max-w-[120px] truncate">{displayUnitName}</span>
+        </div>
 
 
         <TopbarActions />

@@ -59,13 +59,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Retorna o profile independente do status — o layout e middleware gerenciam o acesso
             return data as UserProfile
         } catch (error: any) {
-            if (error.name === 'AbortError') return null
-            console.error('❌ Erro detalhado ao buscar perfil:', {
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                code: error.code
-            })
+            // AbortError variants: Web Locks "steal", fetch abort, Supabase internal cancellation
+            const isAbort =
+                error.name === 'AbortError' ||
+                error instanceof DOMException ||
+                error.message?.includes('Lock broken') ||
+                error.message?.includes('aborted') ||
+                error.message?.includes('AbortError')
+            if (isAbort) return null
+
+            // Only log real unexpected errors
+            if (error.code !== 'PGRST116') {
+                console.error('❌ Erro ao buscar perfil:', error.message || error)
+            }
             return null
         }
     }
@@ -120,20 +126,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // 2. Setup listener for future changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!isMounted) return
-
-            // Avoid double-processing the INITIAL_SESSION event since we handled it in initializeAuth
             if (event === 'INITIAL_SESSION') return
 
-            if (isMounted) setUser(session?.user ?? null)
+            try {
+                if (isMounted) setUser(session?.user ?? null)
 
-            if (session?.user) {
-                const profileData = await fetchProfile(session.user.id)
-                if (isMounted) setProfile(profileData)
-            } else {
-                if (isMounted) setProfile(null)
+                if (session?.user) {
+                    const profileData = await fetchProfile(session.user.id)
+                    if (isMounted) setProfile(profileData)
+                } else {
+                    if (isMounted) setProfile(null)
+                }
+            } catch (e: any) {
+                // Swallow lock/abort errors from concurrent auth state changes
+                if (!e.message?.includes('Lock broken') && e.name !== 'AbortError') {
+                    console.error('[AuthContext] onAuthStateChange error:', e.message)
+                }
+            } finally {
+                if (isMounted) setLoading(false)
             }
-
-            if (isMounted) setLoading(false)
         })
 
         return () => {

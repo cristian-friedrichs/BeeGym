@@ -32,12 +32,14 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, profile, loading: authLoading } = useAuth();
-  const activeStatuses = ['active', 'trial'];
   const { status, hasFeature, loading: subLoading } = useSubscription();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
-  // Hard Blocking logic for payment
-  const isPendingPayment = status && !activeStatuses.includes(status.toLowerCase());
+  // Block ONLY on explicit hard failures — never on PENDING (could be an upgrade in progress).
+  // PENDING = new user waiting for first payment (handled by onboarding, not here).
+  // CANCELED / PAST_DUE = real access loss.
+  const BLOCKING_STATUSES = ['canceled', 'past_due', 'suspended'];
+  const isPendingPayment = !!status && BLOCKING_STATUSES.includes(status.toLowerCase());
 
   useEffect(() => {
     const checkAccess = async () => {
