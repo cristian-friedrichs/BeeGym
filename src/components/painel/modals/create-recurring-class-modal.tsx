@@ -13,7 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
-import { CLASS_TYPES, WEEKDAYS, DURATION_OPTIONS, TIME_SLOTS, type ClassType } from '@/lib/class-definitions';
+import { useAuth } from '@/lib/auth/AuthContext';
+import { CLASS_TYPES, WEEKDAYS, DURATION_OPTIONS, TIME_SLOTS, getClassType, type ClassType } from '@/lib/class-definitions';
 import {
     CalendarIcon, Clock, Home, Users, Hash, Palette,
     Dumbbell, Heart, Zap, Activity, Target, Flame, Bike, PersonStanding,
@@ -45,6 +46,15 @@ interface Instructor {
     avatar_url: string | null;
 }
 
+interface ClassTemplate {
+    id: string;
+    name: string;
+    duration_minutes: number;
+    color: string | null;
+    icon_name: string | null;
+    capacity: number | null;
+}
+
 
 
 // Local constants removed in favor of imported ones
@@ -71,9 +81,11 @@ PopoverContentWithoutPortal.displayName = PopoverPrimitive.Content.displayName
 export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initialDate, initialTime }: CreateRecurringClassModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
 
     const [rooms, setRooms] = useState<Room[]>([]);
     const [instructors, setInstructors] = useState<Instructor[]>([]);
+    const [classTemplates, setClassTemplates] = useState<ClassTemplate[]>([]);
     const [loading, setLoading] = useState(false);
 
     // Section 1: Basic Info
@@ -124,23 +136,13 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
     }, [startDate, endDate, isRecurring]);
 
     async function fetchData() {
+        if (!organizationId) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: userData } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!userData?.organization_id) return;
-
             // Fetch rooms
             const { data: roomsData } = await (supabase as any)
                 .from('rooms')
                 .select('id, name, capacity')
-                .eq('organization_id', userData.organization_id)
+                .eq('organization_id', organizationId)
                 .order('name');
 
             if (roomsData) setRooms(roomsData);
@@ -149,23 +151,32 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
             const { data: instructorsData } = await (supabase as any)
                 .from('instructors')
                 .select('id, name, user_id')
-                .eq('organization_id', userData.organization_id)
+                .eq('organization_id', organizationId)
                 .order('name');
 
             if (instructorsData) {
-                // Map to Instructor interface
                 const formattedInstructors = (instructorsData as any[]).map(i => ({
                     id: i.id,
                     full_name: i.name || 'Instrutor sem nome',
-                    avatar_url: null // Instructors table doesn't have avatar yet
+                    avatar_url: null
                 }));
                 setInstructors(formattedInstructors);
             }
+
+            // Fetch class templates
+            const { data: templatesData } = await (supabase as any)
+                .from('class_templates')
+                .select('id, name, duration_minutes, color, icon_name, capacity')
+                .eq('organization_id', organizationId)
+                .order('name');
+
+            if (templatesData) setClassTemplates(templatesData);
+
         } catch (error) {
             console.error('Error fetching data:', error);
             toast({
                 title: 'Erro ao carregar dados',
-                description: 'Não foi possível carregar salas e instrutores.',
+                description: 'Não foi possível carregar salas, instrutores e modalidades.',
                 variant: 'destructive',
             });
         }
@@ -247,16 +258,7 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
         setLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Usuário não autenticado');
-
-            const { data: userData } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!userData?.organization_id) throw new Error('Organização não encontrada');
+            if (!organizationId) throw new Error('Organização não encontrada');
 
             // Generate recurring events OR single event
             let eventDates: Date[] = [];
@@ -298,28 +300,29 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     title: className,
                     room_id: (selectedRoom && selectedRoom !== '_clear') ? selectedRoom : null,
                     instructor_id: selectedInstructor,
-                    organization_id: userData.organization_id,
-                    start_datetime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
-                    end_datetime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
+                    organization_id: organizationId,
+                    class_template_id: classType, // Using the template ID
+                    start_datetime: format(startDateTime, "yyyy-MM-dd HH:mm:ss"), // Use local format without offset
+                    end_datetime: format(endDateTime, "yyyy-MM-dd HH:mm:ss"), // Use local format without offset
                     capacity: capacityNum,
                     status: 'SCHEDULED',
-                    type: 'CLASS', // Always 'CLASS' — modality is stored in class_template_id relation
+                    type: 'CLASS',
                 };
             });
 
             // --- CONFLICT DETECTION START ---
             // 1. Determine the time range for the new batch
-            const sortedStarts = eventsToInsert.map(e => new Date(e.start_datetime).getTime()).sort((a, b) => a - b);
-            const sortedEnds = eventsToInsert.map(e => new Date(e.end_datetime).getTime()).sort((a, b) => a - b);
+            const sortedStarts = eventsToInsert.map(e => new Date(e.start_datetime.replace(' ', 'T')).getTime()).sort((a, b) => a - b);
+            const sortedEnds = eventsToInsert.map(e => new Date(e.end_datetime.replace(' ', 'T')).getTime()).sort((a, b) => a - b);
 
-            const minStart = format(new Date(sortedStarts[0]), "yyyy-MM-dd'T'HH:mm:ss");
-            const maxEnd = format(new Date(sortedEnds[sortedEnds.length - 1]), "yyyy-MM-dd'T'HH:mm:ss");
+            const minStart = eventsToInsert.reduce((min, e) => e.start_datetime < min ? e.start_datetime : min, eventsToInsert[0].start_datetime);
+            const maxEnd = eventsToInsert.reduce((max, e) => e.end_datetime > max ? e.end_datetime : max, eventsToInsert[0].end_datetime);
 
             // 2. Fetch existing events in this range
             const { data: existingEvents, error: conflictError } = await (supabase as any)
                 .from('calendar_events')
                 .select('id, title, start_datetime, end_datetime, room_id, instructor_id, status')
-                .eq('organization_id', userData.organization_id)
+                .eq('organization_id', organizationId)
                 .gte('end_datetime', minStart) // Ends after our batch starts
                 .lte('start_datetime', maxEnd); // Starts before our batch ends
 
@@ -337,8 +340,8 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     if (existing.status === 'CANCELLED') continue; // Ignore cancelled events
                     if (!existing.start_datetime || !existing.end_datetime) continue; // Skip if null
 
-                    const existingStart = new Date(existing.start_datetime).getTime();
-                    const existingEnd = new Date(existing.end_datetime).getTime();
+                    const existingStart = new Date(existing.start_datetime.replace(' ', 'T')).getTime();
+                    const existingEnd = new Date(existing.end_datetime.replace(' ', 'T')).getTime();
 
                     // Check time overlap
                     const isOverlapping = (newStart < existingEnd) && (newEnd > existingStart);
@@ -346,12 +349,12 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     if (isOverlapping) {
                         // Check Room Conflict
                         if (newRoomId && existing.room_id === newRoomId) {
-                            const dateStr = format(new Date(newEvent.start_datetime), "dd/MM 'às' HH:mm", { locale: ptBR });
+                            const dateStr = format(new Date(newEvent.start_datetime.replace(' ', 'T')), "dd/MM 'às' HH:mm", { locale: ptBR });
                             conflicts.push(`Sala ocupada: ${existing.title} em ${dateStr}`);
                         }
                         // Check Instructor Conflict
                         if (existing.instructor_id === selectedInstructor) {
-                            const dateStr = format(new Date(newEvent.start_datetime), "dd/MM 'às' HH:mm", { locale: ptBR });
+                            const dateStr = format(new Date(newEvent.start_datetime.replace(' ', 'T')), "dd/MM 'às' HH:mm", { locale: ptBR });
                             conflicts.push(`Instrutor ocupado: ${existing.title} em ${dateStr}`);
                         }
                     }
@@ -414,9 +417,28 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
         }
     }
 
-    const selectedClassType = CLASS_TYPES.find(t => t.value === classType);
-    const SelectedIconComponent = selectedClassType?.icon || Dumbbell;
-    const selectedColorValue = selectedClassType?.color || '#F59E0B';
+    const handleTemplateChange = (templateId: string) => {
+        setClassType(templateId);
+        const template = classTemplates.find(t => t.id === templateId);
+        if (template) {
+            // Se o nome atual estiver vazio ou for igual ao nome de outro template (não editado manualmente), atualiza
+            if (!className || classTemplates.some(t => t.name === className)) {
+                setClassName(template.name);
+            }
+            setSelectedDuration(template.duration_minutes.toString());
+            if (template.capacity) setCapacity(template.capacity.toString());
+        }
+    };
+
+    const selectedTemplate = classTemplates.find(t => t.id === classType);
+    const selectedClassInfo = selectedTemplate ? {
+        label: selectedTemplate.name,
+        color: selectedTemplate.color || '#F59E0B',
+        icon: (getClassType(null, selectedTemplate.icon_name || selectedTemplate.name)).icon
+    } : null;
+
+    const SelectedIconComponent = selectedClassInfo?.icon || Dumbbell;
+    const selectedColorValue = selectedClassInfo?.color || '#F59E0B';
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -508,42 +530,38 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                         </h3>
 
                         <div className="space-y-2">
-                            <Label htmlFor="classType" className="font-sans font-medium text-sm">Tipo *</Label>
-                            <Select value={classType} onValueChange={setClassType}>
+                            <Label htmlFor="classType" className="font-sans font-medium text-sm">Modalidade *</Label>
+                            <Select value={classType} onValueChange={handleTemplateChange}>
                                 <SelectTrigger id="classType" className="h-11 text-[11px] font-bold uppercase tracking-wider border-slate-100 bg-white shadow-sm rounded-xl focus:ring-1 focus:ring-orange-200 transition-all hover:border-slate-200">
-                                    <SelectValue placeholder="Selecione o tipo de aula">
-                                        {classType && (() => {
-                                            const selected = CLASS_TYPES.find(t => t.value === classType);
-                                            if (!selected) return null;
-                                            const Icon = selected.icon;
-                                            return (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: selected.color + '20' }}>
-                                                        <Icon className="h-4 w-4" style={{ color: selected.color }} />
-                                                    </div>
-                                                    <span>{selected.label}</span>
+                                    <SelectValue placeholder="Selecione a modalidade">
+                                        {selectedClassInfo && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: selectedClassInfo.color + '20' }}>
+                                                    <selectedClassInfo.icon className="h-4 w-4" style={{ color: selectedClassInfo.color }} />
                                                 </div>
-                                            );
-                                        })()}
+                                                <span>{selectedClassInfo.label}</span>
+                                            </div>
+                                        )}
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {CLASS_TYPES.map((type) => {
-                                        const Icon = type.icon;
+                                    {classTemplates.map((template) => {
+                                        const classInfo = getClassType(null, template.icon_name || template.name);
+                                        const Icon = classInfo.icon;
                                         return (
-                                            <SelectItem key={type.value} value={type.value}>
+                                            <SelectItem key={template.id} value={template.id}>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: type.color + '20' }}>
-                                                        <Icon className="h-4 w-4" style={{ color: type.color }} />
+                                                    <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: (template.color || classInfo.color) + '20' }}>
+                                                        <Icon className="h-4 w-4" style={{ color: template.color || classInfo.color }} />
                                                     </div>
-                                                    <span>{type.label}</span>
+                                                    <span>{template.name}</span>
                                                 </div>
                                             </SelectItem>
                                         );
                                     })}
                                 </SelectContent>
                             </Select>
-                            <p className="text-xs text-muted-foreground">Cada tipo tem ícone e cor pré-definidos</p>
+                            <p className="text-xs text-muted-foreground">Selecione uma modalidade cadastrada no sistema</p>
                         </div>
                     </div>
 

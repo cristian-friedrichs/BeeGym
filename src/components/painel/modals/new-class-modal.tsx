@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import {
     CalendarIcon,
     Clock,
@@ -26,15 +33,13 @@ import {
     Waves,
     Music,
     MoreHorizontal,
-    X,
-    Check,
-    Save,
     Loader2,
     type LucideIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { getClassType } from '@/lib/class-definitions';
 
 interface NewClassModalProps {
     open: boolean;
@@ -54,24 +59,16 @@ interface Instructor {
     avatar_url: string | null;
 }
 
-interface ClassType {
-    value: string;
-    label: string;
-    icon: LucideIcon;
-    color: string;
+interface ClassTemplate {
+    id: string;
+    name: string;
+    duration_minutes: number;
+    color: string | null;
+    icon_name: string | null;
+    capacity: number | null;
 }
 
-const CLASS_TYPES: ClassType[] = [
-    { value: 'yoga', label: 'Yoga', icon: Heart, color: '#10B981' },
-    { value: 'pilates', label: 'Pilates', icon: Sparkles, color: '#8B5CF6' },
-    { value: 'crossfit', label: 'Crossfit', icon: Zap, color: '#EF4444' },
-    { value: 'musculacao', label: 'Musculação', icon: Dumbbell, color: '#F59E0B' },
-    { value: 'spinning', label: 'Spinning', icon: Activity, color: '#3B82F6' },
-    { value: 'funcional', label: 'Funcional', icon: Target, color: '#EC4899' },
-    { value: 'natacao', label: 'Natação', icon: Waves, color: '#06B6D4' },
-    { value: 'danca', label: 'Dança', icon: Music, color: '#F97316' },
-    { value: 'outro', label: 'Outro', icon: MoreHorizontal, color: '#6B7280' },
-];
+// Local constants removed or moved to lib/class-definitions
 
 const DURATION_OPTIONS = [
     { value: '30', label: '30 minutos' },
@@ -90,9 +87,11 @@ const TIME_SLOTS = [
 export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
 
     const [rooms, setRooms] = useState<Room[]>([]);
     const [instructors, setInstructors] = useState<Instructor[]>([]);
+    const [classTemplates, setClassTemplates] = useState<ClassTemplate[]>([]);
     const [loading, setLoading] = useState(false);
 
     const [classType, setClassType] = useState<string>('');
@@ -111,23 +110,12 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
     }, [open]);
 
     async function fetchData() {
+        if (!organizationId) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: userData } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!(userData as any)?.organization_id) return;
-
-            // Fetch rooms
             const { data: roomsData } = await (supabase as any)
                 .from('rooms')
                 .select('id, name, capacity')
-                .eq('organization_id', (userData as any).organization_id)
+                .eq('organization_id', organizationId)
                 .order('name');
 
             if (roomsData) setRooms((roomsData as any[]).map(r => ({
@@ -136,30 +124,41 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
                 capacity: r.capacity || 0
             })));
 
-            // Fetch instructors
             const { data: instructorsData } = await (supabase as any)
-                .from('profiles')
-                .select('id, full_name, avatar_url')
-                .eq('organization_id', (userData as any).organization_id)
-                .order('full_name');
+                .from('instructors')
+                .select('id, name')
+                .eq('organization_id', organizationId)
+                .order('name');
 
             if (instructorsData) setInstructors((instructorsData as any[]).map(i => ({
                 id: i.id,
-                full_name: i.full_name || 'Instrutor',
-                avatar_url: i.avatar_url || null
+                full_name: i.name || 'Instrutor',
+                avatar_url: null
             })));
+
+            const { data: templatesData } = await (supabase as any)
+                .from('class_templates')
+                .select('id, name, duration_minutes, color, icon_name, capacity')
+                .eq('organization_id', organizationId)
+                .order('name');
+
+            if (templatesData) setClassTemplates(templatesData);
         } catch (error) {
             console.error('Error fetching data:', error);
-            toast({
-                title: 'Erro ao carregar dados',
-                description: 'Não foi possível carregar salas e instrutores.',
-                variant: 'destructive',
-            });
         }
     }
 
+    const handleTemplateChange = (templateId: string) => {
+        setClassType(templateId);
+        const template = classTemplates.find(t => t.id === templateId);
+        if (template) {
+            setClassName(template.name);
+            setSelectedDuration(template.duration_minutes.toString());
+            if (template.capacity) setCapacity(template.capacity.toString());
+        }
+    };
+
     async function handleSubmit() {
-        // Validation
         if (!classType || !className || !selectedRoom || !selectedInstructor || !capacity || !selectedDate || !selectedTime || !selectedDuration) {
             toast({
                 title: 'Campos obrigatórios',
@@ -179,7 +178,6 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
             return;
         }
 
-        // Check if capacity exceeds room capacity
         const selectedRoomData = rooms.find(r => r.id === selectedRoom);
         const roomCapacity = selectedRoomData?.capacity || 0;
         if (selectedRoomData && roomCapacity > 0 && capacityNum > roomCapacity) {
@@ -194,16 +192,7 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
         setLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Usuário não autenticado');
-
-            const { data: userData } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!(userData as any)?.organization_id) throw new Error('Organização não encontrada');
+            if (!organizationId) throw new Error('Organização não encontrada');
 
             const startDateTime = new Date(selectedDate);
             const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -218,9 +207,10 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
                     title: className,
                     room_id: selectedRoom,
                     instructor_id: selectedInstructor,
-                    organization_id: (userData as any).organization_id,
-                    start_datetime: startDateTime.toISOString(),
-                    end_datetime: endDateTime.toISOString(),
+                    organization_id: organizationId,
+                    class_template_id: classType,
+                    start_datetime: format(startDateTime, "yyyy-MM-dd HH:mm:ss"),
+                    end_datetime: format(endDateTime, "yyyy-MM-dd HH:mm:ss"),
                     capacity: capacityNum,
                     type: 'CLASS',
                     status: 'SCHEDULED',
@@ -229,27 +219,17 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
             if (error) throw error;
 
             toast({
-                title: 'Aula criada!',
-                description: 'A aula foi agendada com sucesso.',
+                title: 'Aula agendada!',
+                description: 'A aula foi criada com sucesso.',
             });
-
-            // Reset form
-            setClassType('');
-            setClassName('');
-            setSelectedRoom('');
-            setSelectedInstructor('');
-            setCapacity('');
-            setSelectedDate(undefined);
-            setSelectedTime('');
-            setSelectedDuration('60');
 
             onSuccess?.();
             onOpenChange(false);
         } catch (error) {
             console.error('Error creating class:', error);
             toast({
-                title: 'Erro ao criar aula',
-                description: 'Não foi possível agendar a aula. Tente novamente.',
+                title: 'Erro ao agendar aula',
+                description: 'Não foi possível salvar os dados.',
                 variant: 'destructive',
             });
         } finally {
@@ -257,239 +237,195 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
         }
     }
 
+    const labelCls = "text-sm font-medium text-slate-700";
+    const fieldCls = "h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0";
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
-                <SheetHeader className="p-8 border-b relative overflow-hidden shrink-0 bg-white">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-bee-amber/[0.03] rounded-full -mr-32 -mt-32 blur-3xl opacity-50" />
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl bg-white rounded-3xl">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-50">
+                    <DialogTitle className="text-xl font-bold text-slate-900">
+                        Agendar Nova Aula
+                    </DialogTitle>
+                    <DialogDescription className="text-slate-500">
+                        Preencha as informações para criar uma nova turma.
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <div className="flex items-center gap-5 relative text-left">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-bee-amber/10 bg-bee-amber/5 text-bee-amber shadow-inner">
-                            <CalendarIcon className="h-8 w-8" />
-                        </div>
-                        <div className="space-y-1">
-                            <SheetTitle className="text-2xl font-bold font-display tracking-tight text-bee-midnight leading-tight">
-                                Agendar Aula
-                            </SheetTitle>
-                            <SheetDescription className="flex items-center gap-2 text-sm font-medium text-slate-500">
-                                <Badge variant="outline" className="bg-bee-amber/10 text-bee-amber border-bee-amber/30 font-bold uppercase tracking-wider text-[10px] px-2.5 py-0.5 rounded-full font-sans">
-                                    Coletiva
-                                </Badge>
-                                <span>Crie uma nova turma para os alunos</span>
-                            </SheetDescription>
-                        </div>
-                    </div>
-                </SheetHeader>
-
-                <div className="flex-1 p-8 pt-6 space-y-6 overflow-y-auto">
-                    <div className="grid grid-cols-1 gap-6">
-                        {/* Class Type & Name row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="classType" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Tipo de Aula *
-                                </Label>
-                                <Select value={classType} onValueChange={setClassType}>
-                                    <SelectTrigger id="classType" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
-                                        <SelectValue placeholder="Selecione..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {CLASS_TYPES.map((type) => {
-                                            const Icon = type.icon;
-                                            return (
-                                                <SelectItem key={type.value} value={type.value}>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="flex items-center justify-center w-6 h-6 rounded" style={{ backgroundColor: type.color + '20' }}>
-                                                            <Icon className="h-4 w-4" style={{ color: type.color }} />
-                                                        </div>
-                                                        <span className="text-sm">{type.label}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            );
-                                        })}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="className" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Nome da Aula *
-                                </Label>
-                                <div className="relative">
-                                    <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                    <Input
-                                        id="className"
-                                        placeholder="Ex: Yoga Matinal"
-                                        value={className}
-                                        onChange={(e) => setClassName(e.target.value)}
-                                        className="h-11 pl-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all font-medium"
-                                    />
-                                </div>
-                            </div>
+                <div className="p-6 space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Modalidade</Label>
+                            <Select value={classType} onValueChange={handleTemplateChange}>
+                                <SelectTrigger className={fieldCls}>
+                                    <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {classTemplates.map((template) => {
+                                        const classInfo = getClassType(null, template.icon_name || template.name);
+                                        const Icon = classInfo.icon;
+                                        return (
+                                            <SelectItem key={template.id} value={template.id}>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: template.color || classInfo.color }} />
+                                                    <Icon className="h-3.5 w-3.5 text-slate-400" />
+                                                    <span>{template.name}</span>
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        {/* Room & Instructor row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="room" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Sala *
-                                </Label>
-                                <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                                    <SelectTrigger id="room" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
-                                        <div className="flex items-center gap-2">
-                                            <Home className="h-4 w-4 text-slate-400" />
-                                            <SelectValue placeholder="Onde?" />
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {rooms.map((room) => (
-                                            <SelectItem key={room.id} value={room.id}>
-                                                {room.name} {room.capacity && room.capacity > 0 ? `(${room.capacity} cap.)` : '(Ilimitado)'}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="instructor" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Instrutor *
-                                </Label>
-                                <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
-                                    <SelectTrigger id="instructor" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
-                                        <div className="flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-slate-400" />
-                                            <SelectValue placeholder="Quem?" />
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {instructors.map((instructor) => (
-                                            <SelectItem key={instructor.id} value={instructor.id}>
-                                                {instructor.full_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        {/* Date, Time, Duration, Cap */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Data *
-                                </Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn(
-                                                'w-full h-11 justify-start text-left border-slate-100 bg-slate-50/50 rounded-xl font-medium',
-                                                !selectedDate && 'text-slate-400'
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                                            {selectedDate ? format(selectedDate, 'dd/MM', { locale: ptBR }) : 'Data'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={selectedDate}
-                                            onSelect={setSelectedDate}
-                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="time" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Início *
-                                </Label>
-                                <Select value={selectedTime} onValueChange={setSelectedTime}>
-                                    <SelectTrigger id="time" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
-                                        <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4 text-slate-400" />
-                                            <SelectValue placeholder="Hora" />
-                                        </div>
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[200px]">
-                                        {TIME_SLOTS.map((time) => (
-                                            <SelectItem key={time} value={time}>
-                                                {time}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="duration" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Tempo *
-                                </Label>
-                                <Select value={selectedDuration} onValueChange={setSelectedDuration}>
-                                    <SelectTrigger id="duration" className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all">
-                                        <SelectValue placeholder="Dur..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {DURATION_OPTIONS.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="capacity" className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">
-                                    Capacidade *
-                                </Label>
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Nome da aula</Label>
+                            <div className="relative">
+                                <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                                 <Input
-                                    id="capacity"
-                                    type="number"
-                                    min="1"
-                                    placeholder="Máx"
-                                    value={capacity}
-                                    onChange={(e) => setCapacity(e.target.value)}
-                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-xl focus:ring-2 focus:ring-bee-amber/10 focus:border-bee-amber/30 transition-all font-medium"
+                                    placeholder="Ex: Yoga Matinal"
+                                    value={className}
+                                    onChange={(e) => setClassName(e.target.value)}
+                                    className={cn(fieldCls, "pl-9")}
                                 />
                             </div>
                         </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Sala</Label>
+                            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
+                                <SelectTrigger className={fieldCls}>
+                                    <div className="flex items-center gap-2">
+                                        <Home className="h-3.5 w-3.5 text-slate-400" />
+                                        <SelectValue placeholder="Selecione a sala" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {rooms.map((room) => (
+                                        <SelectItem key={room.id} value={room.id}>
+                                            {room.name} {room.capacity ? `(${room.capacity} cap.)` : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Instrutor</Label>
+                            <Select value={selectedInstructor} onValueChange={setSelectedInstructor}>
+                                <SelectTrigger className={fieldCls}>
+                                    <div className="flex items-center gap-2">
+                                        <Users className="h-3.5 w-3.5 text-slate-400" />
+                                        <SelectValue placeholder="Selecione o instrutor" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {instructors.map((instructor) => (
+                                        <SelectItem key={instructor.id} value={instructor.id}>
+                                            {instructor.full_name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className={labelCls}>Data</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(fieldCls, "w-full justify-start font-normal", !selectedDate && "text-slate-400")}
+                                    >
+                                        <CalendarIcon className="mr-2 h-3.5 w-3.5 text-slate-400" />
+                                        {selectedDate ? format(selectedDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Selecione...'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Início</Label>
+                                <Select value={selectedTime} onValueChange={setSelectedTime}>
+                                    <SelectTrigger className={fieldCls}>
+                                        <SelectValue placeholder="00:00" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px]">
+                                        {TIME_SLOTS.map((time) => (
+                                            <SelectItem key={time} value={time}>{time}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Capacidade</Label>
+                                <Input
+                                    type="number"
+                                    min="1"
+                                    placeholder="0"
+                                    value={capacity}
+                                    onChange={(e) => setCapacity(e.target.value)}
+                                    className={fieldCls}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <Label className={labelCls}>Duração</Label>
+                        <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                            <SelectTrigger className={fieldCls}>
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                    <SelectValue placeholder="Duração" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {DURATION_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
-                <SheetFooter className="p-8 bg-slate-50/50 border-t shrink-0 flex flex-row items-center gap-3 sm:justify-end">
+                <DialogFooter className="px-6 pb-6 pt-4 border-t border-slate-50 flex items-center justify-between sm:justify-between">
                     <Button
                         variant="ghost"
                         onClick={() => onOpenChange(false)}
-                        disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-500 hover:bg-slate-100 font-bold h-10 rounded-full uppercase text-xs"
+                        className="rounded-full text-slate-500 hover:text-slate-700 h-9 px-5"
                     >
-                        <X className="mr-2 h-4 w-4" />
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-xs px-8"
+                        className="bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-bold h-9 px-8 shadow-sm"
                     >
                         {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Criando...
-                            </>
+                            <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                            <>
-                                <Save className="mr-2 h-4 w-4" />
-                                Criar Aula
-                            </>
+                            'Agendar Aula'
                         )}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

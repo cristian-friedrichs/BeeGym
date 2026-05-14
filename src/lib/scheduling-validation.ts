@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 /**
  * Scheduling Validation Utilities
  * Reusable functions for time parsing, conflict detection, and capacity management
@@ -140,10 +142,10 @@ export function hasConflict(
     newBooking: { date: Date; startTime: string; endTime: string },
     existingBookings: Booking[]
 ): { hasConflict: boolean; conflictingBooking?: Booking } {
-    const newDateStr = newBooking.date.toISOString().split('T')[0];
+    const newDateStr = format(newBooking.date, 'yyyy-MM-dd');
 
     for (const booking of existingBookings) {
-        const bookingDateStr = new Date(booking.date).toISOString().split('T')[0];
+        const bookingDateStr = format(new Date(booking.date), 'yyyy-MM-dd');
 
         // Only check bookings on the same day
         if (bookingDateStr !== newDateStr) continue;
@@ -167,11 +169,11 @@ export function countBookingsInSlot(
     endTime: string,
     existingBookings: Booking[]
 ): number {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, 'yyyy-MM-dd');
     let count = 0;
 
     for (const booking of existingBookings) {
-        const bookingDateStr = new Date(booking.date).toISOString().split('T')[0];
+        const bookingDateStr = format(new Date(booking.date), 'yyyy-MM-dd');
 
         if (bookingDateStr !== dateStr) continue;
 

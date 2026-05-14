@@ -13,17 +13,19 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import { startOfDay, endOfDay, isWithinInterval } from "date-fns";
+import { startOfDay, endOfDay, isWithinInterval, format, subDays } from "date-fns";
 import { Badge } from '@/components/ui/badge';
-import { ClassModal } from '@/components/painel/modals/class-modal';
-import { EventDetailsModal } from '@/components/painel/modals/event-details-modal';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
-import { format } from 'date-fns';
+
+const ClassModal = dynamic(() => import('@/components/painel/modals/class-modal').then(m => ({ default: m.ClassModal })), { ssr: false });
+const EventDetailsModal = dynamic(() => import('@/components/painel/modals/event-details-modal').then(m => ({ default: m.EventDetailsModal })), { ssr: false });
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { getClassType } from '@/lib/class-definitions';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useSetupStatus } from '@/context/SetupStatusContext';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 // Helper para renderizar ícone dinâmico
 // --- COMPONENTE BLINDADO ---
@@ -74,6 +76,7 @@ interface ClassEvent {
 
 export default function ClassesPage() {
   const router = useRouter();
+  const { organizationId } = useAuth();
   const { hasFeature, loading: subLoading } = useSubscription();
   const { hasBusinessData, hasInstructor, hasPlan, hasStudent, refresh: refreshSetup } = useSetupStatus();
   const aulaBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasPlan ? 'Plano' : !hasInstructor ? 'Instrutor' : !hasStudent ? 'Aluno' : null;
@@ -111,29 +114,18 @@ export default function ClassesPage() {
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
-    fetchClasses();
-  }, []);
+    if (organizationId) fetchClasses();
+  }, [organizationId]);
 
   const fetchClasses = async () => {
+    if (!organizationId) return;
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      // Trigger status update (SCHEDULED → IN_PROGRESS → COMPLETED) before fetching
-      await supabase.rpc('update_class_statuses' as any);
+      // Trigger status update (best effort — non-blocking)
+      try { await supabase.rpc('update_class_statuses' as any); } catch {}
 
-      const { data: profile } = await (supabase as any)
-        .from('profiles')
-        .select('organization_id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile || !profile.organization_id) {
-        console.warn("Usuário sem organização vinculada.");
-        return;
-      }
-      const orgId = profile.organization_id;
+      const orgId = organizationId;
 
       // 2. Query com Relacionamentos (JOINS) Restaurados + Template
       // Fetch com order ASC para pegar as próximas
@@ -150,7 +142,7 @@ export default function ClassesPage() {
         .eq('type', 'CLASS') // Only calendar event classes
         // Optimization: Fetch classes ending from 24h ago onwards to include Running & Recent, 
         // preventing ancient history from pushing current classes out of the default limit.
-        .gte('end_datetime', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .gte('end_datetime', format(subDays(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'))
         .order('start_datetime', { ascending: true }); // Crescente: Mais perto do agora -> Futuro
 
       if (error) {

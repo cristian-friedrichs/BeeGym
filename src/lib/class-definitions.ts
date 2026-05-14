@@ -105,6 +105,72 @@ export function getClassType(typeValue: string | null, title?: string) {
   return CLASS_TYPES.find(t => t.value === 'funcional') || CLASS_TYPES[0];
 }
 
+// ── Workout-type → icon mapping (used for individual workouts with a "type" field) ──
+// Maps Portuguese workout type names to CLASS_TYPES entries so the same icon
+// is used everywhere a type like "Hipertrofia" or "Cardio" appears.
+const WORKOUT_TYPE_MAP: Record<string, string> = {
+    'hipertrofia':   'musculacao',
+    'musculação':    'musculacao',
+    'musculacao':    'musculacao',
+    'força':         'musculacao',
+    'forca':         'musculacao',
+    'cardio':        'cardio',
+    'aeróbico':      'cardio',
+    'aerobico':      'cardio',
+    'crossfit':      'crossfit',
+    'pilates':       'pilates',
+    'yoga':          'yoga',
+    'spinning':      'spinning',
+    'ciclismo':      'spinning',
+    'funcional':     'funcional',
+    'natação':       'natacao',
+    'natacao':       'natacao',
+    'boxe':          'boxe',
+    'muay thai':     'boxe',
+    'jiu-jitsu':     'boxe',
+    'corrida':       'corrida',
+    'caminhada':     'corrida',
+    'dança':         'danca',
+    'danca':         'danca',
+    'zumba':         'danca',
+    'hiit':          'hiit',
+    'fisioterapia':  'fisioterapia',
+    'reabilitação':  'fisioterapia',
+    'alongamento':   'pilates',
+    'mobilidade':    'pilates',
+    'avaliação física': 'fisioterapia',
+};
+
+/**
+ * Returns the icon/color info for any activity — works for both class types
+ * (e.g. "crossfit") and workout types (e.g. "Hipertrofia").
+ * Use this everywhere instead of hardcoding Dumbbell/Users.
+ */
+export function getActivityInfo(
+    type?: string | null,
+    title?: string | null,
+    isCollective?: boolean
+): { icon: any; iconName: string; color: string; label: string } {
+    // Collective events with no specific type → Users icon
+    if (isCollective && !type && !title) {
+        return { icon: Dumbbell, iconName: 'Users', color: '#06B6D4', label: 'Aula' };
+    }
+
+    // 1. Try workout type map (Portuguese names)
+    if (type) {
+        const key = type.toLowerCase().trim();
+        const mapped = WORKOUT_TYPE_MAP[key];
+        if (mapped) {
+            const ct = CLASS_TYPES.find(t => t.value === mapped);
+            if (ct) return { icon: ct.icon, iconName: ct.iconName, color: ct.color, label: ct.label };
+        }
+    }
+
+    // 2. Fall back to getClassType (handles class template values and title fuzzy match)
+    const ct = getClassType(type, title || undefined);
+    return { icon: ct.icon, iconName: ct.iconName, color: ct.color, label: ct.label };
+}
+
 // --- LEGACY EXPORTS (Restored for backward compatibility with CalendarPage) ---
 
 export type RecurringClass = {

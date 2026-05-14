@@ -39,15 +39,17 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { WorkoutModal } from '@/components/treinos/workout-modal';
-import { ClassModal } from '@/components/painel/modals/class-modal';
-import { CreateRecurringClassModal } from '@/components/painel/modals/create-recurring-class-modal';
-import { EventDetailsModal } from '@/components/painel/modals/event-details-modal';
+import dynamic from 'next/dynamic';
 import { SectionHeader } from '@/components/ui/section-header';
 import { getClassType } from '@/lib/class-definitions';
-
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { NewEventSelectionDialog } from '@/components/painel/modals/new-event-selection-dialog';
+
+const WorkoutModal = dynamic(() => import('@/components/treinos/workout-modal').then(m => ({ default: m.WorkoutModal })), { ssr: false });
+const ClassModal = dynamic(() => import('@/components/painel/modals/class-modal').then(m => ({ default: m.ClassModal })), { ssr: false });
+const CreateRecurringClassModal = dynamic(() => import('@/components/painel/modals/create-recurring-class-modal').then(m => ({ default: m.CreateRecurringClassModal })), { ssr: false });
+const EventDetailsModal = dynamic(() => import('@/components/painel/modals/event-details-modal').then(m => ({ default: m.EventDetailsModal })), { ssr: false });
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const WEEK_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -282,6 +284,7 @@ TimeGridCard.displayName = 'TimeGridCard';
 export default function CalendarPage() {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
 
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<'day' | 'week' | 'month'>('week');
@@ -327,26 +330,21 @@ export default function CalendarPage() {
 
     // ── Data Fetching ─────────────────────────────────────────────────────────
     useEffect(() => {
+        if (!organizationId) return;
         const fetchAllEvents = async () => {
             setIsLoading(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
+                const orgId = organizationId;
 
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('organization_id')
-                    .eq('id', user.id)
-                    .single();
+                // Trigger status transitions before fetching (best effort — non-blocking)
+                try {
+                    await supabase.rpc('update_class_statuses' as any);
+                } catch {
+                    // RPC may not be cached by PostgREST yet — ignore and continue
+                }
 
-                if (!profile || !(profile as any).organization_id) return;
-                const orgId = (profile as any).organization_id;
-
-                // Trigger status transitions before fetching
-                await supabase.rpc('update_class_statuses' as any);
-
-                const viewStart = startOfWeek(startOfMonth(currentDate), { locale: ptBR }).toISOString();
-                const viewEnd = endOfWeek(endOfMonth(currentDate), { locale: ptBR }).toISOString();
+                const viewStart = format(startOfWeek(startOfMonth(currentDate), { locale: ptBR }), "yyyy-MM-dd HH:mm:ss");
+                const viewEnd = format(endOfWeek(endOfMonth(currentDate), { locale: ptBR }), "yyyy-MM-dd HH:mm:ss");
 
                 // ── 1. Classes (calendar_events) ──────────────────────────────
                 const { data: classRows, error: classErr } = await supabase
@@ -476,7 +474,7 @@ export default function CalendarPage() {
         };
 
         fetchAllEvents();
-    }, [currentDate, lastUpdate]);
+    }, [currentDate, lastUpdate, organizationId]);
 
     // ── Navigation ────────────────────────────────────────────────────────────
     const handlePrev = () => {

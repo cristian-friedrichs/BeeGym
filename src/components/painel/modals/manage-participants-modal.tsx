@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Trash2, Users, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -50,6 +51,7 @@ export function ManageParticipantsModal({
 }: ManageParticipantsModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
 
     const [loading, setLoading] = useState(false);
     const [participants, setParticipants] = useState<Participant[]>([]);
@@ -103,22 +105,12 @@ export function ManageParticipantsModal({
     }
 
     async function fetchStudents() {
+        if (!organizationId) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: userData } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!userData?.organization_id) return;
-
             const { data, error } = await (supabase as any)
                 .from('students')
                 .select('id, full_name, avatar_url')
-                .eq('organization_id', userData.organization_id)
+                .eq('organization_id', organizationId)
                 .eq('status', 'ACTIVE')
                 .order('full_name');
 

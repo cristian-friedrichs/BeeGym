@@ -15,10 +15,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { format, addMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
+import { CLASS_TYPES } from '@/lib/class-definitions';
 
 interface ClassModalProps {
     open: boolean;
@@ -38,6 +41,7 @@ const labelCls = 'text-sm font-medium text-slate-700';
 export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initialTime, eventId }: ClassModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
     const [loading, setLoading] = useState(false);
 
     const [rooms, setRooms] = useState<Room[]>([]);
@@ -53,6 +57,29 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     const [time, setTime] = useState('08:00');
     const [duration, setDuration] = useState('60');
 
+    const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
+    const isDirty = useMemo(() => {
+        if (!open) return false;
+        return (
+            title !== '' ||
+            selectedTemplateId !== null ||
+            selectedRoom !== '' ||
+            selectedInstructor !== '' ||
+            capacity !== '' ||
+            time !== (initialTime || '08:00') ||
+            duration !== '60'
+        );
+    }, [open, title, selectedTemplateId, selectedRoom, selectedInstructor, capacity, time, duration, initialTime]);
+
+    const handleCloseAttempt = () => {
+        if (isDirty) {
+            setShowDiscardDialog(true);
+        } else {
+            onOpenChange(false);
+        }
+    };
+
     const timeSlots = useMemo(() => {
         const slots = [];
         for (let i = 6; i <= 23; i++) {
@@ -67,21 +94,18 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
         setDate(initialDate || new Date());
         setTime(initialTime || '08:00');
         setTitle('');
-        setSelectedTemplateId(null);
+        setSelectedTemplateId('');
         setSelectedRoom('');
         setSelectedInstructor('');
         setCapacity('');
         setDuration('60');
         fetchData();
-    }, [open]);
+    }, [open, initialDate, initialTime]);
 
     async function fetchData() {
+        if (!organizationId) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
-            if (!(profile as any)?.organization_id) return;
-            const orgId = (profile as any).organization_id;
+            const orgId = organizationId;
 
             const [{ data: roomsData }, { data: instructorsData }, { data: templatesData }] = await Promise.all([
                 (supabase as any).from('rooms').select('id, name, capacity').eq('organization_id', orgId).order('name'),
@@ -105,11 +129,8 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
 
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Não autenticado');
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
-            if (!(profile as any)?.organization_id) throw new Error('Organização não encontrada');
-            const orgId = (profile as any).organization_id;
+            if (!organizationId) throw new Error('Organização não encontrada');
+            const orgId = organizationId;
 
             const dateStr = format(date, 'yyyy-MM-dd');
             const startDateTime = new Date(`${dateStr}T${time}:00`);
@@ -120,9 +141,9 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 organization_id: orgId,
                 instructor_id: selectedInstructor || null,
                 room_id: selectedRoom || null,
-                class_template_id: selectedTemplateId || null,
-                start_datetime: format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
-                end_datetime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss"),
+                class_template_id: templates.some(t => t.id === selectedTemplateId) ? selectedTemplateId : null,
+                start_datetime: format(startDateTime, "yyyy-MM-dd HH:mm:ss"),
+                end_datetime: format(endDateTime, "yyyy-MM-dd HH:mm:ss"),
                 capacity: parseInt(capacity) || null,
                 type: 'CLASS',
                 status: 'SCHEDULED',
@@ -142,8 +163,9 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden">
+        <>
+            <Dialog open={open} onOpenChange={handleCloseAttempt}>
+                <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden">
 
                 {/* Header */}
                 <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
@@ -163,10 +185,17 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                                 value={selectedTemplateId || ''}
                                 onValueChange={v => {
                                     setSelectedTemplateId(v);
+                                    // First try to find in templates
                                     const template = templates.find(t => t.id === v);
                                     if (template) {
                                         setTitle(template.title);
                                         if (template.duration_minutes) setDuration(template.duration_minutes.toString());
+                                    } else {
+                                        // Then try in standard types
+                                        const type = CLASS_TYPES.find(t => t.value === v);
+                                        if (type) {
+                                            setTitle(type.label);
+                                        }
                                     }
                                 }}
                             >
@@ -174,12 +203,24 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                                     <SelectValue placeholder="Selecione…" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {templates.map(t => (
-                                        <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
-                                    ))}
-                                    {templates.length === 0 && (
-                                        <div className="px-4 py-3 text-sm text-slate-400 text-center">Nenhuma modalidade cadastrada.</div>
+                                    {templates.length > 0 && (
+                                        <>
+                                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Seus Modelos</div>
+                                            {templates.map(t => (
+                                                <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+                                            ))}
+                                            <hr className="my-1 border-slate-100" />
+                                        </>
                                     )}
+                                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">Padrão</div>
+                                    {CLASS_TYPES.map(type => (
+                                        <SelectItem key={type.value} value={type.value}>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: type.color }} />
+                                                {type.label}
+                                            </div>
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -298,7 +339,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                     <Button
                         variant="outline"
-                        onClick={() => onOpenChange(false)}
+                        onClick={handleCloseAttempt}
                         disabled={loading}
                         className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
                     >
@@ -315,5 +356,15 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
 
             </DialogContent>
         </Dialog>
+
+            <ConfirmDiscardDialog
+                open={showDiscardDialog}
+                onOpenChange={setShowDiscardDialog}
+                onConfirm={() => {
+                    setShowDiscardDialog(false);
+                    onOpenChange(false);
+                }}
+            />
+        </>
     );
 }
