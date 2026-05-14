@@ -167,7 +167,7 @@ export function getActivityInfo(
     }
 
     // 2. Fall back to getClassType (handles class template values and title fuzzy match)
-    const ct = getClassType(type, title || undefined);
+    const ct = getClassType(type ?? null, title || undefined);
     return { icon: ct.icon, iconName: ct.iconName, color: ct.color, label: ct.label };
 }
 
