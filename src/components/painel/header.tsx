@@ -231,21 +231,14 @@ export function Header({ className }: { className?: string }) {
     const storedLang = localStorage.getItem('lang') || 'PT';
     setLanguage(storedLang);
 
-    const applyTheme = (t: string) => {
-      let isDark;
-      if (t === 'system') {
-        isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      } else {
-        isDark = t === 'dark';
-      }
+    // Dark mode removed — always force light
+    document.documentElement.classList.remove('dark');
+    localStorage.removeItem('theme');
+    setEffectiveTheme('light');
 
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-        setEffectiveTheme('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-        setEffectiveTheme('light');
-      }
+    const applyTheme = (_t: string) => {
+      document.documentElement.classList.remove('dark');
+      setEffectiveTheme('light');
     };
 
     applyTheme(storedTheme);
@@ -362,23 +355,6 @@ export function Header({ className }: { className?: string }) {
       <div className="flex items-center gap-1 md:gap-2">
         {mounted && (
           <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95">
-                  <ThemeIcon className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{t.theme}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v as any)}>
-                  <DropdownMenuRadioItem value="light">{t.light}</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark">{t.dark}</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="system">{t.system}</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="relative p-2 rounded-full text-muted-foreground hover:text-primary transition-all hover:-translate-y-0.5 active:scale-95 flex items-center gap-1">

@@ -136,7 +136,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   if (isAuthorized === null) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark">
+      <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-bee-amber" />
       </div>
     );
@@ -144,7 +144,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
 
   if (isAuthorized === false) {
     return (
-      <div className="flex flex-col h-screen w-full items-center justify-center bg-background-light dark:bg-background-dark p-6 text-center">
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-background p-6 text-center">
          <Loader2 className="w-8 h-8 animate-spin text-bee-amber mb-4" />
          <h2 className="text-xl font-bold font-display text-bee-midnight">Acesso Bloqueado</h2>
          <p className="text-slate-500 font-sans mt-2">Você precisa regularizar sua assinatura para acessar o painel. Redirecionando...</p>
@@ -156,7 +156,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     <UnitProvider>
       <SetupStatusProvider>
         <StatusAutomator />
-        <div className="flex h-[100dvh] w-full bg-background-light dark:bg-background-dark overflow-hidden">
+        <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
           <Sidebar className="flex-shrink-0" />
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Header className="flex-shrink-0" />
