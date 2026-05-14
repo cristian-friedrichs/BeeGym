@@ -63,8 +63,8 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
         let eventsQuery = supabase
             .from('calendar_events')
             .select('id', { count: 'exact', head: true })
-            .gte('start_datetime', startOfDay.toISOString())
-            .lte('start_datetime', endOfDay.toISOString());
+            .gte('start_datetime', format(startOfDay, "yyyy-MM-dd HH:mm:ss"))
+            .lte('start_datetime', format(endOfDay, "yyyy-MM-dd HH:mm:ss"));
 
         if (unitId && unitId.length > 10) eventsQuery = eventsQuery.eq('organization_id', unitId); // Changed unit_id to organization_id
 
@@ -158,7 +158,7 @@ export async function getUpcomingClasses(organizationId?: string): Promise<Sched
             // Note: If DB has 'class_template_id', Supabase/PostgREST usually maps this to 'class_templates' relationship.
             // If it fails with "Could not find relationship", the user might need to rename the relation or use 'class_templates:class_template_id(...)' syntax if ambiguous.
             .eq('organization_id', organizationId)
-            .gte('start_datetime', new Date().toISOString()) // Busca eventos futuros
+            .gte('start_datetime', format(new Date(), "yyyy-MM-dd HH:mm:ss")) // Busca eventos futuros
             .order('start_datetime', { ascending: true })
             .limit(5);
 
@@ -221,7 +221,7 @@ export async function getAlerts(unitId?: string): Promise<Alert[]> {
                 iconName: 'UserX',
                 color: 'yellow',
                 action: 'Ver Lista',
-                href: '/painel/alunos'
+                href: '/app/alunos'
             });
         }
 

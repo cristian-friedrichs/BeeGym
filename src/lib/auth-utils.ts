@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/server';
 import { isSuperAdmin } from '@/lib/auth/role-checks';
 
@@ -52,7 +53,7 @@ export function logSecurityEvent(event: string, details: {
     path?: string;
     action?: string;
 }) {
-    const timestamp = new Date().toISOString();
+    const timestamp = format(new Date(), 'yyyy-MM-dd HH:mm:ss');
     console.log(`[SECURITY] ${timestamp} - ${event}`, {
         ...details,
         userAgent: details.userId ? undefined : 'unknown'

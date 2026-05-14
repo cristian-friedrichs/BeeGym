@@ -33,6 +33,8 @@ const defaultStatus: SetupStatus = {
 
 const SetupStatusContext = createContext<SetupStatus>(defaultStatus);
 
+const SETUP_CACHE_KEY = (orgId: string) => `beegym_setup_complete:${orgId}`;
+
 export function SetupStatusProvider({ children }: { children: ReactNode }) {
     const { organizationId, profile, loading: authLoading } = useAuth();
     const [hasBusinessData, setHasBusinessData] = useState(false);
@@ -42,8 +44,20 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
     const [hasStudent, setHasStudent] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    const fetchStatus = useCallback(async () => {
+    const fetchStatus = useCallback(async (opts?: { useCache?: boolean }) => {
         if (!organizationId) {
+            setLoading(false);
+            return;
+        }
+
+        // Fast path: only on initial mount (useCache=true). The `refresh()` exposed
+        // to callers always bypasses cache so post-mutation refreshes are accurate.
+        if (opts?.useCache && typeof window !== 'undefined' && window.localStorage.getItem(SETUP_CACHE_KEY(organizationId)) === '1') {
+            setHasBusinessData(true);
+            setHasUnit(true);
+            setHasInstructor(true);
+            setHasPlan(true);
+            setHasStudent(true);
             setLoading(false);
             return;
         }
@@ -86,11 +100,28 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
                 ? Object.values(org.schedule as Record<string, { active?: boolean }>).some(d => d?.active)
                 : false;
             const validBusinessType = !!(org?.business_type && VALID_BUSINESS_TYPES.includes(org.business_type));
-            setHasBusinessData(!!(validBusinessType && org?.name && hasSchedule));
-            setHasUnit((unitsRes.count ?? 0) > 0);
-            setHasInstructor((instructorsRes.count ?? 0) > 0);
-            setHasPlan((plansRes.count ?? 0) > 0);
-            setHasStudent((studentsRes.count ?? 0) > 0);
+            const businessData = !!(validBusinessType && org?.name && hasSchedule);
+            const hasU = (unitsRes.count ?? 0) > 0;
+            const hasI = (instructorsRes.count ?? 0) > 0;
+            const hasP = (plansRes.count ?? 0) > 0;
+            const hasS = (studentsRes.count ?? 0) > 0;
+
+            setHasBusinessData(businessData);
+            setHasUnit(hasU);
+            setHasInstructor(hasI);
+            setHasPlan(hasP);
+            setHasStudent(hasS);
+
+            // Persist completion so the next page load can skip these 5 queries.
+            // Note: hasUnit isn't part of the wizard, so we don't include it here.
+            if (typeof window !== 'undefined') {
+                const isComplete = businessData && hasI && hasP && hasS;
+                if (isComplete) {
+                    window.localStorage.setItem(SETUP_CACHE_KEY(organizationId), '1');
+                } else {
+                    window.localStorage.removeItem(SETUP_CACHE_KEY(organizationId));
+                }
+            }
         } catch (err) {
             console.error('[SetupStatus] Error fetching setup status:', err);
         } finally {
@@ -100,8 +131,12 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         if (authLoading) return;
-        fetchStatus();
+        // Initial mount: try the cache to skip 5 parallel queries when setup is known complete.
+        fetchStatus({ useCache: true });
     }, [authLoading, fetchStatus]);
+
+    // Wrapper exposed as `refresh` to consumers — always bypasses the cache.
+    const refresh = useCallback(() => fetchStatus(), [fetchStatus]);
 
     const isSuperAdminUser = isSuperAdmin(profile?.role as string | undefined);
 
@@ -119,9 +154,9 @@ export function SetupStatusProvider({ children }: { children: ReactNode }) {
             isFullyReady: isPrimaryReady,
             loading,
             isSuperAdminUser,
-            refresh: fetchStatus,
+            refresh,
         };
-    }, [hasBusinessData, hasUnit, hasInstructor, hasPlan, hasStudent, loading, isSuperAdminUser, fetchStatus]);
+    }, [hasBusinessData, hasUnit, hasInstructor, hasPlan, hasStudent, loading, isSuperAdminUser, refresh]);
 
     return (
         <SetupStatusContext.Provider value={value}>
