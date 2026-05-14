@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { Dumbbell, Users, Loader2, Edit, Calendar as CalendarIcon, User, MapPin, X, Plus, Trash2, AlertTriangle, Check } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import { ExerciseSearch } from "./exercise-search";
 import { addDays, format, addMinutes, differenceInMinutes, addMonths, parseISO, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { ConfirmDiscardDialog } from "@/components/ui/confirm-discard-dialog";
 
 interface WorkoutModalProps {
     open: boolean;
@@ -34,7 +36,12 @@ interface WorkoutModalProps {
 export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEdit, onSuccess, initialDate, initialTime }: WorkoutModalProps) {
     const supabase = createClient();
     const { toast } = useToast();
+    const { organizationId, user: authUser } = useAuth();
     const [loading, setLoading] = useState(false);
+    const fieldCls = "h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0 transition-all";
+    const labelCls = "text-sm font-medium text-slate-700";
+
+    const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
     // States - Geral
     const [sessionType, setSessionType] = useState<"individual" | "group">("individual");
@@ -80,6 +87,42 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
     // States - Exercícios
     const [exercises, setExercises] = useState<{ name: string, exercise_id: string | null, sets: number, reps: string, weight: string }[]>([]);
+
+    const isDirty = useMemo(() => {
+        if (!open) return false;
+
+        const initial = {
+            title: workoutToEdit?.title || "",
+            type: workoutToEdit?.type || "Hipertrofia",
+            isMakeup: workoutToEdit?.is_makeup || false,
+            selectedStudentId: workoutToEdit?.student_id || defaultStudentId || "",
+            locationType: workoutToEdit?.location_type || "internal",
+            locationDetails: workoutToEdit?.location_details || "",
+            recurrenceType: workoutToEdit?.recurrence_type || "none",
+            instructorId: workoutToEdit?.instructor_id || "",
+            roomId: workoutToEdit?.room_id || "",
+            date: workoutToEdit?.scheduled_at ? new Date(workoutToEdit.scheduled_at).toDateString() : (initialDate || new Date()).toDateString(),
+            time: workoutToEdit?.scheduled_at ? format(new Date(workoutToEdit.scheduled_at), 'HH:mm') : (initialTime || "08:00"),
+            duration: workoutToEdit?.end_time ? differenceInMinutes(new Date(workoutToEdit.end_time), new Date(workoutToEdit.scheduled_at)).toString() : "60"
+        };
+
+        const current = {
+            title,
+            type,
+            isMakeup,
+            selectedStudentId,
+            locationType,
+            locationDetails,
+            recurrenceType,
+            instructorId,
+            roomId,
+            date: date?.toDateString() || "",
+            time,
+            duration
+        };
+
+        return JSON.stringify(initial) !== JSON.stringify(current) || exercises.length > 0;
+    }, [open, title, type, isMakeup, selectedStudentId, locationType, locationDetails, recurrenceType, instructorId, roomId, date, time, duration, exercises, workoutToEdit, defaultStudentId, initialDate, initialTime]);
 
     // Edição Recorrente
     const [editScopeDialog, setEditScopeDialog] = useState(false);
@@ -139,30 +182,37 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 setExercises([]);
             }
 
+
             const fetchInitialData = async () => {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
+                if (!organizationId) return;
+                const orgId = organizationId;
 
-                const { data: profile, error: profileError } = await (supabase as any)
-                    .from('profiles')
-                    .select('organization_id')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profileError || !profile?.organization_id) {
-                    console.error("WorkoutModal: Failed to fetch organization_id", profileError);
-                    return;
+                // Pre-populate the student being edited so the name shows immediately
+                // even before the full list loads (student might be inactive)
+                if (workoutToEdit?.student) {
+                    const s = workoutToEdit.student;
+                    setAvailableStudents([{ id: s.id, name: s.full_name || s.name }]);
+                } else if (workoutToEdit?.student_id && workoutToEdit?.student_name) {
+                    setAvailableStudents([{ id: workoutToEdit.student_id, name: workoutToEdit.student_name }]);
                 }
-                const orgId = profile.organization_id;
 
-                // Students
+                // Students (active list for search)
                 const { data: sData } = await (supabase as any)
                     .from('students')
                     .select('id, full_name')
                     .eq('organization_id', orgId)
                     .eq('status', 'ACTIVE')
                     .order('full_name');
-                if (sData) setAvailableStudents(sData.map((s: any) => ({ id: s.id, name: s.full_name })));
+                if (sData) {
+                    const list = sData.map((s: any) => ({ id: s.id, name: s.full_name }));
+                    // Ensure the edited student is included even if inactive
+                    const editedId = workoutToEdit?.student_id;
+                    const editedName = workoutToEdit?.student?.full_name || workoutToEdit?.student_name;
+                    if (editedId && editedName && !list.find((s: any) => s.id === editedId)) {
+                        list.unshift({ id: editedId, name: editedName });
+                    }
+                    setAvailableStudents(list);
+                }
 
                 // Instructors
                 const { data: iData } = await (supabase as any)
@@ -182,7 +232,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             };
             fetchInitialData();
         }
-    }, [open, workoutToEdit, defaultStudentId]);
+    }, [open, workoutToEdit, defaultStudentId, organizationId]);
 
     const generateRecurrencePayloads = (baseDate: Date, orgId: string, resolvedTitle?: string) => {
         const payloads = [];
@@ -204,8 +254,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 title: resolvedTitle ?? title,
                 type,
                 status: 'Agendado',
-                scheduled_at: current.toISOString(),
-                end_time: addMinutes(current, parseInt(duration)).toISOString(),
+                scheduled_at: format(current, "yyyy-MM-dd HH:mm:ss"),
+                end_time: format(addMinutes(current, parseInt(duration)), "yyyy-MM-dd HH:mm:ss"),
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
@@ -241,8 +291,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             const payload = {
                 title: effectiveTitle,
                 type,
-                scheduled_at: scheduledDate.toISOString(),
-                end_time: endDateTime.toISOString(),
+                scheduled_at: format(scheduledDate, "yyyy-MM-dd HH:mm:ss"),
+                end_time: format(endDateTime, "yyyy-MM-dd HH:mm:ss"),
                 is_makeup: isMakeup,
                 location_type: locationType,
                 location_details: locationDetails,
@@ -263,12 +313,9 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
         // MODO CRIAÇÃO
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user?.id || '').single();
-
             if (!ignoreOverbooking) {
                 const { data: isOverbooked } = await (supabase as any).rpc('check_overbooking', {
-                    p_start_time: scheduledDate.toISOString(), p_end_time: endDateTime.toISOString(), p_org_id: profile?.organization_id
+                    p_start_time: format(scheduledDate, "yyyy-MM-dd HH:mm:ss"), p_end_time: format(endDateTime, "yyyy-MM-dd HH:mm:ss"), p_org_id: organizationId
                 });
                 if (isOverbooked) {
                     toast({ title: "Conflito de Horário!", description: "Marque 'Forçar Agendamento' para prosseguir.", variant: "destructive" });
@@ -278,16 +325,16 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
             let payloadsToInsert = [];
             if (recurrenceType !== 'none' && endDate) {
-                payloadsToInsert = generateRecurrencePayloads(scheduledDate, profile?.organization_id || '', effectiveTitle);
+                payloadsToInsert = generateRecurrencePayloads(scheduledDate, organizationId || '', effectiveTitle);
             } else {
                 payloadsToInsert = [{
-                    organization_id: profile?.organization_id,
+                    organization_id: organizationId,
                     student_id: selectedStudentId,
                     title: effectiveTitle,
                     type,
                     status: 'Agendado',
-                    scheduled_at: scheduledDate.toISOString(),
-                    end_time: endDateTime.toISOString(),
+                    scheduled_at: format(scheduledDate, "yyyy-MM-dd HH:mm:ss"),
+                    end_time: format(endDateTime, "yyyy-MM-dd HH:mm:ss"),
                     is_makeup: isMakeup,
                     location_type: locationType,
                     location_details: locationDetails,
@@ -343,9 +390,6 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                     .gt('scheduled_at', workoutToEdit.scheduled_at);
                 // 3. Recria futuros
                 if (workoutToEdit.recurrence_type !== 'none') {
-                    const { data: { user } } = await supabase.auth.getUser();
-                    const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user?.id).single();
-
                     // Extension logic - Recreate from the NEXT occurrence
                     const baseDate = new Date(payload.scheduled_at);
                     const nextDate = workoutToEdit.recurrence_type === 'weekly' ? addDays(baseDate, 7) : addMonths(baseDate, 1);
@@ -356,13 +400,13 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
                     while (current <= endLimit) {
                         futurePayloads.push({
-                            organization_id: profile?.organization_id,
+                            organization_id: organizationId,
                             student_id: selectedStudentId,
                             title: payload.title,
                             type: payload.type,
                             status: 'Agendado',
-                            scheduled_at: format(current, "yyyy-MM-dd'T'HH:mm:ss"),
-                            end_time: format(addMinutes(current, parseInt(duration)), "yyyy-MM-dd'T'HH:mm:ss"),
+                            scheduled_at: format(current, "yyyy-MM-dd HH:mm:ss"),
+                            end_time: format(addMinutes(current, parseInt(duration)), "yyyy-MM-dd HH:mm:ss"),
                             is_makeup: payload.is_makeup,
                             location_type: payload.location_type,
                             location_details: payload.location_details,
@@ -390,35 +434,36 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
         }
     };
 
+    const handleCloseAttempt = () => {
+        if (isDirty) setShowDiscardDialog(true);
+        else onOpenChange(false);
+    };
+
     return (
         <>
-            <Sheet open={open} onOpenChange={onOpenChange}>
-                <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
-                    <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
-                        <div className="flex items-center gap-2">
-                            <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
-                                {workoutToEdit ? <Edit className="h-6 w-6 text-bee-amber" /> : <Dumbbell className="h-6 w-6 text-bee-amber" />}
-                            </div>
-                            <div className="text-left">
-                                <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
-                                    {workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
-                                </SheetTitle>
-                                <SheetDescription className="text-slate-400 font-medium text-xs">
-                                    {workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
-                                </SheetDescription>
-                            </div>
-                        </div>
-                    </SheetHeader>
+            <Dialog open={open} onOpenChange={handleCloseAttempt}>
+                <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden border-none shadow-2xl bg-white flex flex-col max-h-[90vh]">
 
-                    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 bg-white shrink-0">
+                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                            {workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
+                        </DialogTitle>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                            {workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
+                        </p>
+                    </DialogHeader>
+
+
+                    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 max-h-[70vh]">
+
                         {/* ABAS INDIVIDUAL / GRUPO */}
                         {!workoutToEdit && (
                             <Tabs value={sessionType} onValueChange={(v) => setSessionType(v as "individual" | "group")} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 h-11 bg-slate-50 p-1 border border-slate-100 rounded-xl">
-                                    <TabsTrigger value="individual" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-black uppercase text-[10px] tracking-widest flex gap-2 rounded-lg">
+                                <TabsList className="grid w-full grid-cols-2 h-9 bg-slate-50 p-1 border border-slate-100 rounded-xl">
+                                    <TabsTrigger value="individual" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-semibold text-xs flex gap-2 rounded-lg">
                                         <User className="h-3.5 w-3.5" /> Individual
                                     </TabsTrigger>
-                                    <TabsTrigger value="group" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-black uppercase text-[10px] tracking-widest flex gap-2 rounded-lg">
+                                    <TabsTrigger value="group" className="h-full data-[state=active]:bg-white data-[state=active]:text-bee-amber data-[state=active]:shadow-sm font-semibold text-xs flex gap-2 rounded-lg">
                                         <Users className="h-3.5 w-3.5" /> Em Grupo
                                     </TabsTrigger>
                                 </TabsList>
@@ -428,11 +473,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                         <div className="space-y-6">
                             {/* ALUNO & MODALIDADE */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Aluno</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Aluno</Label>
                                     <div ref={studentSearchRef} className="relative">
                                         {selectedStudentId ? (
-                                            <div className="group border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 flex items-center">
+                                            <div className={cn("px-3 flex items-center", fieldCls)}>
                                                 <Badge variant="secondary" className="bg-bee-amber/10 text-bee-amber border-none font-bold">
                                                     {availableStudents.find(s => s.id === selectedStudentId)?.name}
                                                     {!workoutToEdit && (
@@ -455,7 +500,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                 onFocus={() => { if (!workoutToEdit) setOpenCommand(true); }}
                                                 onBlur={() => setTimeout(() => setOpenCommand(false), 250)}
                                                 disabled={!!workoutToEdit}
-                                                className="w-full border border-slate-100 px-4 h-11 text-sm rounded-2xl bg-slate-50/50 outline-none placeholder:text-slate-400 transition-all focus:ring-2 focus:ring-bee-amber/20 focus:border-bee-amber/30"
+                                                className={cn("w-full px-3 outline-none transition-all", fieldCls)}
                                             />
                                         )}
                                         {openCommand && !selectedStudentId && (
@@ -487,10 +532,10 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                         )}
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Modalidade</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Modalidade</Label>
                                     <Select value={type} onValueChange={setType}>
-                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                        <SelectTrigger className={fieldCls}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
@@ -504,10 +549,10 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
                             
                             {/* INSTRUTOR */}
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Instrutor</Label>
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Instrutor</Label>
                                 <Select value={instructorId} onValueChange={setInstructorId}>
-                                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                    <SelectTrigger className={fieldCls}>
                                         <SelectValue placeholder="Selecione um instrutor..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
@@ -526,28 +571,28 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
 
                             {/* NOME DO TREINO */}
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome do Treino / Aula *</Label>
+                            <div className="space-y-1.5">
+                                <Label className={labelCls}>Nome do Treino / Aula *</Label>
                                 <Input
                                     placeholder="Ex: Treino A - Full Body"
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
-                                    className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                    className={fieldCls}
                                 />
                             </div>
 
                             {/* DATA E HORA */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data *</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Data *</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant={"outline"}
-                                                className="w-full h-11 justify-start text-left font-semibold border-slate-100 bg-slate-50/50 rounded-2xl px-5 hover:bg-slate-100/50 transition-all"
+                                                className={cn("w-full justify-start text-left font-normal border-slate-200 px-3", fieldCls)}
                                             >
-                                                <CalendarIcon className="mr-2 h-4 w-4 text-bee-amber" />
-                                                {date ? format(date, "P", { locale: ptBR }) : <span>Selecione...</span>}
+                                                <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                                                {date ? format(date, "P", { locale: ptBR }) : <span className="text-slate-400">Selecione...</span>}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl border-slate-100 overflow-hidden" align="start">
@@ -562,10 +607,10 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                         </PopoverContent>
                                     </Popover>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Horário *</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Horário *</Label>
                                     <Select value={time} onValueChange={setTime}>
-                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                        <SelectTrigger className={fieldCls}>
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent className="max-h-60 rounded-2xl border-slate-100 shadow-xl">
@@ -576,20 +621,20 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duração (min) *</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Duração (min) *</Label>
                                     <Input
                                         type="number"
                                         value={duration}
                                         onChange={e => setDuration(e.target.value)}
-                                        className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
+                                        className={fieldCls}
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Repetição</Label>
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Repetição</Label>
                                     {!workoutToEdit ? (
                                         <Select value={recurrenceType} onValueChange={(v: any) => setRecurrenceType(v)}>
-                                            <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                            <SelectTrigger className={fieldCls}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
@@ -599,47 +644,47 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                             </SelectContent>
                                         </Select>
                                     ) : (
-                                        <Input disabled value={recurrenceType === 'weekly' ? 'Semanalmente' : recurrenceType === 'monthly' ? 'Mensalmente' : 'Não se repete'} className="h-11 rounded-2xl border-slate-100 bg-slate-100/50 font-semibold" />
+                                        <Input disabled value={recurrenceType === 'weekly' ? 'Semanalmente' : recurrenceType === 'monthly' ? 'Mensalmente' : 'Não se repete'} className={cn("opacity-50", fieldCls)} />
                                     )}
                                 </div>
                             </div>
 
                             {/* CHECKBOXES DE REGRAS */}
-                            <div className="flex items-center gap-6 p-1 ml-1">
+                            <div className="flex items-center gap-6 p-1">
                                 <div className="flex items-center gap-2 group cursor-pointer">
-                                    <Checkbox id="makeup" checked={isMakeup} onCheckedChange={(c) => setIsMakeup(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-5 w-5" />
-                                    <Label htmlFor="makeup" className="text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer group-hover:text-bee-midnight transition-colors">Aula de Reposição</Label>
+                                    <Checkbox id="makeup" checked={isMakeup} onCheckedChange={(c) => setIsMakeup(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-4 w-4" />
+                                    <Label htmlFor="makeup" className="text-sm font-medium text-slate-600 cursor-pointer group-hover:text-bee-midnight transition-colors">Aula de Reposição</Label>
                                 </div>
                                 {!workoutToEdit && (
                                     <div className="flex items-center gap-2 group cursor-pointer">
-                                        <Checkbox id="overbooking" checked={ignoreOverbooking} onCheckedChange={(c) => setIgnoreOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-5 w-5" />
-                                        <Label htmlFor="overbooking" className="text-xs font-bold text-slate-500 uppercase tracking-widest cursor-pointer group-hover:text-bee-midnight transition-colors">Forçar Agendamento</Label>
+                                        <Checkbox id="overbooking" checked={ignoreOverbooking} onCheckedChange={(c) => setIgnoreOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-4 w-4" />
+                                        <Label htmlFor="overbooking" className="text-sm font-medium text-slate-600 cursor-pointer group-hover:text-bee-midnight transition-colors">Forçar Agendamento</Label>
                                     </div>
                                 )}
                             </div>
 
                             {/* LOCALIZAÇÃO */}
-                            <div className="space-y-4 p-5 bg-slate-50/50 border border-slate-100 rounded-3xl group">
-                                <div className="flex items-center justify-between mb-1">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                            <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl group">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                                         <MapPin className="h-3.5 w-3.5 text-bee-amber" /> Localização
                                     </Label>
-                                    <div className="flex bg-white p-0.5 rounded-xl border border-slate-100 shadow-sm">
-                                        <button onClick={() => setLocationType('internal')} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-[10px] transition-all">Interno</button>
-                                        <button onClick={() => setLocationType('external')} className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-[10px] transition-all">Externo</button>
+                                    <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+                                        <button onClick={() => setLocationType('internal')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", locationType === 'internal' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600")}>Interno</button>
+                                        <button onClick={() => setLocationType('external')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", locationType === 'external' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600")}>Externo</button>
                                     </div>
                                 </div>
                                 <Input
                                     placeholder={locationType === 'internal' ? "Ex: Sala de Musculação, Estúdio A" : "Ex: Parque, Av. Principal 123"}
                                     value={locationDetails}
                                     onChange={e => setLocationDetails(e.target.value)}
-                                    className="h-11 bg-white border-slate-100 rounded-2xl font-semibold px-4 focus:ring-4 focus:ring-bee-amber/5"
+                                    className={cn("bg-white", fieldCls)}
                                 />
                                 {locationType === 'internal' && (
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Sala / Recinto</Label>
+                                    <div className="space-y-1.5">
+                                        <Label className={labelCls}>Sala / Recinto</Label>
                                         <Select value={roomId} onValueChange={setRoomId}>
-                                            <SelectTrigger className="h-11 bg-white border-slate-100 rounded-2xl font-semibold px-4 focus:ring-4 focus:ring-bee-amber/5">
+                                            <SelectTrigger className={cn("bg-white", fieldCls)}>
                                                 <SelectValue placeholder="Selecione o local..." />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
@@ -660,9 +705,9 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
 
                         {/* SEÇÃO DE EXERCÍCIOS */}
-                        <div className="space-y-4 border-t border-slate-50 pt-6">
+                        <div className="space-y-4 border-t border-slate-100 pt-6">
                             <div className="flex items-center justify-between">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 ml-1">
+                                <Label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                                     <Dumbbell className="h-3.5 w-3.5 text-bee-amber" /> Exercícios do Treino
                                 </Label>
                                 <Button
@@ -670,7 +715,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => setExercises([...exercises, { name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                    className="text-[10px] font-black uppercase h-8 px-3 text-bee-amber hover:bg-bee-amber/10 rounded-full transition-all"
+                                    className="text-[11px] font-bold uppercase h-8 px-3 text-bee-amber hover:bg-bee-amber/10 rounded-full transition-all"
                                 >
                                     <Plus className="h-3 w-3 mr-1" /> Adicionar
                                 </Button>
@@ -678,7 +723,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
                             <div className="space-y-4">
                                 {exercises.map((exercise, index) => (
-                                    <div key={index} className="p-5 bg-white border border-slate-100 rounded-3xl relative group shadow-sm hover:shadow-md transition-all animate-in fade-in slide-in-from-top-2">
+                                    <div key={index} className="p-4 bg-white border border-slate-100 rounded-2xl relative group shadow-sm hover:shadow-md transition-all animate-in fade-in slide-in-from-top-2">
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -693,8 +738,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
 
-                                        <div className="mb-5 pr-12">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 mb-2 block">Exercício</Label>
+                                        <div className="mb-4 pr-12">
+                                            <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2 block">Exercício</Label>
                                             <ExerciseSearch
                                                 value={exercise.name}
                                                 onChange={(id, name) => {
@@ -707,11 +752,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                         </div>
 
                                         <div className="grid grid-cols-3 gap-3">
-                                            <div className="space-y-2">
-                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Séries</Label>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Séries</Label>
                                                 <Input
                                                     type="number"
-                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
+                                                    className={cn("text-center font-bold", fieldCls)}
                                                     value={exercise.sets}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -720,11 +765,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                     }}
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Reps</Label>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Reps</Label>
                                                 <Input
                                                     type="text"
-                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
+                                                    className={cn("text-center font-bold", fieldCls)}
                                                     value={exercise.reps}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -733,11 +778,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                     }}
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Peso (kg)</Label>
+                                            <div className="space-y-1.5">
+                                                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Peso (kg)</Label>
                                                 <Input
                                                     type="text"
-                                                    className="h-11 border-slate-100 bg-slate-50/50 rounded-2xl font-bold text-center"
+                                                    className={cn("text-center font-bold", fieldCls)}
                                                     value={exercise.weight}
                                                     onChange={(e) => {
                                                         const newEx = [...exercises];
@@ -750,7 +795,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     </div>
                                 ))}
                                 {exercises.length === 0 && (
-                                    <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
+                                    <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/30">
                                         <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300">
                                             <Dumbbell className="h-6 w-6" />
                                         </div>
@@ -760,7 +805,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setExercises([{ name: '', exercise_id: null, sets: 3, reps: '10', weight: '0' }])}
-                                            className="text-[10px] font-black uppercase h-9 px-6 border-slate-200 text-slate-500 hover:bg-white rounded-full transition-all"
+                                            className="text-[11px] font-bold uppercase h-9 px-6 border-slate-200 text-slate-500 hover:bg-white rounded-full transition-all"
                                         >
                                             + Montar Ficha agora
                                         </Button>
@@ -771,36 +816,43 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 </div>
                     </div>
 
-                    <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
                         <Button
                             type="button"
-                            variant="ghost"
-                            onClick={() => onOpenChange(false)}
+                            variant="outline"
+                            onClick={handleCloseAttempt}
                             disabled={loading}
-                            className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                            className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
                         >
-                            <X className="w-4 h-4 mr-2" /> Cancelar
+                            Cancelar
                         </Button>
                         <Button
                             onClick={handleSave}
                             disabled={loading}
-                            className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                            className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
                         >
                             {loading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Processando...
-                                </>
+                                <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
                             ) : (
-                                <>
-                                    <Check className="mr-2 h-4 w-4 stroke-[3px]" />
-                                    {workoutToEdit ? 'Salvar Alterações' : 'Agendar Treino'}
-                                </>
+                                <div className="flex items-center gap-2">
+                                    <Check className="h-4 w-4" />
+                                    <span>{workoutToEdit ? 'Salvar alterações' : 'Agendar treino'}</span>
+                                </div>
                             )}
                         </Button>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmDiscardDialog
+                open={showDiscardDialog}
+                onOpenChange={setShowDiscardDialog}
+                onConfirm={() => {
+                    setShowDiscardDialog(false);
+                    onOpenChange(false);
+                }}
+            />
+
 
             {/* DIALOG DA REGRA MASTER */}
             <AlertDialog open={editScopeDialog} onOpenChange={setEditScopeDialog}>

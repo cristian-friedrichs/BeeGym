@@ -6,6 +6,8 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
+    DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { checkStudentScheduleLimits } from '@/actions/aulas';
 import { CalendarIcon, Users as UsersIcon, User, Dumbbell, MapPin, Plus, Trash2, Loader2 } from 'lucide-react';
@@ -40,6 +43,7 @@ interface NewTrainingModalProps {
 interface Student { id: string; name: string; }
 interface Instructor { id: string; full_name: string; }
 interface Room { id: string; name: string; capacity: number; }
+interface ModalityTemplate { id: string; title: string; duration_minutes: number; color: string; }
 
 type Modality = 'individual' | 'group';
 
@@ -79,6 +83,7 @@ export function NewTrainingModal({
 }: NewTrainingModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId } = useAuth();
     const { currentUnitId } = useUnit();
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
@@ -88,12 +93,14 @@ export function NewTrainingModal({
     const [students, setStudents] = useState<Student[]>([]);
     const [instructors, setInstructors] = useState<Instructor[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
+    const [modalities, setModalities] = useState<ModalityTemplate[]>([]);
 
     const [trainingName, setTrainingName] = useState('');
     const [selectedStudent, setSelectedStudent] = useState('');
     const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
     const [selectedInstructor, setSelectedInstructor] = useState('');
     const [selectedRoom, setSelectedRoom] = useState('');
+    const [selectedModalityId, setSelectedModalityId] = useState('');
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(initialDate);
     const [selectedTime, setSelectedTime] = useState(initialTime || '');
     const [selectedDuration, setSelectedDuration] = useState('60');
@@ -132,20 +139,19 @@ export function NewTrainingModal({
     }, [open, eventId, eventKind]);
 
     async function fetchData() {
+        if (!organizationId) return;
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: userData } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
-            if (!userData?.organization_id) return;
-
-            const { data: studentsData } = await (supabase as any).from('students').select('id, full_name').eq('organization_id', userData.organization_id).eq('status', 'ACTIVE').order('full_name');
+            const { data: studentsData } = await (supabase as any).from('students').select('id, full_name').eq('organization_id', organizationId).eq('status', 'ACTIVE').order('full_name');
             if (studentsData) setStudents((studentsData as any[]).map(s => ({ id: s.id, name: s.full_name })));
 
-            const { data: instructorsData } = await (supabase as any).from('profiles').select('id, full_name').eq('organization_id', userData.organization_id).order('full_name');
+            const { data: instructorsData } = await (supabase as any).from('profiles').select('id, full_name').eq('organization_id', organizationId).order('full_name');
             if (instructorsData) setInstructors(instructorsData as any[]);
 
-            const { data: roomsData } = await (supabase as any).from('rooms').select('id, name, capacity').eq('organization_id', userData.organization_id).order('name');
+            const { data: roomsData } = await (supabase as any).from('rooms').select('id, name, capacity').eq('organization_id', organizationId).order('name');
             if (roomsData) setRooms(roomsData.map((r: any) => ({ ...r, capacity: r.capacity || 0 })));
+
+            const { data: modalitiesData } = await (supabase as any).from('class_templates').select('id, title, duration_minutes, color').eq('organization_id', organizationId).order('title');
+            if (modalitiesData) setModalities(modalitiesData as ModalityTemplate[]);
         } catch (error) {
             console.error('Error fetching data:', error);
             toast({ title: 'Erro ao carregar dados', variant: 'destructive' });
@@ -186,6 +192,8 @@ export function NewTrainingModal({
                 if (event) {
                     setTrainingName(event.title);
                     setSelectedInstructor(event.instructor_id || '');
+                    setSelectedModalityId(event.class_template_id || '');
+                    setActivityType(event.event_type || 'Funcional');
                     if (event.room_id) { setLocationType('internal'); setSelectedRoom(event.room_id); }
                     else if (event.address) { setLocationType('external'); setAddress(event.address); }
                     if (event.start_datetime) {
@@ -218,6 +226,7 @@ export function NewTrainingModal({
             setActivityType('Hipertrofia'); setIsMakeup(false); setForceSchedule(false);
             setIsRecurring(false); setSelectedWeekDays([]); setEndDate(undefined);
             setLocationType('internal'); setAddress(''); setExercises([]);
+            setSelectedModalityId('');
         } else {
             if (!initialDate) setSelectedDate(undefined);
             if (!initialTime) setSelectedTime('');
@@ -227,6 +236,7 @@ export function NewTrainingModal({
             setActivityType('Hipertrofia'); setIsMakeup(false); setForceSchedule(false);
             setIsRecurring(false); setSelectedWeekDays([]); setEndDate(undefined);
             setLocationType('internal'); setAddress(''); setExercises([]);
+            setSelectedModalityId('');
         }
     }
 
@@ -245,24 +255,31 @@ export function NewTrainingModal({
 
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Usuário não autenticado');
-            const { data: userData } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
-            if (!userData?.organization_id) throw new Error('Organização não encontrada');
+            if (!organizationId) throw new Error('Organização não encontrada');
 
-            const processDates = (dateStr: Date) => {
-                const sd = new Date(dateStr);
+            const processDates = (dateSource: Date) => {
+                // Cria uma nova data baseada no dia selecionado (local)
+                const sd = new Date(dateSource);
                 const [hours, minutes] = selectedTime.split(':').map(Number);
+                
+                // Define as horas e minutos no fuso local do navegador
                 sd.setHours(hours, minutes, 0, 0);
+                
                 const ed = new Date(sd);
                 ed.setMinutes(ed.getMinutes() + parseInt(selectedDuration));
-                return { start: sd.toISOString(), end: ed.toISOString() };
+                
+                // Envia como string ISO que preserva o instante exato. 
+                // O timestamptz do Postgres converterá para UTC corretamente.
+                return { 
+                    start: format(sd, "yyyy-MM-dd HH:mm:ss"), 
+                    end: format(ed, "yyyy-MM-dd HH:mm:ss") 
+                };
             };
 
             if (modality === 'individual') {
                 const basePayload = {
                     title: trainingName, type: activityType, status: 'Agendado',
-                    student_id: selectedStudent, organization_id: userData.organization_id,
+                    student_id: selectedStudent, organization_id: organizationId,
                     unit_id: currentUnitId, is_makeup: isMakeup, credit_cost: isMakeup ? 0 : 1,
                 };
 
@@ -317,11 +334,19 @@ export function NewTrainingModal({
                 const baseEvent = {
                     title: trainingName, instructor_id: selectedInstructor,
                     room_id: locationType === 'internal' ? selectedRoom : null,
+                    class_template_id: selectedModalityId || null,
                     address: locationType === 'external' ? address : null,
-                    organization_id: userData.organization_id, unit_id: currentUnitId, status: 'SCHEDULED',
+                    organization_id: organizationId, unit_id: currentUnitId, status: 'SCHEDULED',
                 };
                 const { start, end } = processDates(selectedDate);
-                const eventPayload = { ...baseEvent, start_datetime: start, end_datetime: end, type: 'TRAINING', capacity: selectedStudents.length || null };
+                const eventPayload = { 
+                    ...baseEvent, 
+                    start_datetime: start, 
+                    end_datetime: end, 
+                    type: 'TRAINING', 
+                    event_type: activityType,
+                    capacity: selectedStudents.length || null 
+                };
 
                 if (eventId) {
                     const { error } = await (supabase as any).from('calendar_events').update(eventPayload).eq('id', eventId);
@@ -331,7 +356,7 @@ export function NewTrainingModal({
                     const { data: eventData, error: eventError } = await (supabase as any).from('calendar_events').insert(eventPayload).select().single();
                     if (eventError) throw eventError;
                     if (eventData && selectedStudents.length > 0) {
-                        const attendances = selectedStudents.map(studentId => ({ event_id: eventData.id, student_id: studentId, organization_id: userData.organization_id, unit_id: currentUnitId, status: 'CONFIRMED' }));
+                        const attendances = selectedStudents.map(studentId => ({ event_id: eventData.id, student_id: studentId, organization_id: organizationId, unit_id: currentUnitId, status: 'CONFIRMED' }));
                         await ((supabase as any).from('event_enrollments') as any).insert(attendances);
                     }
                     toast({ title: 'Treino em grupo criado.' });
@@ -354,16 +379,14 @@ export function NewTrainingModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[600px] p-0 gap-0 rounded-2xl overflow-hidden">
-
-                {/* Header */}
-                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
-                    <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
-                        {isEditing ? 'Editar treino' : modality === 'individual' ? 'Novo treino' : 'Novo treino em grupo'}
+            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl bg-white rounded-3xl">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-50">
+                    <DialogTitle className="text-xl font-bold text-slate-900">
+                        {isEditing ? 'Editar Treino' : modality === 'individual' ? 'Novo Treino' : 'Novo Treino em Grupo'}
                     </DialogTitle>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <DialogDescription className="text-slate-500">
                         {isEditing ? 'Atualize os detalhes do agendamento.' : 'Agende uma sessão para um ou mais alunos.'}
-                    </p>
+                    </DialogDescription>
                 </DialogHeader>
 
                 {dataLoading ? (
@@ -443,7 +466,11 @@ export function NewTrainingModal({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="max-h-56">
-                                                {ACTIVITY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                                {modalities.length > 0 ? (
+                                                    modalities.map(m => <SelectItem key={m.id} value={m.title}>{m.title}</SelectItem>)
+                                                ) : (
+                                                    ACTIVITY_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -588,6 +615,29 @@ export function NewTrainingModal({
                                         placeholder="Selecione os alunos…"
                                     />
                                 </div>
+
+                                <div className="space-y-1.5">
+                                    <Label className={labelCls}>Modalidade *</Label>
+                                    <Select 
+                                        value={selectedModalityId} 
+                                        onValueChange={(val) => {
+                                            setSelectedModalityId(val);
+                                            const mod = modalities.find(m => m.id === val);
+                                            if (mod) {
+                                                setActivityType(mod.title);
+                                                setSelectedDuration(mod.duration_minutes.toString());
+                                                if (!trainingName) setTrainingName(mod.title);
+                                            }
+                                        }}
+                                    >
+                                        <SelectTrigger className={fieldCls}>
+                                            <SelectValue placeholder="Selecione a modalidade…" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-56">
+                                            {modalities.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         )}
 
@@ -639,27 +689,27 @@ export function NewTrainingModal({
                     </div>
                 )}
 
-                {/* Footer */}
-                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <DialogFooter className="px-6 pb-6 pt-4 border-t border-slate-50 flex items-center justify-between sm:justify-between">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
-                        className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+                        className="rounded-full text-slate-500 hover:text-slate-700 h-9 px-5"
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
+                        className="bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-bold h-9 px-8 shadow-sm"
                     >
-                        {loading
-                            ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
-                            : isEditing ? 'Salvar alterações' : 'Criar treino'
-                        }
+                        {loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            isEditing ? 'Salvar Alterações' : 'Criar Treino'
+                        )}
                     </Button>
-                </div>
+                </DialogFooter>
 
             </DialogContent>
         </Dialog>

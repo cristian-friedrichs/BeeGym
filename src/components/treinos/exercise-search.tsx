@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Search, Loader2 } from 'lucide-react';
 import { exercises as staticExercises } from '@/lib/exercises';
 
@@ -12,6 +13,7 @@ interface ExerciseSearchProps {
 
 export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
     const supabase = createClient();
+    const { organizationId } = useAuth();
     const [searchTerm, setSearchTerm] = useState(value);
     const [results, setResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -44,14 +46,11 @@ export function ExerciseSearch({ value, onChange }: ExerciseSearchProps) {
                         is_static: true
                     }));
 
-                // 2. Busca o Tenant do usuário logado e exercícios do banco
-                const { data: { user } } = await supabase.auth.getUser();
-                const { data: profile } = await (supabase.from('profiles') as any).select('organization_id').eq('id', user?.id).single();
-
-                const { data: dbData } = await (supabase
+                // 2. Busca exercícios do banco (filtro automático por org via RLS + organizationId do contexto)
+                const { data: dbData } = !organizationId ? { data: [] as any[] } : await (supabase
                     .from('exercises') as any)
                     .select('id, name, target_muscle')
-                    .eq('organization_id', profile?.organization_id)
+                    .eq('organization_id', organizationId)
                     .ilike('name', `%${searchTerm}%`)
                     .limit(10);
 

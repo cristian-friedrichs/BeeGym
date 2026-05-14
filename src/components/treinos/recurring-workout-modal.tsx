@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { Dumbbell, Calendar as CalendarIcon, Loader2, Check, X, Clock, Trash2 } from "lucide-react";
+import { CalendarDays, Loader2, Check, X, Clock } from "lucide-react";
 import { saveRecurringWorkouts, getStudentRecurringSchedule } from "@/actions/treinos";
 import { cn } from "@/lib/utils";
 
@@ -21,278 +20,169 @@ interface RecurringWorkoutModalProps {
     onSuccess?: () => void;
 }
 
-const DAYS_OF_WEEK = [
-    { label: "Dom", value: 0 },
-    { label: "Seg", value: 1 },
-    { label: "Ter", value: 2 },
-    { label: "Qua", value: 3 },
-    { label: "Qui", value: 4 },
-    { label: "Sex", value: 5 },
-    { label: "Sáb", value: 6 },
+const DAYS = [
+    { label: "Dom", value: 0 }, { label: "Seg", value: 1 }, { label: "Ter", value: 2 },
+    { label: "Qua", value: 3 }, { label: "Qui", value: 4 }, { label: "Sex", value: 5 }, { label: "Sáb", value: 6 },
 ];
 
-export function RecurringWorkoutModal({ 
-    open, 
-    onOpenChange, 
-    studentId, 
-    studentName, 
-    organizationId,
-    onSuccess 
-}: RecurringWorkoutModalProps) {
+export function RecurringWorkoutModal({ open, onOpenChange, studentId, studentName, organizationId, onSuccess }: RecurringWorkoutModalProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(false);
-
-    // States
     const [title, setTitle] = useState("Treino");
     const [type, setType] = useState("Hipertrofia");
     const [schedule, setSchedule] = useState<Record<number, string>>({});
 
     useEffect(() => {
-        if (open && studentId) {
-            const loadSchedule = async () => {
-                setFetching(true);
-                try {
-                    const data = await getStudentRecurringSchedule(studentId);
-                    if (data) {
-                        setTitle(data.title || "Treino");
-                        setType(data.type || "Hipertrofia");
-                        const newSchedule: Record<number, string> = {};
-                        data.schedule.forEach(item => {
-                            newSchedule[item.day] = item.time;
-                        });
-                        setSchedule(newSchedule);
-                    } else {
-                        // Reset defaults if no schedule found
-                        setTitle("Treino");
-                        setType("Hipertrofia");
-                        setSchedule({});
-                    }
-                } catch (error) {
-                    console.error("Error loading recurring schedule:", error);
-                } finally {
-                    setFetching(false);
-                }
-            };
-            loadSchedule();
-        }
+        if (!open || !studentId) return;
+        setFetching(true);
+        getStudentRecurringSchedule(studentId).then(data => {
+            if (data) {
+                setTitle(data.title || "Treino");
+                setType(data.type || "Hipertrofia");
+                const s: Record<number, string> = {};
+                data.schedule.forEach((item: any) => { s[item.day] = item.time; });
+                setSchedule(s);
+            } else {
+                setTitle("Treino"); setType("Hipertrofia"); setSchedule({});
+            }
+        }).catch(console.error).finally(() => setFetching(false));
     }, [open, studentId]);
 
     const toggleDay = (day: number) => {
         setSchedule(prev => {
             const next = { ...prev };
-            if (day in next) {
-                delete next[day];
-            } else {
-                next[day] = "08:00";
-            }
+            if (day in next) delete next[day]; else next[day] = "08:00";
             return next;
         });
     };
 
-    const updateTime = (day: number, time: string) => {
-        setSchedule(prev => ({ ...prev, [day]: time }));
-    };
+    const updateTime = (day: number, time: string) => setSchedule(prev => ({ ...prev, [day]: time }));
 
     const handleSave = async () => {
-        if (!title) {
-            toast({ title: "Informe o título do treino", variant: "destructive" });
-            return;
-        }
-
+        if (!title) { toast({ title: "Informe o título do treino", variant: "destructive" }); return; }
         setLoading(true);
         try {
-            const formattedSchedule = Object.entries(schedule).map(([day, time]) => ({
-                day: parseInt(day),
-                time
-            }));
-
             const result = await saveRecurringWorkouts({
-                studentId,
-                organizationId,
-                title,
-                type,
-                schedule: formattedSchedule,
-                studentName
+                studentId, organizationId, title, type,
+                schedule: Object.entries(schedule).map(([day, time]) => ({ day: parseInt(day), time })),
+                studentName,
             });
-
             if (result.success) {
-                toast({ title: "Grade de treinos atualizada!", description: result.message });
-                onSuccess?.();
-                onOpenChange(false);
+                toast({ title: "Grade atualizada!", description: result.message });
+                onSuccess?.(); onOpenChange(false);
             } else {
                 toast({ title: "Erro ao salvar", description: result.error, variant: "destructive" });
             }
-        } catch (error: any) {
-            toast({ title: "Erro inesperado", description: error.message, variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
+        } catch (e: any) {
+            toast({ title: "Erro inesperado", description: e.message, variant: "destructive" });
+        } finally { setLoading(false); }
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="sm:max-w-xl p-0 overflow-hidden border-l border-slate-100 shadow-2xl flex flex-col h-full bg-white">
-                <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
-                    <div className="flex items-center gap-2 text-left">
-                        <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
-                            <CalendarIcon className="h-6 w-6 text-bee-amber" />
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[500px] p-0 gap-0 rounded-2xl overflow-hidden bg-white border border-slate-100">
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-bee-amber/10 flex items-center justify-center">
+                            <CalendarDays className="h-4.5 w-4.5 text-bee-amber" />
                         </div>
                         <div>
-                            <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
-                                Grade de Treinos
-                            </SheetTitle>
-                            <SheetDescription className="text-slate-400 font-medium text-xs">
-                                {studentName} • Defina os dias e horários recorrentes
-                            </SheetDescription>
+                            <DialogTitle className="text-[17px] font-bold text-slate-900 leading-tight">Grade de Treinos</DialogTitle>
+                            <DialogDescription className="text-xs text-slate-400 mt-0.5">{studentName} · Dias e horários recorrentes</DialogDescription>
                         </div>
                     </div>
-                </SheetHeader>
+                </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
                     {fetching ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
-                            <Loader2 className="h-8 w-8 animate-spin text-bee-amber" />
-                            <p className="text-xs font-bold uppercase tracking-widest">Carregando grade atual...</p>
+                        <div className="flex items-center justify-center py-12">
+                            <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
                         </div>
                     ) : (
                         <>
-                            {/* CONFIGURAÇÃO GERAL */}
-                            <div className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Título do Treino</Label>
-                                    <Input
-                                        placeholder="Ex: Musculação / Treino A"
-                                        value={title}
-                                        onChange={e => setTitle(e.target.value)}
-                                        className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20"
-                                    />
+                            {/* Title + Type */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Título</Label>
+                                    <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Treino A"
+                                        className="h-9 rounded-xl border-slate-200 text-sm" />
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Modalidade</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Modalidade</Label>
                                     <Select value={type} onValueChange={setType}>
-                                        <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-slate-50/50 transition-all font-semibold text-bee-midnight px-5 focus:ring-bee-amber/20">
+                                        <SelectTrigger className="h-9 rounded-xl border-slate-200 text-sm">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                                            <SelectItem value="Hipertrofia" className="font-medium">Hipertrofia</SelectItem>
-                                            <SelectItem value="Força" className="font-medium">Força</SelectItem>
-                                            <SelectItem value="Cardio" className="font-medium">Cardio</SelectItem>
-                                            <SelectItem value="Pilates" className="font-medium">Pilates</SelectItem>
-                                            <SelectItem value="CrossFit" className="font-medium">CrossFit</SelectItem>
+                                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                            {['Hipertrofia', 'Força', 'Cardio', 'Pilates', 'CrossFit', 'Funcional', 'Outro'].map(t => (
+                                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
 
-                            {/* SELEÇÃO DE DIAS */}
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Agenda Semanal</Label>
-                                    <div className="h-px flex-1 bg-slate-50 mx-4" />
-                                </div>
-
-                                <div className="flex justify-between gap-1 overflow-x-auto pb-2">
-                                    {DAYS_OF_WEEK.map((day) => {
-                                        const isActive = day.value in schedule;
+                            {/* Day selector */}
+                            <div className="space-y-3">
+                                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Agenda semanal</Label>
+                                <div className="flex gap-1.5 justify-between">
+                                    {DAYS.map(day => {
+                                        const active = day.value in schedule;
                                         return (
-                                            <button
-                                                key={day.value}
-                                                onClick={() => toggleDay(day.value)}
+                                            <button key={day.value} type="button" onClick={() => toggleDay(day.value)}
                                                 className={cn(
-                                                    "h-12 w-12 rounded-xl flex items-center justify-center text-[10px] font-black uppercase transition-all border",
-                                                    isActive 
-                                                        ? "bg-bee-amber text-bee-midnight border-bee-amber shadow-lg shadow-bee-amber/10 scale-105" 
-                                                        : "bg-slate-50 text-slate-400 border-slate-100 hover:border-slate-300"
-                                                )}
-                                            >
+                                                    'flex-1 h-10 rounded-xl text-[11px] font-bold transition-all border',
+                                                    active ? 'bg-bee-amber text-bee-midnight border-bee-amber' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
+                                                )}>
                                                 {day.label}
                                             </button>
                                         );
                                     })}
                                 </div>
 
-                                {/* LISTA DE HORÁRIOS */}
-                                <div className="space-y-4 pt-2">
-                                    {Object.keys(schedule).length > 0 ? (
-                                        Object.keys(schedule).sort().map((dayStr) => {
+                                {/* Time list */}
+                                {Object.keys(schedule).length > 0 ? (
+                                    <div className="space-y-2">
+                                        {Object.keys(schedule).sort((a, b) => parseInt(a) - parseInt(b)).map(dayStr => {
                                             const day = parseInt(dayStr);
-                                            const dayData = DAYS_OF_WEEK.find(d => d.value === day);
+                                            const dayLabel = DAYS.find(d => d.value === day)?.label;
                                             return (
-                                                <div 
-                                                    key={day} 
-                                                    className="flex items-center gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl animate-in fade-in slide-in-from-left-2 transition-all group hover:bg-white hover:shadow-sm"
-                                                >
-                                                    <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center border border-slate-100 font-black text-bee-midnight text-xs shadow-sm">
-                                                        {dayData?.label}
-                                                    </div>
-                                                    
-                                                    <div className="flex-1 flex items-center gap-3">
-                                                        <Clock className="h-4 w-4 text-bee-amber" />
-                                                        <Input
-                                                            type="time"
-                                                            value={schedule[day]}
-                                                            onChange={(e) => updateTime(day, e.target.value)}
-                                                            className="h-10 border-none bg-transparent font-bold text-bee-midnight text-sm p-0 focus-visible:ring-0"
-                                                        />
-                                                    </div>
-
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => toggleDay(day)}
-                                                        className="h-8 w-8 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg group-hover:opacity-100 transition-opacity"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </Button>
+                                                <div key={day} className="flex items-center gap-3 bg-slate-50 rounded-xl px-4 py-2.5 border border-slate-100">
+                                                    <span className="text-xs font-bold text-slate-700 w-8">{dayLabel}</span>
+                                                    <Clock className="h-3.5 w-3.5 text-bee-amber shrink-0" />
+                                                    <Input type="time" value={schedule[day]} onChange={e => updateTime(day, e.target.value)}
+                                                        className="h-7 border-none bg-transparent p-0 text-sm font-semibold focus-visible:ring-0 text-slate-700 w-24" />
+                                                    <button onClick={() => toggleDay(day)} className="ml-auto text-slate-300 hover:text-red-500 transition-colors">
+                                                        <X className="h-3.5 w-3.5" />
+                                                    </button>
                                                 </div>
                                             );
-                                        })
-                                    ) : (
-                                        <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
-                                            <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4 text-slate-300">
-                                                <Clock className="h-6 w-6" />
-                                            </div>
-                                            <p className="text-sm font-semibold text-slate-400">Nenhum dia selecionado na agenda</p>
-                                            <p className="text-[10px] text-slate-300 uppercase font-bold tracking-widest mt-1">Toque em um dia acima para começar</p>
-                                        </div>
-                                    )}
-                                </div>
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-xl text-slate-400">
+                                        <Clock className="h-5 w-5 mx-auto mb-2 text-slate-200" />
+                                        <p className="text-xs font-medium">Selecione os dias acima</p>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
                 </div>
 
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => onOpenChange(false)}
-                        disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
-                    >
+                <DialogFooter className="px-6 py-4 border-t border-slate-100 flex flex-row items-center gap-2 sm:justify-end">
+                    <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={loading}
+                        className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
                         Cancelar
                     </Button>
-                    <Button
-                        onClick={handleSave}
-                        disabled={loading || fetching}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Salvando...
-                            </>
-                        ) : (
-                            <>
-                                <Check className="mr-2 h-4 w-4 stroke-[3px]" />
-                                Atualizar Grade
-                            </>
-                        )}
+                    <Button size="sm" disabled={loading || fetching} onClick={handleSave}
+                        className="h-9 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-bold text-xs px-5 gap-1.5 shadow-none">
+                        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5 stroke-[3px]" />}
+                        {loading ? 'Salvando...' : 'Salvar grade'}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

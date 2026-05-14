@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ExerciseModal } from '@/components/exercicios/exercise-modal';
+
+const ExerciseModal = dynamic(() => import('@/components/exercicios/exercise-modal').then(m => ({ default: m.ExerciseModal })), { ssr: false });
 import { exercises as staticExercises } from '@/lib/exercises';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Dumbbell, Pencil, Trash2, Loader2, Search, Plus } from 'lucide-react';
@@ -13,6 +16,7 @@ import { Input } from '@/components/ui/input';
 export default function ExerciciosPage() {
     const supabase = createClient();
     const { toast } = useToast();
+    const { organizationId } = useAuth();
 
     const [activeTab, setActiveTab] = useState<'meus' | 'base'>('meus');
     const [exercises, setExercises] = useState<any[]>([]);
@@ -25,17 +29,15 @@ export default function ExerciciosPage() {
     const [counts, setCounts] = useState({ meus: 0, base: 0 });
 
     useEffect(() => {
-        fetchExercises();
-    }, [activeTab]);
+        if (organizationId) fetchExercises();
+    }, [activeTab, organizationId]);
 
     const fetchExercises = async () => {
+        if (!organizationId) return;
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            const { data: profile } = await (supabase.from('profiles') as any).select('organization_id').eq('id', user?.id).single();
-
             // 1. Busca contagens
-            const { count: countMeus } = await (supabase.from('exercises') as any).select('*', { count: 'exact', head: true }).eq('organization_id', profile?.organization_id);
+            const { count: countMeus } = await (supabase.from('exercises') as any).select('*', { count: 'exact', head: true }).eq('organization_id', organizationId);
             const baseList = staticExercises.filter(ex => ex.type === 'base');
             setCounts({ base: baseList.length, meus: countMeus || 0 });
 
@@ -67,7 +69,7 @@ export default function ExerciciosPage() {
                 });
                 setExercises(mappedBase);
             } else {
-                const { data, error } = await (supabase.from('exercises') as any).select('*').eq('organization_id', profile?.organization_id).order('name', { ascending: true });
+                const { data, error } = await (supabase.from('exercises') as any).select('*').eq('organization_id', organizationId).order('name', { ascending: true });
                 if (error) throw error;
                 if (data) setExercises(data);
             }

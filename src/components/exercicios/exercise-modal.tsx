@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
     Dialog,
@@ -27,6 +28,7 @@ const labelCls = 'text-sm font-medium text-slate-700';
 
 export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: ExerciseModalProps) {
     const supabase = createClient();
+    const { organizationId } = useAuth();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -63,39 +65,51 @@ export function ExerciseModal({ isOpen, onClose, onSuccess, exerciseToEdit }: Ex
             toast({ title: 'Grupo muscular obrigatório', description: 'Informe o grupo muscular alvo.', variant: 'destructive' });
             return;
         }
+        if (!organizationId) {
+            toast({ title: 'Aguarde', description: 'Organização ainda carregando. Tente novamente.', variant: 'destructive' });
+            return;
+        }
 
         setLoading(true);
 
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Usuário não autenticado');
-            const { data: profile } = await (supabase.from('profiles') as any).select('organization_id').eq('id', user?.id).single();
+        // Timeout protection — prevents the UI from getting stuck if the request hangs
+        const timeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('A operação demorou demais. Verifique sua conexão.')), 12000)
+        );
 
-            const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+        try {
+            const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
 
             const payload = {
-                organization_id: profile?.organization_id,
-                name: formData.name,
+                organization_id: organizationId,
+                name: formData.name.trim(),
                 category: formData.category,
-                target_muscle: formData.target_muscle,
+                target_muscle: formData.target_muscle.trim(),
                 tags: tagsArray,
-                difficulty: formData.difficulty
+                difficulty: formData.difficulty,
             };
 
             if (exerciseToEdit) {
-                const { error } = await (supabase.from('exercises') as any).update(payload).eq('id', exerciseToEdit.id);
+                const { error } = await Promise.race([
+                    (supabase as any).from('exercises').update(payload).eq('id', exerciseToEdit.id),
+                    timeout,
+                ]);
                 if (error) throw error;
                 toast({ title: 'Exercício atualizado!' });
             } else {
-                const { error } = await (supabase.from('exercises') as any).insert([payload]);
+                const { error } = await Promise.race([
+                    (supabase as any).from('exercises').insert(payload),
+                    timeout,
+                ]);
                 if (error) throw error;
-                toast({ title: 'Exercício criado com sucesso!' });
+                toast({ title: 'Exercício criado!' });
             }
 
             onSuccess();
             onClose();
         } catch (error: any) {
-            toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
+            console.error('[ExerciseModal] Erro ao salvar:', error);
+            toast({ title: 'Erro ao salvar', description: error.message || 'Tente novamente.', variant: 'destructive' });
         } finally {
             setLoading(false);
         }

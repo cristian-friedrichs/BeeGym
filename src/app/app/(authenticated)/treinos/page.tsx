@@ -14,11 +14,13 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { WorkoutDetailsSheet } from "@/components/treinos/workout-details-sheet";
-import { WorkoutExecutionSheet } from "@/components/treinos/workout-execution-sheet";
-import { WorkoutModal } from "@/components/treinos/workout-modal";
+import dynamic from 'next/dynamic';
 import { SectionHeader } from '@/components/ui/section-header';
-import { EventDetailsModal } from "@/components/painel/modals/event-details-modal";
+
+const WorkoutDetailsSheet = dynamic(() => import('@/components/treinos/workout-details-sheet').then(m => ({ default: m.WorkoutDetailsSheet })), { ssr: false });
+const WorkoutExecutionSheet = dynamic(() => import('@/components/treinos/workout-execution-sheet').then(m => ({ default: m.WorkoutExecutionSheet })), { ssr: false });
+const WorkoutModal = dynamic(() => import('@/components/treinos/workout-modal').then(m => ({ default: m.WorkoutModal })), { ssr: false });
+const EventDetailsModal = dynamic(() => import('@/components/painel/modals/event-details-modal').then(m => ({ default: m.EventDetailsModal })), { ssr: false });
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
@@ -34,10 +36,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast";
 import { useSetupStatus } from "@/context/SetupStatusContext";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function WorkoutsPage() {
     const supabase = createClient();
     const { toast } = useToast();
+    const { organizationId } = useAuth();
     const { hasBusinessData, hasStudent, refresh: refreshSetup } = useSetupStatus();
     const treinoBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasStudent ? 'Aluno' : null;
     const [workouts, setWorkouts] = useState<any[]>([]);
@@ -101,21 +105,17 @@ export default function WorkoutsPage() {
 
 
     const fetchWorkouts = async () => {
+        if (!organizationId) return;
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', user.id).single();
-            if (!profile) return;
-
-            // Trigger status transitions for both classes and workouts
-            await supabase.rpc('update_class_statuses' as any);
+            // Trigger status transitions for both classes and workouts (best effort)
+            try { await supabase.rpc('update_class_statuses' as any); } catch {}
 
             // Individual workouts (workouts table — single student)
             const { data: workoutsData, error: workoutsError } = await (supabase as any)
                 .from('workouts')
                 .select(`*, student:students (id, full_name, avatar_url), room:rooms(name), instructor:instructors(name)`)
-                .eq('organization_id', profile.organization_id)
+                .eq('organization_id', organizationId)
                 .order('scheduled_at', { ascending: false });
 
             if (workoutsError) console.error('Workouts error:', workoutsError);
@@ -129,7 +129,7 @@ export default function WorkoutsPage() {
                     instructor:instructors(name),
                     enrollments:event_enrollments(student:students(id, full_name, avatar_url))
                 `)
-                .eq('organization_id', profile.organization_id)
+                .eq('organization_id', organizationId)
                 .eq('type', 'TRAINING')
                 .order('start_datetime', { ascending: false });
 
@@ -191,8 +191,8 @@ export default function WorkoutsPage() {
     };
 
     useEffect(() => {
-        fetchWorkouts();
-    }, []);
+        if (organizationId) fetchWorkouts();
+    }, [organizationId]);
 
 
 
