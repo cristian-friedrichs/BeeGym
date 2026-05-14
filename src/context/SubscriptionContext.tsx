@@ -104,6 +104,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
                 if (subData) {
                     const sub = subData as any
 
+                    // Use subscription status as source of truth if available
+                    if (sub.status) {
+                        setStatus(sub.status)
+                    }
+
                     if (sub.plan_tier) {
                         setPlanId(`plan_${sub.plan_tier.toLowerCase()}`)
                     } else if (sub.saas_plans?.tier) {

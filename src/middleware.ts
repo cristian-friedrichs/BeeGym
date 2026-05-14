@@ -105,7 +105,20 @@ export async function middleware(request: NextRequest) {
             .select('subscription_status, onboarding_completed')
             .eq('id', profile.organization_id)
             .single()
-        org = orgData
+            
+        const { data: subData } = await supabase
+            .from('saas_subscriptions')
+            .select('status')
+            .eq('organization_id', profile.organization_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        org = {
+            ...orgData,
+            // Prioritize saas_subscriptions status to prevent out-of-sync redirect loops
+            subscription_status: subData?.status || orgData?.subscription_status
+        }
     }
 
     // 👑 SEGREGAÇÃO DE SISTEMAS: SUPER_ADMIN (BeeGym) VS SAAS (orgs)

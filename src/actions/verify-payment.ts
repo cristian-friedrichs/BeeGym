@@ -31,6 +31,12 @@ export async function verifyPaymentStatusAction() {
             .maybeSingle()
 
         if (subscription && ACTIVE_STATUSES.includes(subscription.status)) {
+            // Sincroniza a tabela organizations para evitar loop de redirecionamento no middleware
+            await supabase
+                .from('organizations')
+                .update({ subscription_status: subscription.status })
+                .eq('id', orgId)
+
             return { success: true, status: 'CONCLUIDA' }
         }
 
