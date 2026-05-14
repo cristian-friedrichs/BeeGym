@@ -8,9 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Plus, Filter, ArrowUpDown, MoreHorizontal, User, Mail, Phone, Calendar as CalendarIcon, Edit2, Eye, ExternalLink } from "lucide-react";
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
-import { StudentModal } from '@/components/alunos/student-modal';
 import { SectionHeader } from '@/components/ui/section-header';
+
+const StudentModal = dynamic(() => import('@/components/alunos/student-modal').then(m => ({ default: m.StudentModal })), { ssr: false });
 import Link from 'next/link';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -61,34 +63,34 @@ export default function StudentsPage() {
             return;
         }
 
-        // 1. Opcional: Forçar atualização dos status das aulas passadas
-        await (supabase.rpc as any)('update_finished_classes_status');
+        try {
+            await (supabase.rpc as any)('update_finished_classes_status');
+        } catch {
+            // RPC optional — ignore errors
+        }
 
-        let query = supabase
-            .from('students')
-            .select('*, last_activity, membership_plans(name)') // Join com tabela de planos
-            .order('full_name');
+        try {
+            let query = supabase
+                .from('students')
+                .select('*, membership_plans(name)')
+                .order('full_name');
 
-        if (!organizationId || currentUnitId === organizationId) {
-            // Master unit or org not yet loaded: include legacy students (unit_id null) and master-unit students
-            query = query.or(`unit_id.is.null,unit_id.eq.${currentUnitId}`);
-            if (organizationId) {
-                query = query.eq('organization_id', organizationId);
+            if (!organizationId || currentUnitId === organizationId) {
+                query = query.or(`unit_id.is.null,unit_id.eq.${currentUnitId}`);
+                if (organizationId) {
+                    query = query.eq('organization_id', organizationId);
+                }
+            } else {
+                query = query.eq('unit_id', currentUnitId);
             }
-        } else {
-            // Branch unit: only show branch students
-            query = query.eq('unit_id', currentUnitId);
+
+            const { data, error } = await query;
+
+            if (error) console.error("Erro ao buscar alunos:", error);
+            if (data) setStudents(data as unknown as Student[]);
+        } finally {
+            setLoading(false);
         }
-
-        const { data, error } = await query;
-
-        if (error) console.error("Erro ao buscar alunos:", error);
-
-        if (data) {
-            // Also ensure we map birth_date
-            setStudents(data as unknown as Student[]);
-        }
-        setLoading(false);
     };
 
     useEffect(() => {

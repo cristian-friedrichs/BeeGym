@@ -2,22 +2,14 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
-    MessageSquare, Dumbbell, Ruler,
-    CreditCard, Power, Edit, Calendar,
-    Mail, Phone, User, Target, Building2,
-    Clock, Infinity, Package
+    MessageSquare, Dumbbell, Ruler, CreditCard, Power, Edit2,
+    Calendar,
 } from "lucide-react";
-
-import { format, differenceInYears } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInYears } from "date-fns";
 import { formatDate, formatNumber, formatCurrency } from "@/lib/formatters";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface StudentProfileMainSectionProps {
     student: {
@@ -27,11 +19,11 @@ interface StudentProfileMainSectionProps {
         created_at: string;
         email: string | null;
         phone: string | null;
-        sex: string | null;
+        gender: string | null;
         birth_date: string | null;
-        height: number | null;
         objective: string | null;
         unitName: string | null;
+        status?: string;
         credits_balance?: number;
         plan: {
             name: string;
@@ -55,6 +47,12 @@ interface StudentProfileMainSectionProps {
     onInactivate: () => void;
 }
 
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+    ACTIVE:   { label: 'Ativo',        cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    INACTIVE: { label: 'Inativo',      cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+    OVERDUE:  { label: 'Inadimplente', cls: 'bg-red-50 text-red-600 border-red-100' },
+};
+
 export function StudentProfileMainSection({
     student,
     attendancePercentage,
@@ -66,159 +64,156 @@ export function StudentProfileMainSection({
     onWorkout,
     onMeasurement,
     onPlan,
-    onInactivate
+    onInactivate,
 }: StudentProfileMainSectionProps) {
-    const initials = student.full_name
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase();
+    const initials = student.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+    const age = student.birth_date ? differenceInYears(new Date(), new Date(student.birth_date)) : null;
+    const statusInfo = STATUS_BADGE[student.status || 'ACTIVE'] || STATUS_BADGE.ACTIVE;
 
-    const age = student.birth_date
-        ? differenceInYears(new Date(), new Date(student.birth_date))
-        : null;
-
-    const getPlanDetails = () => {
-        const plan = student.plan;
-        if (!plan) return { label: 'Sem Plano', icon: CreditCard, subtitle: 'Nenhuma assinatura ativa' };
-        if (plan.plan_type === 'pack') return { label: 'Plano de Créditos', icon: Package, subtitle: `${student.credits_balance ?? 0} créditos` };
-        if (!plan.days_per_week) return { label: 'Mensalidade', icon: Infinity, subtitle: 'Acesso Ilimitado' };
-
-        const workouts = student.workouts || [];
-        const scheduledWorkouts = workouts
-            .filter(w => w.status === 'Agendado' && w.scheduled_at)
-            .filter(w => new Date(w.scheduled_at) >= new Date());
-
-        if (scheduledWorkouts.length > 0) {
-            const map: Record<number, string> = { 1: 'SEG', 2: 'TER', 3: 'QUA', 4: 'QUI', 5: 'SEX', 6: 'SAB', 0: 'DOM' };
-            const uniqueDays = Array.from(new Set(scheduledWorkouts.map(w => new Date(w.scheduled_at).getDay())));
-            const order = [1, 2, 3, 4, 5, 6, 0];
-            uniqueDays.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-            return { label: 'Plano Semanal', icon: Clock, subtitle: uniqueDays.map(d => map[d]).join(' | ') };
-        }
-        return { label: 'Plano Semanal', icon: Clock, subtitle: `${plan.days_per_week}x / semana` };
-    };
-
-    const planInfo = getPlanDetails();
-
-    const InfoItem = ({ icon: Icon, label, value, subValue }: any) => (
-        <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{label}</span>
-            <div className="flex items-center gap-2">
-                <span className="text-[14px] font-bold text-deep-midnight leading-tight">{value || '-'}</span>
-                {subValue && <span className="text-[11px] font-medium text-slate-400">({subValue})</span>}
-            </div>
-        </div>
-    );
-
-    const ActionButton = ({ icon: Icon, onClick, label, variant = "default" }: any) => (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        onClick={onClick}
-                        variant="outline"
-                        className={`h-10 w-10 rounded-[10px] p-0 transition-all shadow-sm ${variant === 'danger'
-                            ? 'bg-red-50 border-red-100 text-red-400 hover:bg-red-500 hover:text-white hover:border-red-600'
-                            : 'bg-slate-50 border-slate-100 text-slate-400 hover:text-bee-amber hover:bg-amber-50 hover:border-orange-100'
-                            }`}
-                    >
-                        <Icon className="h-4.5 w-4.5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent className={`font-sans font-bold text-[10px] uppercase tracking-widest border-none py-2 px-3 ${variant === 'danger' ? 'bg-red-600 text-white' : 'bg-deep-midnight text-white'}`}>
-                    {label}
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
+    const planLabel = (() => {
+        const p = student.plan;
+        if (!p) return { name: 'Sem plano', detail: null, isCredits: false };
+        if (p.plan_type === 'pack') return {
+            name: p.name,
+            detail: `${student.credits_balance ?? 0} créditos disponíveis`,
+            isCredits: true,
+        };
+        if (p.days_per_week) return { name: p.name, detail: `${p.days_per_week}× / semana`, isCredits: false };
+        return { name: p.name, detail: 'Acesso ilimitado', isCredits: false };
+    })();
 
     return (
-        <div className="bg-white rounded-[20px] shadow-sm border border-slate-100 overflow-hidden flex animate-in fade-in slide-in-from-top-4 duration-500">
-            {/* COLUMN 1 (1/3 Width): Visual Identity */}
-            <div className="w-[320px] p-6 border-r border-slate-50 flex flex-col items-center text-center shrink-0">
-                <div className="relative mb-4 group">
-                    <Avatar className="h-28 w-28 border-4 border-slate-50 shadow-md ring-1 ring-slate-100 transition-transform duration-500 group-hover:scale-105">
+        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            {/* ── Top: Identity + Actions ─────────────────────────────── */}
+            <div className="flex items-start gap-6 px-6 pt-6 pb-5">
+                {/* Avatar */}
+                <div className="relative shrink-0">
+                    <Avatar className="h-20 w-20 border-2 border-slate-100 shadow-sm">
                         <AvatarImage src={student.avatar_url || ''} className="object-cover" />
-                        <AvatarFallback className="text-4xl bg-orange-100 text-orange-600 font-black">{initials}</AvatarFallback>
+                        <AvatarFallback className="text-2xl font-black bg-orange-50 text-orange-500">{initials}</AvatarFallback>
                     </Avatar>
-                    <button onClick={onEdit} className="absolute bottom-0 right-0 h-8 w-8 bg-white rounded-full shadow-lg border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-all hover:scale-110">
-                        <Edit className="h-3.5 w-3.5" />
+                    <button
+                        onClick={onEdit}
+                        className="absolute -bottom-1 -right-1 h-6 w-6 bg-white rounded-full shadow border border-slate-100 flex items-center justify-center text-slate-400 hover:text-bee-amber transition-colors"
+                    >
+                        <Edit2 className="h-3 w-3" />
                     </button>
                 </div>
 
-                <div className="space-y-0.5 mb-4">
-                    <h1 className="text-xl font-bold text-deep-midnight tracking-tight leading-tight font-display">{student.full_name}</h1>
-                    <p className="text-[12px] font-medium text-slate-400 truncate max-w-[240px]">{student.email}</p>
-                    <div className="flex items-center justify-center gap-2 mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full">
-                        <Calendar className="h-3 w-3 text-slate-300" />
-                        <span>Aluno desde: {formatDate(student.created_at)}</span>
+                {/* Name & meta */}
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        <h1 className="text-[22px] font-bold text-slate-900 leading-tight tracking-tight">{student.full_name}</h1>
+                        <Badge className={cn('text-[10px] font-bold border rounded-full px-2.5 py-0.5 shadow-none', statusInfo.cls)}>
+                            {statusInfo.label}
+                        </Badge>
+                    </div>
+                    <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-1.5">
+                        {student.email && (
+                            <span className="text-sm text-slate-400 truncate">{student.email}</span>
+                        )}
+                        {student.phone && (
+                            <span className="text-sm text-slate-400">{student.phone}</span>
+                        )}
+                        <span className="text-[11px] font-medium text-slate-400 flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            Aluno desde {formatDate(student.created_at)}
+                        </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-auto">
-                    <ActionButton icon={MessageSquare} onClick={onMessage} label="Conversas" />
-                    <ActionButton icon={Dumbbell} onClick={onWorkout} label="Treinos" />
-                    <ActionButton icon={Ruler} onClick={onMeasurement} label="Medidas" />
-                    <ActionButton icon={CreditCard} onClick={onPlan} label="Planos" />
-                    <ActionButton icon={Power} onClick={onInactivate} label="Inativar" variant="danger" />
+                {/* Action buttons */}
+                <div className="flex items-center gap-2 shrink-0">
+                    <Button onClick={onMessage} variant="outline" size="sm" className="h-8 gap-1.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
+                        <MessageSquare className="h-3.5 w-3.5" /> Mensagem
+                    </Button>
+                    <Button onClick={onWorkout} variant="outline" size="sm" className="h-8 gap-1.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
+                        <Dumbbell className="h-3.5 w-3.5" /> Treino
+                    </Button>
+                    <Button onClick={onMeasurement} variant="outline" size="sm" className="h-8 gap-1.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
+                        <Ruler className="h-3.5 w-3.5" /> Medidas
+                    </Button>
+                    <Button onClick={onPlan} variant="outline" size="sm" className="h-8 gap-1.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
+                        <CreditCard className="h-3.5 w-3.5" /> Plano
+                    </Button>
+                    <Button onClick={onInactivate} variant="outline" size="sm" className="h-8 w-8 p-0 rounded-lg border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
+                        <Power className="h-3.5 w-3.5" />
+                    </Button>
                 </div>
             </div>
 
-            {/* COLUMN 2 & 3 (2/3 Width): Data Grid */}
-            <div className="flex-1 p-6 bg-slate-50/20 grid grid-cols-3 gap-y-6 gap-x-10 content-start">
-                {/* Row 1 - Performance KPIs (Moved to Top) */}
-                <div className="col-span-3 pb-6 border-b border-slate-100 grid grid-cols-4 gap-8">
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Frequência</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black text-emerald-600 leading-none">{attendancePercentage}%</span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Treinos / Aulas</span>
-                        <span className="text-2xl font-black text-bee-amber leading-none">{completedCount}</span>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Altura</span>
-                        <span className="text-2xl font-black text-slate-700 leading-none">{formatNumber(currentHeight, 2)} m</span>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Peso Atual</span>
-                        <span className="text-2xl font-black text-blue-600 leading-none">{formatNumber(currentWeight, 1)} kg</span>
-                    </div>
+            {/* ── KPI strip ───────────────────────────────────────────── */}
+            <div className="grid grid-cols-4 border-t border-slate-100">
+                <KpiCell
+                    label="Frequência"
+                    value={`${attendancePercentage}%`}
+                    valueClass={attendancePercentage >= 75 ? 'text-emerald-600' : attendancePercentage >= 50 ? 'text-amber-500' : 'text-red-500'}
+                />
+                <KpiCell label="Treinos concluídos" value={String(completedCount)} valueClass="text-bee-amber" divider />
+                <KpiCell label="Peso atual" value={currentWeight ? `${formatNumber(currentWeight, 1)} kg` : '—'} divider />
+                <KpiCell label="Altura" value={currentHeight ? `${formatNumber(currentHeight, 2)} m` : '—'} divider />
+            </div>
+
+            {/* ── Info + Plan row ──────────────────────────────────────── */}
+            <div className="grid grid-cols-3 border-t border-slate-100">
+                {/* Personal info */}
+                <div className="col-span-2 px-6 py-4 grid grid-cols-3 gap-x-8 gap-y-4">
+                    <InfoItem label="Sexo" value={student.gender === 'male' ? 'Masculino' : student.gender === 'female' ? 'Feminino' : 'Não informado'} />
+                    <InfoItem label="Nascimento" value={formatDate(student.birth_date)} />
+                    <InfoItem label="Idade" value={age ? `${age} anos` : '—'} />
+                    <InfoItem label="Telefone" value={student.phone} />
+                    <InfoItem label="Objetivo" value={student.objective} />
+                    <InfoItem label="Unidade" value={student.unitName || 'Não vinculado'} />
                 </div>
 
-                {/* Row 2 - Personal Identity (DOB and Age Swapped) */}
-                <InfoItem icon={User} label="Sexo" value={student.sex || 'Não informado'} />
-                <InfoItem icon={Calendar} label="Data de Nasc." value={formatDate(student.birth_date)} />
-                <InfoItem icon={Calendar} label="Idade" value={age ? `${age} anos` : '-'} />
-
-                {/* Row 3 - Contact & Goal */}
-                <InfoItem icon={Phone} label="Telefone" value={student.phone} />
-                <InfoItem icon={Target} label="Objetivo" value={student.objective} />
-                <InfoItem icon={Building2} label="Unidade" value={student.unitName || 'Não vinculado'} />
-
-                {/* Row 4 - Plan Sector */}
-                <div className="col-span-3 pt-6 border-t border-slate-100 grid grid-cols-3 gap-12">
-                    <InfoItem icon={planInfo.icon} label="Tipo de Plano" value={planInfo.label} />
-                    <InfoItem icon={CreditCard} label="Detalhes" value={planInfo.subtitle} />
-                    {student.plan?.plan_type === 'pack' ? (
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Saldo</span>
-                            <span className="text-xl font-black text-deep-midnight leading-tight">{student.credits_balance ?? 0} <span className="text-[11px] text-slate-400 font-bold uppercase">Créditos</span></span>
-                        </div>
+                {/* Plan card */}
+                <div className="border-l border-slate-100 px-6 py-4 flex flex-col justify-center gap-1.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Plano atual</p>
+                    {student.plan ? (
+                        <>
+                            <p className="text-base font-bold text-slate-800 leading-snug">{planLabel.name}</p>
+                            {planLabel.detail && (
+                                <p className="text-[13px] text-slate-500">{planLabel.detail}</p>
+                            )}
+                            {student.plan.price && (
+                                <p className="text-[13px] font-bold text-slate-700 mt-0.5">{formatCurrency(student.plan.price)}<span className="text-slate-400 font-normal text-[11px]">/mês</span></p>
+                            )}
+                            {planLabel.isCredits && (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                    <span className="text-xl font-black text-bee-amber">{student.credits_balance ?? 0}</span>
+                                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">créditos</span>
+                                </div>
+                            )}
+                        </>
                     ) : (
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Valor</span>
-                            <span className="text-xl font-black text-deep-midnight leading-tight">
-                                {formatCurrency(student.plan?.price)}
-                            </span>
-                        </div>
+                        <p className="text-sm text-slate-400">Sem plano vinculado</p>
                     )}
+                    <button
+                        onClick={onPlan}
+                        className="mt-1.5 text-[11px] font-bold text-bee-amber hover:text-amber-600 transition-colors self-start"
+                    >
+                        Gerenciar plano →
+                    </button>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function KpiCell({ label, value, valueClass, divider }: { label: string; value: string; valueClass?: string; divider?: boolean }) {
+    return (
+        <div className={cn('px-6 py-4', divider && 'border-l border-slate-100')}>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">{label}</p>
+            <p className={cn('text-2xl font-black leading-none', valueClass || 'text-slate-800')}>{value}</p>
+        </div>
+    );
+}
+
+function InfoItem({ label, value }: { label: string; value?: string | null }) {
+    return (
+        <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{label}</p>
+            <p className="text-[14px] font-semibold text-slate-700">{value || '—'}</p>
         </div>
     );
 }

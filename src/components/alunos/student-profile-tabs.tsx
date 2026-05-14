@@ -12,8 +12,10 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { WorkoutModal } from "@/components/treinos/workout-modal";
-import { WorkoutDetailsSheet } from "@/components/treinos/workout-details-sheet";
+import dynamic from 'next/dynamic';
+
+const WorkoutModal = dynamic(() => import('@/components/treinos/workout-modal').then(m => ({ default: m.WorkoutModal })), { ssr: false });
+const WorkoutDetailsSheet = dynamic(() => import('@/components/treinos/workout-details-sheet').then(m => ({ default: m.WorkoutDetailsSheet })), { ssr: false });
 import { addMonths } from "date-fns";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";

@@ -1,15 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Ruler, Loader2, Save, X, CalendarDays, Scale, Activity, ArrowRight, Info, Check } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Ruler, Loader2, Check } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface CreateMeasurementModalProps {
     open: boolean;
@@ -20,240 +20,123 @@ interface CreateMeasurementModalProps {
 
 export function CreateMeasurementModal({ open, onOpenChange, studentId, onSuccess }: CreateMeasurementModalProps) {
     const supabase = createClient();
+    const { organizationId } = useAuth();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
-    const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [weight, setWeight] = useState('');
     const [height, setHeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
 
+    const reset = () => { setWeight(''); setHeight(''); setBodyFat(''); setDate(format(new Date(), 'yyyy-MM-dd')); };
+
     const handleSubmit = async () => {
         if (!date || !weight) {
-            toast({ title: "Campos obrigatórios", description: "Por favor, preencha a data e o peso.", variant: "destructive" });
-            return;
+            toast({ title: "Preencha a data e o peso.", variant: "destructive" }); return;
         }
-
         const weightVal = parseFloat(weight);
         if (isNaN(weightVal) || weightVal <= 0 || weightVal > 500) {
-            toast({ title: "Peso inválido", description: "O peso deve estar entre 1 e 500 kg.", variant: "destructive" });
-            return;
+            toast({ title: "Peso inválido", description: "Entre 1 e 500 kg.", variant: "destructive" }); return;
         }
-
         const heightVal = height ? parseFloat(height) : null;
         if (heightVal !== null && (isNaN(heightVal) || heightVal < 0.3 || heightVal > 3.0)) {
-            toast({ title: "Altura inválida", description: "A altura deve estar entre 0,30 m e 3,00 m.", variant: "destructive" });
-            return;
+            toast({ title: "Altura inválida", description: "Entre 0,30 m e 3,00 m.", variant: "destructive" }); return;
         }
-
         const bodyFatVal = bodyFat ? parseFloat(bodyFat) : null;
-        if (bodyFatVal !== null && (isNaN(bodyFatVal) || bodyFatVal < 0 || bodyFatVal > 100)) {
-            toast({ title: "% Gordura inválida", description: "O percentual de gordura deve estar entre 0 e 100.", variant: "destructive" });
-            return;
-        }
 
         setLoading(true);
         try {
+            if (!organizationId) throw new Error("Organização não encontrada");
+            let bmi = null;
+            if (weightVal && heightVal) bmi = Math.round((weightVal / (heightVal * heightVal)) * 100) / 100;
 
-            // Calculate BMI
-            let bmiVal = null;
-            if (weightVal && heightVal && heightVal > 0) {
-                bmiVal = weightVal / (heightVal * heightVal);
-                bmiVal = Math.round(bmiVal * 100) / 100;
-            }
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error("Usuário não autenticado");
-
-            const { data: profile } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (!profile?.organization_id) throw new Error("Organização não encontrada para o usuário");
-
-            const { error } = await (supabase as any)
-                .from('student_measurements' as any)
-                .insert({
-                    student_id: studentId,
-                    organization_id: (profile as any).organization_id,
-                    recorded_at: date,
-                    weight: weightVal,
-                    height: heightVal,
-                    body_fat: bodyFatVal,
-                    bmi: bmiVal,
-                } as any);
-
+            const { error } = await (supabase as any).from('student_measurements').insert({
+                student_id: studentId, organization_id: organizationId,
+                recorded_at: date, weight: weightVal, height: heightVal, body_fat: bodyFatVal, bmi,
+            });
             if (error) throw error;
 
-            toast({ title: "Avaliação salva com sucesso!" });
-            if (onSuccess) onSuccess();
+            toast({ title: "Avaliação salva!" });
+            reset();
+            onSuccess?.();
             onOpenChange(false);
-            setWeight(''); setHeight(''); setBodyFat('');
-        } catch (error: any) {
-            console.error(error);
-            toast({ title: "Erro ao salvar", description: error.message || "Tente novamente.", variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
+        } catch (e: any) {
+            toast({ title: "Erro ao salvar", description: e.message, variant: "destructive" });
+        } finally { setLoading(false); }
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="p-0 border-none bg-white sm:max-w-[600px] flex flex-col h-full overflow-hidden">
-                <SheetHeader className="relative p-8 bg-gradient-to-br from-bee-midnight via-bee-midnight to-slate-900 border-none shrink-0 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-bee-amber/10 blur-3xl rounded-full -mr-16 -mt-16" />
-
-                    <div className="relative flex items-center gap-5">
-                        <div className="h-16 w-16 rounded-[22px] bg-bee-amber/10 flex items-center justify-center ring-1 ring-bee-amber/20">
-                            <Scale className="h-8 w-8 text-bee-amber" />
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[440px] p-0 gap-0 rounded-2xl overflow-hidden bg-white border border-slate-100">
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                            <Ruler className="h-4.5 w-4.5 text-emerald-500" />
                         </div>
                         <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <SheetTitle className="text-2xl font-black text-white tracking-tight">Avaliação Física</SheetTitle>
-                                <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tighter h-5 px-2">Antropometria</Badge>
-                            </div>
-                            <SheetDescription className="text-slate-400 font-medium text-sm">
-                                Registre as medidas e índices corporais
-                            </SheetDescription>
+                            <DialogTitle className="text-[17px] font-bold text-slate-900 leading-tight">Avaliação Física</DialogTitle>
+                            <DialogDescription className="text-xs text-slate-400 mt-0.5">Registre as medidas corporais do aluno</DialogDescription>
                         </div>
                     </div>
-                </SheetHeader>
+                </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10 scrollbar-hide">
-                    {/* Data e Peso */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
-                                <Activity className="h-4 w-4 text-bee-amber" />
-                            </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Medidas Principais</h3>
+                <div className="px-6 py-5 space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Date */}
+                        <div className="col-span-2 space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Data da coleta</Label>
+                            <Input type="date" value={date} onChange={e => setDate(e.target.value)}
+                                className="h-9 rounded-xl border-slate-200 text-sm" />
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Data da Coleta</Label>
-                                <div className="group/input relative transition-all">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
-                                        <CalendarDays className="h-full w-full" />
-                                    </div>
-                                    <Input
-                                        type="date"
-                                        value={date}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
-                                    />
+                        {/* Weight */}
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Peso (kg) <span className="text-red-400">*</span></Label>
+                            <Input type="number" step="0.1" placeholder="85.0" value={weight} onChange={e => setWeight(e.target.value)}
+                                className="h-9 rounded-xl border-slate-200 text-sm" />
+                        </div>
+
+                        {/* Height */}
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Altura (m)</Label>
+                            <Input type="number" step="0.01" placeholder="1.75" value={height} onChange={e => setHeight(e.target.value)}
+                                className="h-9 rounded-xl border-slate-200 text-sm" />
+                        </div>
+
+                        {/* Body fat */}
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Gordura (%)</Label>
+                            <Input type="number" step="0.1" placeholder="15.0" value={bodyFat} onChange={e => setBodyFat(e.target.value)}
+                                className="h-9 rounded-xl border-slate-200 text-sm" />
+                        </div>
+
+                        {/* BMI preview */}
+                        {weight && height && (
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">IMC calculado</Label>
+                                <div className="h-9 rounded-xl border border-slate-100 bg-slate-50 px-3 flex items-center">
+                                    <span className="text-sm font-semibold text-slate-700">
+                                        {(parseFloat(weight) / (parseFloat(height) ** 2)).toFixed(1)}
+                                    </span>
                                 </div>
                             </div>
-
-                            <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Peso Atual (kg)</Label>
-                                <div className="group/input relative transition-all">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
-                                        <Scale className="h-full w-full" />
-                                    </div>
-                                    <Input
-                                        type="number"
-                                        step="0.1"
-                                        placeholder="00.0"
-                                        value={weight}
-                                        onChange={(e) => setWeight(e.target.value)}
-                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator className="bg-slate-50" />
-
-                    {/* Altura e Gordura */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
-                                <Ruler className="h-4 w-4 text-bee-amber" />
-                            </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Composição Corporal</h3>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Altura (m)</Label>
-                                <div className="group/input relative transition-all">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
-                                        <Ruler className="h-full w-full" />
-                                    </div>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={height}
-                                        onChange={(e) => setHeight(e.target.value)}
-                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2.5">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">% de Gordura (BF)</Label>
-                                <div className="group/input relative transition-all">
-                                    <div className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within/input:text-bee-amber transition-colors duration-300">
-                                        <Activity className="h-full w-full" />
-                                    </div>
-                                    <Input
-                                        type="number"
-                                        step="0.1"
-                                        placeholder="0.0"
-                                        value={bodyFat}
-                                        onChange={(e) => setBodyFat(e.target.value)}
-                                        className="h-11 pl-14 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-bee-amber/5 focus:border-bee-amber/20 transition-all font-semibold text-bee-midnight"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Info Tip */}
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div className="flex gap-3">
-                                <Info className="h-5 w-5 text-bee-amber shrink-0 mt-0.5" />
-                                <p className="text-xs text-slate-500 leading-relaxed">
-                                    O <strong>IMC (Índice de Massa Corporal)</strong> será calculado automaticamente com base no peso e altura fornecidos.
-                                </p>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
-                    <Button
-                        variant="ghost"
-                        onClick={() => onOpenChange(false)}
-                        disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-100 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
-                    >
-                        <X className="mr-2 h-4 w-4" />
-                        Descartar
+                <DialogFooter className="px-6 py-4 border-t border-slate-100 flex flex-row items-center gap-2 sm:justify-end">
+                    <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={loading}
+                        className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
+                        Cancelar
                     </Button>
-                    <Button
-                        disabled={loading}
-                        onClick={handleSubmit}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-[10px] tracking-widest px-10"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processando...
-                            </>
-                        ) : (
-                            <>
-                                <Check className="mr-2 h-4 w-4" />
-                                Registrar Avaliação
-                            </>
-                        )}
+                    <Button size="sm" disabled={loading || !weight || !date} onClick={handleSubmit}
+                        className="h-9 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-bold text-xs px-5 gap-1.5 shadow-none">
+                        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5 stroke-[3px]" />}
+                        {loading ? 'Salvando...' : 'Salvar medidas'}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

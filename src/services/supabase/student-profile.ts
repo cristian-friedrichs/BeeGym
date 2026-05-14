@@ -109,7 +109,7 @@ export async function getStudentProfile(studentId: string): Promise<StudentProfi
         avatar_url: dataAny.avatar_url,
         status: dataAny.status as 'ACTIVE' | 'INACTIVE' | 'OVERDUE',
         objective: dataAny.objective,
-        created_at: dataAny.created_at || new Date().toISOString(),
+        created_at: dataAny.created_at || format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         unit_id: '',
         organization_id: dataAny.organization_id || '',
         plan: dataAny.plan ? { id: '0', name: dataAny.plan, color: '#F97316', price: 0 } : null,

@@ -4,25 +4,24 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { startOfISOWeek, endOfISOWeek, isWithinInterval, parseISO } from 'date-fns';
 import { StudentProfileMainSection } from '@/components/alunos/student-profile-main-section';
-import { ActiveListSection } from '@/components/alunos/active-list-section';
-import { StudentModal } from '@/components/alunos/student-modal';
-import { QuickMessageModal } from "@/components/alunos/quick-message-modal";
-import { CreateMeasurementModal } from "@/components/alunos/create-measurement-modal";
-import { ManagePlanModal } from "@/components/alunos/manage-plan-modal";
-import { WorkoutModal } from "@/components/treinos/workout-modal";
-import { RecurringWorkoutModal } from "@/components/treinos/recurring-workout-modal";
+import dynamic from 'next/dynamic';
 
-import { ArrowLeft, Loader2, TrendingUp, Dumbbell, RefreshCw, ClipboardList } from 'lucide-react';
+const StudentModal = dynamic(() => import('@/components/alunos/student-modal').then(m => ({ default: m.StudentModal })), { ssr: false });
+const QuickMessageModal = dynamic(() => import('@/components/alunos/quick-message-modal').then(m => ({ default: m.QuickMessageModal })), { ssr: false });
+const CreateMeasurementModal = dynamic(() => import('@/components/alunos/create-measurement-modal').then(m => ({ default: m.CreateMeasurementModal })), { ssr: false });
+const ManagePlanModal = dynamic(() => import('@/components/alunos/manage-plan-modal').then(m => ({ default: m.ManagePlanModal })), { ssr: false });
+const WorkoutModal = dynamic(() => import('@/components/treinos/workout-modal').then(m => ({ default: m.WorkoutModal })), { ssr: false });
+const RecurringWorkoutModal = dynamic(() => import('@/components/treinos/recurring-workout-modal').then(m => ({ default: m.RecurringWorkoutModal })), { ssr: false });
+
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-
-// New Components
 import { MedicalRecordModal } from "@/components/alunos/medical-record-modal";
 import { MedicalRecordCard } from "@/components/alunos/medical-record-card";
 import { MeasurementEvolutionChart } from "@/components/alunos/measurement-evolution-chart";
-import { StudentUpcomingActivities } from "@/components/alunos/student-upcoming-activities";
+import { StudentActivitiesCard } from "@/components/alunos/student-activities-card";
 
 export default function StudentDetailsPage() {
     const supabase = createClient();
@@ -173,61 +172,49 @@ export default function StudentDetailsPage() {
 
 
     return (
-        <div className="space-y-6">
-            {/* Nav & Header */}
-            <div className="flex flex-col gap-4 shrink-0">
-                <Link href="/app/alunos" className="w-fit">
-                    <Button variant="ghost" size="sm" className="gap-2 text-slate-400 hover:text-orange-600 hover:bg-transparent transition-all font-bold uppercase tracking-widest text-[11px] h-auto p-0 group">
-                        <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" /> Voltar para Alunos
-                    </Button>
-                </Link>
+        <div className="space-y-5 pb-8">
+            {/* Back nav */}
+            <Link href="/app/alunos" className="w-fit">
+                <Button variant="ghost" size="sm" className="gap-1.5 text-slate-400 hover:text-slate-700 hover:bg-transparent p-0 h-auto font-medium text-sm group">
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                    Voltar para Alunos
+                </Button>
+            </Link>
 
-                <StudentProfileMainSection
-                    student={student}
-                    attendancePercentage={attendancePercentage}
-                    completedCount={completedCount}
-                    currentWeight={currentWeight}
-                    currentHeight={currentHeight}
-                    onEdit={() => setIsEditModalOpen(true)}
-                    onMessage={() => setIsMessageModalOpen(true)}
-                    onWorkout={() => setIsRecurringModalOpen(true)}
-                    onMeasurement={() => setIsMeasurementModalOpen(true)}
-                    onPlan={() => setIsPlanModalOpen(true)}
-                    onInactivate={handleInactivate}
-                />
-            </div>
+            {/* Main profile card */}
+            <StudentProfileMainSection
+                student={student}
+                attendancePercentage={attendancePercentage}
+                completedCount={completedCount}
+                currentWeight={currentWeight}
+                currentHeight={currentHeight}
+                onEdit={() => setIsEditModalOpen(true)}
+                onMessage={() => setIsMessageModalOpen(true)}
+                onWorkout={() => setIsRecurringModalOpen(true)}
+                onMeasurement={() => setIsMeasurementModalOpen(true)}
+                onPlan={() => setIsPlanModalOpen(true)}
+                onInactivate={handleInactivate}
+            />
 
-            {/* Main Dashboard Area: Metric Evolution & Medical Records */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="h-[350px]">
-                    <MeasurementEvolutionChart
-                        data={student.measurements}
-                        studentId={id}
-                    />
+            {/* Chart + Medical side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <div className="lg:col-span-3 h-[320px]">
+                    <MeasurementEvolutionChart data={student.measurements} studentId={id} />
                 </div>
-                <div className="h-[350px]">
-                    <MedicalRecordCard
-                        data={student.medicalRecord}
-                        onEdit={() => setIsMedicalModalOpen(true)}
-                    />
+                <div className="lg:col-span-2 h-[320px]">
+                    <MedicalRecordCard data={student.medicalRecord} onEdit={() => setIsMedicalModalOpen(true)} />
                 </div>
             </div>
 
-            {/* Upcoming Activities */}
-            <StudentUpcomingActivities studentId={id} />
-
-            {/* List Section */}
-            <div className="flex-1 min-h-[400px]">
-                <ActiveListSection
-                    workouts={(student.workouts || []).filter((w: any) =>
-                        ['Concluido', 'Faltou', 'Cancelado', 'Realizada', 'Agendado', 'Em Execução'].includes(w.status)
-                    )}
-                    invoices={student.invoices}
-                    studentId={id}
-                    onWorkoutClick={(id) => setIsWorkoutModalOpen(true)}
-                    onInvoiceClick={() => { }}
-                />
-            </div>
+            {/* Unified activities card */}
+            <StudentActivitiesCard
+                studentId={id}
+                workouts={(student.workouts || []).filter((w: any) =>
+                    ['Concluido', 'Faltou', 'Cancelado', 'Realizada', 'Agendado', 'Em Execução'].includes(w.status)
+                )}
+                invoices={student.invoices}
+                onWorkoutClick={() => setIsWorkoutModalOpen(true)}
+            />
 
             {/* Modals */}
             <StudentModal

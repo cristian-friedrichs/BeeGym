@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getActivityInfo } from "@/lib/class-definitions";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -61,14 +62,20 @@ export function ActiveListSection({
         }
     };
 
-    const WorkoutItem = ({ workout }: { workout: Workout }) => (
+    const WorkoutItem = ({ workout }: { workout: Workout }) => {
+        const actInfo = getActivityInfo(workout.type, workout.title);
+        const ActivityIcon = actInfo.icon;
+        return (
         <div
             onClick={() => onWorkoutClick(workout.id)}
             className="flex items-center justify-between p-3.5 bg-slate-50/50 rounded-[12px] border border-slate-100 hover:border-bee-amber hover:bg-white hover:shadow-sm transition-all cursor-pointer group"
         >
             <div className="flex items-center gap-4">
-                <div className="h-10 w-10 bg-white rounded-[10px] flex items-center justify-center border group-hover:bg-amber-50 group-hover:border-orange-100 transition-colors">
-                    {getStatusIcon(workout.status)}
+                <div
+                    className="h-10 w-10 rounded-[10px] flex items-center justify-center border transition-colors"
+                    style={{ backgroundColor: `${actInfo.color}12`, borderColor: `${actInfo.color}25` }}
+                >
+                    <ActivityIcon className="h-4.5 w-4.5" style={{ color: actInfo.color }} />
                 </div>
                 <div>
                     <h4 className="font-bold text-sm text-deep-midnight group-hover:text-bee-amber transition-colors">{workout.title}</h4>
@@ -86,7 +93,8 @@ export function ActiveListSection({
                 <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-amber transition-colors" />
             </div>
         </div>
-    );
+        );
+    };
 
     const InvoiceItem = ({ invoice }: { invoice: Invoice }) => {
         const isPaid = invoice.status === 'PAID' || invoice.status === 'Pago';
@@ -184,7 +192,7 @@ export function ActiveListSection({
 
             <div className="p-4 border-t border-slate-50 bg-slate-50/20">
                 <Button variant="ghost" size="sm" asChild className="w-full justify-center text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-orange-600 transition-colors">
-                    <a href={`/alunos/${studentId}/${view}`}>
+                    <a href={`/app/alunos/${studentId}/${view}`}>
                         Ver todo o histórico de {view === 'workouts' ? 'atividades' : 'faturas'}
                         <ChevronRight className="h-3.5 w-3.5 ml-1.5" />
                     </a>

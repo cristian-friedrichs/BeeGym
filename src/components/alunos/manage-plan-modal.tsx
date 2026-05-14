@@ -1,21 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
-import { CreditCard, Loader2, Check, Save, X, Tag, Hash, CalendarIcon, Info } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, addMonths } from "date-fns";
-const dateAddMonths = addMonths;
-import { Separator } from '@/components/ui/separator';
+import { CreditCard, Loader2, Check, Tag, CalendarIcon, Info, Hash } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { format, addMonths } from 'date-fns';
 
 interface Plan {
     id: string;
@@ -31,9 +29,7 @@ interface Plan {
 }
 
 const recurrenceLabel: Record<string, string> = {
-    monthly: 'Mensal',
-    quarterly: 'Trimestral',
-    yearly: 'Anual',
+    monthly: 'Mensal', quarterly: 'Trimestral', yearly: 'Anual',
 };
 
 interface ManagePlanModalProps {
@@ -52,326 +48,208 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
     const [plans, setPlans] = useState<Plan[]>([]);
     const [selectedPlanId, setSelectedPlanId] = useState<string>(currentPlanId || '');
 
-    // Discount State
     const [discountActive, setDiscountActive] = useState(false);
     const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
     const [discountValue, setDiscountValue] = useState('');
     const [discountDuration, setDiscountDuration] = useState('1_month');
 
-    // Permissions (TODO: Implement real RBAC)
-    const [canManageDiscounts, setCanManageDiscounts] = useState(true);
+    const selectedPlan = plans.find(p => p.id === selectedPlanId);
 
-    const selectedPlanDetails = plans.find(p => p.id === selectedPlanId);
+    const finalPrice = (() => {
+        if (!selectedPlan || !discountActive || !discountValue) return selectedPlan?.price ?? 0;
+        const v = parseFloat(discountValue.replace(',', '.'));
+        if (isNaN(v)) return selectedPlan.price;
+        return discountType === 'percent'
+            ? selectedPlan.price * (1 - v / 100)
+            : Math.max(0, selectedPlan.price - v);
+    })();
 
-    const calculateFinalPrice = () => {
-        if (!selectedPlanDetails) return 0;
-        if (!discountActive || !discountValue) return selectedPlanDetails.price;
-
-        const value = parseFloat(discountValue.replace(',', '.'));
-        if (isNaN(value)) return selectedPlanDetails.price;
-
-        if (discountType === 'percent') {
-            return selectedPlanDetails.price * (1 - value / 100);
-        } else {
-            return Math.max(0, selectedPlanDetails.price - value);
-        }
-    };
-
-    const calculateDiscountEndDate = () => {
+    const discountEndDate = (() => {
         if (!discountActive) return null;
         const now = new Date();
-        switch (discountDuration) {
-            case '1_month': return addMonths(now, 1);
-            case '3_months': return addMonths(now, 3);
-            case '6_months': return addMonths(now, 6);
-            case '12_months': return addMonths(now, 12);
-            case 'indefinite': return null;
-            default: return null;
-        }
-    };
+        const map: Record<string, Date | null> = {
+            '1_month': addMonths(now, 1), '3_months': addMonths(now, 3),
+            '6_months': addMonths(now, 6), '12_months': addMonths(now, 12), 'indefinite': null,
+        };
+        return map[discountDuration] ?? null;
+    })();
 
     useEffect(() => {
         if (!open || !studentId) return;
-
-        const loadData = async () => {
+        const load = async () => {
             setLoading(true);
             try {
-                // 1. Resolve Organization ID (If admin, we need the student's org)
-                let resolvedOrgId = organizationId;
+                let orgId = organizationId;
+                const { data: s } = await (supabase as any).from('students').select('organization_id').eq('id', studentId).single();
+                if (s?.organization_id) orgId = s.organization_id;
+                if (!orgId) return;
 
-                // If we're not sure about the org or to be safe, fetch student's org
-                const { data: studentData } = await (supabase as any)
-                    .from('students')
-                    .select('organization_id')
-                    .eq('id', studentId)
-                    .single();
-
-                if (studentData?.organization_id) {
-                    resolvedOrgId = studentData.organization_id;
-                }
-
-                if (!resolvedOrgId) return;
-
-                // 2. Fetch Plans for that Org
-                const { data, error } = await supabase
-                    .from('membership_plans')
-                    .select('*')
-                    .eq('active', true)
-                    .eq('organization_id', resolvedOrgId)
-                    .order('name');
-
-                if (!error && data) {
-                    setPlans(data as Plan[]);
-                }
-
+                const { data } = await supabase.from('membership_plans').select('*').eq('active', true).eq('organization_id', orgId).order('name');
+                if (data) setPlans(data as Plan[]);
                 setSelectedPlanId(currentPlanId || '');
-            } catch (err) {
-                console.error('Error loading modal data:', err);
-            } finally {
-                setLoading(false);
-            }
+            } catch {}
+            finally { setLoading(false); }
         };
-
-        loadData();
+        load();
     }, [open, studentId, currentPlanId, organizationId]);
 
     const handleSubmit = async () => {
         if (!selectedPlanId) {
-            toast({ title: "Selecione um plano", variant: "destructive" });
-            return;
+            toast({ title: 'Selecione um plano', variant: 'destructive' }); return;
         }
-
-        // Discount validation
         if (discountActive && discountValue) {
             const dv = parseFloat(discountValue.replace(',', '.'));
             if (isNaN(dv) || dv <= 0) {
-                toast({ title: "Desconto inválido", description: "O valor do desconto deve ser maior que zero.", variant: "destructive" });
-                return;
+                toast({ title: 'Desconto inválido', description: 'O valor deve ser maior que zero.', variant: 'destructive' }); return;
             }
             if (discountType === 'percent' && dv >= 100) {
-                toast({ title: "Desconto inválido", description: "O desconto percentual deve ser menor que 100%.", variant: "destructive" });
-                return;
-            }
-            if (discountType === 'fixed' && selectedPlanDetails && dv >= selectedPlanDetails.price) {
-                toast({ title: "Desconto inválido", description: "O desconto fixo não pode ser igual ou maior que o valor do plano.", variant: "destructive" });
-                return;
+                toast({ title: 'Desconto inválido', description: 'Percentual deve ser menor que 100%.', variant: 'destructive' }); return;
             }
         }
 
         setLoading(true);
         try {
-            // Fetch current student data for credits calculation
-            const { data: currentStudent } = await (supabase as any)
-                .from('students')
-                .select('credits_balance')
-                .eq('id', studentId)
-                .single();
-
-            // Calculate new credits balance (Cumulative)
-            let newCreditsBalance = undefined;
-            if (selectedPlanDetails?.plan_type === 'pack') {
-                const currentBalance = currentStudent?.credits_balance || 0;
-                newCreditsBalance = currentBalance + (selectedPlanDetails.credits || 0);
+            const { data: cur } = await (supabase as any).from('students').select('credits_balance').eq('id', studentId).single();
+            let newCredits: number | undefined;
+            if (selectedPlan?.plan_type === 'pack') {
+                newCredits = (cur?.credits_balance || 0) + (selectedPlan.credits || 0);
             }
 
-            // Calculate Expiration Date
-            let expirationDate = null;
-            if (selectedPlanDetails?.duration_months) {
-                expirationDate = dateAddMonths(new Date(), selectedPlanDetails.duration_months).toISOString();
-            }
-            const discountEndDate = calculateDiscountEndDate()?.toISOString() || null;
+            const expDate = selectedPlan?.duration_months
+                ? format(addMonths(new Date(), selectedPlan.duration_months), 'yyyy-MM-dd HH:mm:ss')
+                : null;
+            const discountEndStr = discountEndDate ? format(discountEndDate, 'yyyy-MM-dd HH:mm:ss') : null;
             const discountVal = discountActive && discountValue ? parseFloat(discountValue.replace(',', '.')) : null;
 
-            // 1. Close any current active history row for this student
-            await (supabase as any)
-                .from('student_plan_history' as any)
-                .update({ ended_at: new Date().toISOString() } as any)
-                .eq('student_id', studentId)
-                .is('ended_at', null);
+            await (supabase as any).from('student_plan_history').update({ ended_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss') }).eq('student_id', studentId).is('ended_at', null);
+            await (supabase as any).from('student_plan_history').insert({
+                student_id: studentId, plan_id: selectedPlanId,
+                plan_name: selectedPlan?.name, plan_price: selectedPlan?.price,
+                discount_type: discountActive ? discountType : null,
+                discount_value: discountVal, discount_end_date: discountEndStr,
+                final_price: finalPrice,
+                started_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+                expiration_date: expDate,
+            });
 
-            // 2. Insert new history row with snapshot of chosen plan + discount
-            const finalPrice = calculateFinalPrice();
-            await (supabase as any)
-                .from('student_plan_history' as any)
-                .insert({
-                    student_id: studentId,
-                    plan_id: selectedPlanId,
-                    plan_name: selectedPlanDetails?.name ?? null,
-                    plan_price: selectedPlanDetails?.price ?? null,
-                    discount_type: discountActive ? discountType : null,
-                    discount_value: discountVal,
-                    discount_end_date: discountEndDate,
-                    final_price: finalPrice,
-                    started_at: new Date().toISOString(),
-                    expiration_date: expirationDate,
-                } as any);
-
-            // 3. Update the student record
-            const { error } = await (supabase as any)
-                .from('students')
-                .update({
-                    plan_id: selectedPlanId,
-                    discount_type: discountActive ? discountType : null,
-                    discount_value: discountVal,
-                    discount_end_date: discountEndDate,
-                    updated_at: new Date().toISOString(),
-                    // Cumulative credits if pack plan
-                    ...(selectedPlanDetails?.plan_type === 'pack' ? { credits_balance: newCreditsBalance } : {})
-                } as any)
-                .eq('id', studentId);
+            const { error } = await (supabase as any).from('students').update({
+                plan_id: selectedPlanId,
+                discount_type: discountActive ? discountType : null,
+                discount_value: discountVal,
+                discount_end_date: discountEndStr,
+                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+                ...(selectedPlan?.plan_type === 'pack' ? { credits_balance: newCredits } : {}),
+            }).eq('id', studentId);
 
             if (error) throw error;
-
-            toast({ title: "Plano atualizado com sucesso!" });
-            if (onSuccess) onSuccess();
+            toast({ title: 'Plano atualizado!' });
+            onSuccess?.();
             onOpenChange(false);
-        } catch (error: any) {
-            console.error(error);
-            toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
+        } catch (e: any) {
+            toast({ title: 'Erro ao atualizar', description: e.message, variant: 'destructive' });
+        } finally { setLoading(false); }
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="p-0 border-none bg-white sm:max-w-[600px] flex flex-col h-full overflow-hidden">
-                <SheetHeader className="p-6 border-b border-slate-50 bg-white shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className="h-12 w-12 rounded-xl bg-bee-amber/10 flex items-center justify-center border border-bee-amber/20">
-                            <CreditCard className="h-6 w-6 text-bee-amber" />
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-[540px] p-0 gap-0 rounded-2xl overflow-hidden bg-white border border-slate-100">
+
+                {/* Header */}
+                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="h-9 w-9 rounded-xl bg-bee-amber/10 flex items-center justify-center">
+                            <CreditCard className="h-4.5 w-4.5 text-bee-amber" />
                         </div>
-                        <div className="text-left">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <SheetTitle className="text-xl font-bold tracking-tight text-bee-midnight uppercase">
-                                    Assinatura
-                                </SheetTitle>
-                                <Badge className="bg-bee-amber text-bee-midnight border-none font-black uppercase text-[10px] tracking-tight h-5 px-2 rounded-full">
-                                    Financeiro
-                                </Badge>
-                            </div>
-                            <SheetDescription className="text-slate-400 font-medium text-xs">
-                                Gerencie o plano e benefícios do aluno.
-                            </SheetDescription>
+                        <div>
+                            <DialogTitle className="text-[17px] font-bold text-slate-900 leading-tight">Gerenciar Plano</DialogTitle>
+                            <DialogDescription className="text-xs text-slate-400 mt-0.5">Selecione o plano e aplique descontos se necessário.</DialogDescription>
                         </div>
                     </div>
-                </SheetHeader>
+                </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 scrollbar-hide">
-                    {/* Lista de Planos */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-bee-amber/10 flex items-center justify-center">
-                                <CreditCard className="h-4 w-4 text-bee-amber" />
+                {/* Body */}
+                <div className="px-6 py-5 space-y-5 max-h-[65vh] overflow-y-auto">
+
+                    {/* Plan list */}
+                    <div className="space-y-2">
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Planos disponíveis</p>
+
+                        {loading && plans.length === 0 ? (
+                            <div className="flex items-center justify-center py-10">
+                                <Loader2 className="h-5 w-5 animate-spin text-slate-300" />
                             </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Planos Disponíveis</h3>
-                        </div>
-
-                        <div className="space-y-3">
-                            {plans.length === 0 && (
-                                <div className="p-12 border-2 border-dashed border-slate-100 rounded-[32px] text-center space-y-2">
-                                    <Info className="h-8 w-8 text-slate-200 mx-auto" />
-                                    <p className="text-sm font-semibold text-slate-500">Nenhum plano ativo encontrado.</p>
-                                    <p className="text-xs text-slate-400">Cadastre planos em Configurações &gt; Planos.</p>
-                                </div>
-                            )}
-
-                            {plans.map((plan) => (
-                                <div
-                                    key={plan.id}
-                                    onClick={() => setSelectedPlanId(plan.id)}
-                                    className={cn(
-                                        "group relative flex items-center justify-between p-6 rounded-[32px] cursor-pointer transition-all duration-300 border-2",
-                                        selectedPlanId === plan.id
-                                            ? "bg-bee-amber/[0.03] border-bee-amber shadow-xl shadow-bee-amber/5"
-                                            : "border-slate-50 hover:border-bee-amber/20 hover:bg-slate-50/50 bg-slate-50/30"
-                                    )}
-                                >
-                                    {selectedPlanId === plan.id && (
-                                        <div className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-bee-amber flex items-center justify-center text-bee-midnight shadow-lg border-2 border-white animate-in zoom-in-50 duration-300 z-10">
-                                            <Check className="h-4 w-4 stroke-[4px]" />
+                        ) : plans.length === 0 ? (
+                            <div className="flex flex-col items-center gap-2 py-10 text-slate-400">
+                                <Info className="h-8 w-8 text-slate-200" />
+                                <p className="text-sm font-medium text-slate-500">Nenhum plano ativo encontrado.</p>
+                                <p className="text-xs text-slate-400">Cadastre planos em Configurações &gt; Planos.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {plans.map(plan => (
+                                    <button
+                                        key={plan.id}
+                                        type="button"
+                                        onClick={() => setSelectedPlanId(plan.id)}
+                                        className={cn(
+                                            'w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 text-left transition-all',
+                                            selectedPlanId === plan.id
+                                                ? 'border-bee-amber bg-bee-amber/5'
+                                                : 'border-slate-100 hover:border-slate-200 bg-white'
+                                        )}
+                                    >
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-sm font-bold text-slate-800">{plan.name}</span>
+                                                {plan.plan_type === 'pack' && (
+                                                    <Badge className="bg-blue-50 text-blue-600 border-none text-[10px] font-bold rounded-full px-2 py-0 shadow-none">Pack</Badge>
+                                                )}
+                                                {plan.recurrence && plan.recurrence !== 'one_time' && (
+                                                    <Badge className="bg-slate-100 text-slate-500 border-none text-[10px] font-bold rounded-full px-2 py-0 shadow-none">{recurrenceLabel[plan.recurrence] || plan.recurrence}</Badge>
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                {plan.plan_type === 'pack' && plan.credits && (
+                                                    <span className="text-xs text-slate-500 flex items-center gap-1"><Hash className="h-3 w-3" />{plan.credits} créditos</span>
+                                                )}
+                                                {plan.plan_type !== 'pack' && plan.duration_months && (
+                                                    <span className="text-xs text-slate-500">{plan.duration_months} meses</span>
+                                                )}
+                                                {plan.description && (
+                                                    <span className="text-xs text-slate-400 truncate max-w-[200px]">{plan.description}</span>
+                                                )}
+                                            </div>
                                         </div>
-                                    )}
-
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2">
-                                            <span className={cn(
-                                                "font-black text-lg tracking-tight transition-colors uppercase",
-                                                selectedPlanId === plan.id ? "text-bee-midnight" : "text-slate-700"
-                                            )}>
-                                                {plan.name}
+                                        <div className="flex items-center gap-2.5 shrink-0 ml-4">
+                                            <span className={cn('text-base font-bold', selectedPlanId === plan.id ? 'text-bee-amber' : 'text-slate-800')}>
+                                                {plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                             </span>
-                                            {plan.plan_type === 'pack' && (
-                                                <Badge className="bg-blue-50 text-blue-600 border-none font-black uppercase text-[9px] tracking-widest px-2 h-5 rounded-full">Pack</Badge>
-                                            )}
+                                            <div className={cn(
+                                                'h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                                                selectedPlanId === plan.id ? 'border-bee-amber bg-bee-amber' : 'border-slate-200'
+                                            )}>
+                                                {selectedPlanId === plan.id && <Check className="h-3 w-3 text-bee-midnight stroke-[3px]" />}
+                                            </div>
                                         </div>
-
-                                        {plan.description && (
-                                            <span className="text-sm text-slate-400 font-medium leading-tight max-w-[300px]">{plan.description}</span>
-                                        )}
-
-                                        <div className="flex flex-wrap gap-2 mt-1">
-                                            {plan.plan_type === 'pack' ? (
-                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50/50 border border-blue-100/50 text-blue-600 text-[10px] font-black uppercase tracking-wider">
-                                                    <Hash className="h-3 w-3" />
-                                                    {plan.credits} Créditos
-                                                </div>
-                                            ) : (
-                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-bee-amber/10 border border-bee-amber/10 text-bee-amber text-[10px] font-black uppercase tracking-wider">
-                                                    <Check className="h-3 w-3 stroke-[3px]" />
-                                                    {plan.duration_months ? `${plan.duration_months} meses` : 'Ilimitado'}
-                                                </div>
-                                            )}
-                                            {plan.recurrence && plan.recurrence !== 'one_time' && (
-                                                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-wider">
-                                                    <CalendarIcon className="h-3 w-3" />
-                                                    {recurrenceLabel[plan.recurrence] || plan.recurrence}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="text-right">
-                                        <div className={cn(
-                                            "text-2xl font-black tracking-tighter transition-colors",
-                                            selectedPlanId === plan.id ? "text-bee-amber" : "text-slate-900"
-                                        )}>
-                                            {plan.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                        </div>
-                                        {plan.recurrence && plan.plan_type !== 'pack' && (
-                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1 block">por período</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Área de Desconto */}
-                </div>
-                {selectedPlanDetails && canManageDiscounts && (
-                    <div className="px-8 mt-auto pb-4">
+                    {/* Discount section — only when a plan is selected */}
+                    {selectedPlan && (
                         <div className={cn(
-                            "p-6 rounded-[32px] border-2 transition-all duration-500",
-                            discountActive
-                                ? "bg-bee-amber/[0.02] border-bee-amber/20 shadow-xl shadow-bee-amber/5"
-                                : "bg-slate-50 border-dashed border-slate-200"
+                            'rounded-xl border-2 px-4 py-4 transition-all',
+                            discountActive ? 'border-bee-amber/30 bg-bee-amber/[0.03]' : 'border-dashed border-slate-200'
                         )}>
-                            <div className="flex items-center justify-between mb-6">
-                                <Label className="flex items-center gap-3 cursor-pointer group/label" htmlFor="discount-toggle-manage">
-                                    <div className={cn(
-                                        "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
-                                        discountActive ? "bg-bee-amber/20" : "bg-slate-200"
-                                    )}>
-                                        <Tag className={cn("h-4 w-4", discountActive ? "text-bee-amber" : "text-slate-400")} />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-black text-[10px] uppercase tracking-widest text-slate-400 mb-0.5">Promoção</span>
-                                        <span className="font-bold text-slate-700">Aplicar Desconto</span>
-                                    </div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="discount-toggle" className="flex items-center gap-2.5 cursor-pointer">
+                                    <Tag className={cn('h-4 w-4', discountActive ? 'text-bee-amber' : 'text-slate-400')} />
+                                    <span className="text-sm font-semibold text-slate-700">Aplicar desconto</span>
                                 </Label>
                                 <Switch
-                                    id="discount-toggle-manage"
+                                    id="discount-toggle"
                                     checked={discountActive}
                                     onCheckedChange={setDiscountActive}
                                     className="data-[state=checked]:bg-bee-amber"
@@ -379,116 +257,103 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
                             </div>
 
                             {discountActive && (
-                                <div className="space-y-6 animate-in slide-in-from-top-4 fade-in duration-500">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor</Label>
-                                            <div className="group/input relative">
+                                <div className="mt-4 space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Discount value */}
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Valor</Label>
+                                            <div className="relative">
                                                 <Input
                                                     type="number"
                                                     value={discountValue}
                                                     onChange={e => setDiscountValue(e.target.value)}
-                                                    placeholder={discountType === 'percent' ? "0" : "0,00"}
-                                                    className="h-11 border-slate-100 bg-white rounded-2xl transition-all font-black text-bee-midnight text-lg px-5 focus:ring-bee-amber/20"
+                                                    placeholder={discountType === 'percent' ? '0' : '0,00'}
+                                                    className="h-9 rounded-xl border-slate-200 bg-white pr-20 text-sm font-semibold"
                                                 />
-                                                <div className="absolute right-2 top-2 bottom-2 flex bg-slate-50 rounded-xl border p-1 border-slate-100 shadow-inner">
+                                                <div className="absolute right-1 top-1 bottom-1 flex bg-slate-50 rounded-lg border border-slate-100 overflow-hidden">
                                                     <button
                                                         type="button"
                                                         onClick={() => setDiscountType('percent')}
-                                                        className={cn(
-                                                            "px-3 text-xs font-black rounded-lg transition-all",
-                                                            discountType === 'percent' ? "bg-white shadow-sm text-bee-amber" : "text-slate-400 hover:text-slate-600"
-                                                        )}
-                                                    >
-                                                        %
-                                                    </button>
+                                                        className={cn('px-2.5 text-xs font-bold transition-colors', discountType === 'percent' ? 'bg-white text-bee-amber' : 'text-slate-400 hover:text-slate-600')}
+                                                    >%</button>
                                                     <button
                                                         type="button"
                                                         onClick={() => setDiscountType('fixed')}
-                                                        className={cn(
-                                                            "px-3 text-xs font-black rounded-lg transition-all",
-                                                            discountType === 'fixed' ? "bg-white shadow-sm text-bee-amber" : "text-slate-400 hover:text-slate-600"
-                                                        )}
-                                                    >
-                                                        R$
-                                                    </button>
+                                                        className={cn('px-2.5 text-xs font-bold transition-colors', discountType === 'fixed' ? 'bg-white text-bee-amber' : 'text-slate-400 hover:text-slate-600')}
+                                                    >R$</button>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Duração</Label>
+                                        {/* Duration */}
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Duração</Label>
                                             <Select value={discountDuration} onValueChange={setDiscountDuration}>
-                                                <SelectTrigger className="h-11 bg-white border-slate-100 rounded-2xl transition-all font-bold text-bee-midnight px-5 focus:ring-bee-amber/20 focus:border-bee-amber/30 shadow-sm">
+                                                <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-sm">
                                                     <SelectValue />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-2xl border-slate-100 shadow-xl p-2 bg-white">
-                                                    <SelectItem value="1_month" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">1º Mês apenas</SelectItem>
-                                                    <SelectItem value="3_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">3 Meses</SelectItem>
-                                                    <SelectItem value="6_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">6 Meses</SelectItem>
-                                                    <SelectItem value="12_months" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">12 Meses</SelectItem>
-                                                    <SelectItem value="indefinite" className="rounded-xl focus:bg-bee-amber/10 focus:text-bee-amber font-bold py-3 px-4 transition-colors">VITALÍCIO</SelectItem>
+                                                <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                                    <SelectItem value="1_month">1 mês</SelectItem>
+                                                    <SelectItem value="3_months">3 meses</SelectItem>
+                                                    <SelectItem value="6_months">6 meses</SelectItem>
+                                                    <SelectItem value="12_months">12 meses</SelectItem>
+                                                    <SelectItem value="indefinite">Vitalício</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border border-bee-amber/10 rounded-2xl p-4 flex justify-between items-center shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-xl bg-bee-amber flex items-center justify-center text-bee-midnight">
-                                                <Check className="h-5 w-5 stroke-[3px]" />
-                                            </div>
+                                    {/* Price preview */}
+                                    {discountValue && (
+                                        <div className="flex items-center justify-between bg-white rounded-xl border border-slate-100 px-4 py-3">
                                             <div>
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total com Desconto</p>
-                                                <p className="text-xl font-black text-bee-midnight tracking-tighter leading-none mt-1">
-                                                    {calculateFinalPrice()?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total com desconto</p>
+                                                <p className="text-lg font-black text-slate-800 mt-0.5">
+                                                    {finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                                 </p>
                                             </div>
-                                        </div>
-                                        {calculateDiscountEndDate() && (
-                                            <div className="text-right">
-                                                <div className="flex items-center justify-end gap-1.5 text-bee-amber">
-                                                    <CalendarIcon className="h-3.5 w-3.5" />
-                                                    <span className="text-[10px] font-black uppercase tracking-widest">Até {format(new Date(calculateDiscountEndDate()!), 'dd/MM/yyyy')}</span>
+                                            {discountEndDate && (
+                                                <div className="text-right">
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Válido até</p>
+                                                    <p className="text-sm font-semibold text-slate-700 mt-0.5 flex items-center gap-1">
+                                                        <CalendarIcon className="h-3.5 w-3.5 text-bee-amber" />
+                                                        {format(discountEndDate, 'dd/MM/yyyy')}
+                                                    </p>
                                                 </div>
-                                            </div>
-                                        )}
-                                    </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
 
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30">
+                {/* Footer */}
+                <DialogFooter className="px-6 py-4 border-t border-slate-100 flex flex-row items-center gap-2 sm:justify-end">
                     <Button
-                        variant="ghost"
+                        variant="outline"
+                        size="sm"
                         onClick={() => onOpenChange(false)}
                         disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-50 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
+                        className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold"
                     >
-                        <X className="mr-2 h-4 w-4" />
-                        Descartar
+                        Cancelar
                     </Button>
                     <Button
+                        size="sm"
                         disabled={loading || !selectedPlanId}
                         onClick={handleSubmit}
-                        className="flex-1 sm:flex-none bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black h-10 rounded-full shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-[10px] px-10"
+                        className="h-9 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-bold text-xs px-6 gap-1.5 shadow-none"
                     >
                         {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processando...
-                            </>
+                            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
                         ) : (
-                            <>
-                                <Check className="mr-2 h-4 w-4 stroke-[3px]" />
-                                Atualizar Assinatura
-                            </>
+                            <><Check className="h-3.5 w-3.5 stroke-[3px]" /> Salvar plano</>
                         )}
                     </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet >
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

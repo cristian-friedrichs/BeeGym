@@ -46,7 +46,8 @@ export function StudentUpcomingActivities({ studentId }: { studentId: string }) 
     async function fetchActivities() {
         setLoading(true);
         try {
-            const now = new Date().toISOString();
+            const nowStr = format(new Date(), "yyyy-MM-dd HH:mm:ss");
+            const todayStr = format(new Date(), 'yyyy-MM-dd');
 
             // 1. Future / today workouts (personal sessions)
             const { data: workouts } = await (supabase as any)
@@ -54,7 +55,7 @@ export function StudentUpcomingActivities({ studentId }: { studentId: string }) 
                 .select('id, title, type, scheduled_at, end_time, status')
                 .eq('student_id', studentId)
                 .in('status', ['Agendado', 'Em Execução'])
-                .gte('scheduled_at', now.split('T')[0]) // date part only — covers today
+                .gte('scheduled_at', todayStr) // date part only — covers today
                 .order('scheduled_at', { ascending: true })
                 .limit(20);
 
@@ -73,7 +74,7 @@ export function StudentUpcomingActivities({ studentId }: { studentId: string }) 
                 .from('event_enrollments')
                 .select('id, status, calendar_events(id, title, type, start_datetime, end_datetime, instructor_name, status)')
                 .eq('student_id', studentId)
-                .gte('calendar_events.start_datetime', now.split('T')[0])
+                .gte('calendar_events.start_datetime', todayStr)
                 .not('calendar_events', 'is', null);
 
             const classItems: UpcomingActivity[] = (enrollments || [])
