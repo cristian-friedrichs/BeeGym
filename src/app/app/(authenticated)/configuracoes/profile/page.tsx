@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,12 +42,13 @@ export default function ProfilePage() {
 
     const { toast } = useToast();
     const supabase = createClient();
+    const { user: authUser } = useAuth();
 
     useEffect(() => {
         async function fetchProfile() {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
+                if (!authUser) return;
+                const user = authUser;
 
                 setUserId(user.id);
                 setUserEmail(user.email || '');
@@ -81,7 +83,7 @@ export default function ProfilePage() {
             }
         }
         fetchProfile();
-    }, []);
+    }, [authUser]);
 
     const formatPhone = (value: string) => {
         const clean = value.replace(/\D/g, '').slice(0, 11);

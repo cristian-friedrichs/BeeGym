@@ -21,6 +21,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { MoreVertical, Edit, Power, PowerOff, Plus, Clock, CreditCard, Loader2 } from 'lucide-react';
+import { ConfirmDiscardDialog } from "@/components/ui/confirm-discard-dialog";
 import { PlanForm, PlanFormValues } from './plan-form';
 import { createPlanAction, updatePlanAction, togglePlanStatusAction } from '@/actions/plans';
 import { useToast } from '@/hooks/use-toast';
@@ -52,12 +53,29 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFormDirty, setIsFormDirty] = useState(false);
+    const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL',
         }).format(price);
+    };
+
+    const handleCloseAttempt = () => {
+        if (isFormDirty) {
+            setShowDiscardDialog(true);
+        } else {
+            closeAllModals();
+        }
+    };
+
+    const closeAllModals = () => {
+        setIsAddModalOpen(false);
+        setEditingPlan(null);
+        setIsFormDirty(false);
+        setShowDiscardDialog(false);
     };
 
     const recurrenceMap: Record<string, string> = {
@@ -121,6 +139,7 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
         if (result.success) {
             toast({ title: 'Sucesso', description: 'Plano criado com sucesso!' });
             setIsAddModalOpen(false);
+            setIsFormDirty(false);
 
             setTimeout(() => {
                 router.refresh();
@@ -150,6 +169,7 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
         if (result.success) {
             toast({ title: 'Sucesso', description: 'Plano atualizado com sucesso!' });
             setEditingPlan(null);
+            setIsFormDirty(false);
 
             setTimeout(() => {
                 router.refresh();
@@ -198,11 +218,11 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50">
-                                    <TableHead className="font-semibold">Nome</TableHead>
-                                    <TableHead className="font-semibold">Preço</TableHead>
-                                    <TableHead className="w-[200px]">Regra de Acesso</TableHead>
-                                    <TableHead className="font-semibold">Status</TableHead>
-                                    <TableHead className="text-right font-semibold">Ações</TableHead>
+                                    <TableHead className="font-semibold text-xs uppercase tracking-wider text-slate-500 px-6 py-4">Nome</TableHead>
+                                    <TableHead className="font-semibold text-xs uppercase tracking-wider text-slate-500">Preço</TableHead>
+                                    <TableHead className="w-[200px] font-semibold text-xs uppercase tracking-wider text-slate-500">Regra de Acesso</TableHead>
+                                    <TableHead className="font-semibold text-xs uppercase tracking-wider text-slate-500">Status</TableHead>
+                                    <TableHead className="text-right font-semibold text-xs uppercase tracking-wider text-slate-500 px-6 py-4">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -215,37 +235,37 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
                                 ) : (
                                     initialPlans.map((plan) => (
                                         <TableRow key={plan.id} className="hover:bg-muted/30 transition-colors">
-                                            <TableCell>
+                                            <TableCell className="px-6 py-4">
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground">{plan.name}</span>
+                                                    <span className="font-semibold text-slate-900">{plan.name}</span>
                                                     {plan.description && (
-                                                        <span className="text-xs text-muted-foreground line-clamp-1">
+                                                        <span className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                                                             {plan.description}
                                                         </span>
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="font-medium">{formatPrice(plan.price)}</TableCell>
+                                            <TableCell className="font-bold text-slate-700">{formatPrice(plan.price)}</TableCell>
                                             <TableCell>
                                                 {renderAccessRule(plan)}
                                             </TableCell>
                                             <TableCell>
                                                 {plan.active ? (
-                                                    <Badge className="bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-200 shadow-none px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
+                                                    <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-100 shadow-none px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
                                                         Ativo
                                                     </Badge>
                                                 ) : (
-                                                    <Badge variant="secondary" className="text-muted-foreground shadow-none">
+                                                    <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-slate-200 shadow-none px-3 py-1 rounded-full uppercase text-[10px] tracking-wider font-bold">
                                                         Arquivado
                                                     </Badge>
                                                 )}
                                             </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-1 px-2">
+                                            <TableCell className="text-right px-6 py-4">
+                                                <div className="flex justify-end gap-1">
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-9 w-9 text-bee-midnight hover:bg-bee-amber/10 hover:text-bee-amber rounded-xl transition-all border border-transparent hover:border-bee-amber/20 shadow-none"
+                                                        className="h-9 w-9 text-slate-400 hover:text-bee-amber hover:bg-bee-amber/5 rounded-xl transition-all"
                                                         onClick={() => setEditingPlan(plan)}
                                                     >
                                                         <Edit className="h-4 w-4" />
@@ -253,7 +273,7 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className={`h-9 w-9 rounded-xl transition-all border border-transparent shadow-none ${plan.active ? 'text-bee-amber hover:bg-amber-50 hover:border-amber-100' : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100'}`}
+                                                        className={`h-9 w-9 rounded-xl transition-all ${plan.active ? 'text-amber-500 hover:bg-amber-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
                                                         onClick={() => handleToggleStatus(plan.id, plan.active)}
                                                         title={plan.active ? 'Desativar Plano' : 'Ativar Plano'}
                                                     >
@@ -270,42 +290,63 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
                 </CardContent>
 
                 {/* Add Dialog */}
-                <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-                    <DialogContent className="max-w-[560px] p-0 gap-0 rounded-2xl overflow-hidden">
-                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                <Dialog open={isAddModalOpen} onOpenChange={handleCloseAttempt}>
+                    <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden border-none shadow-2xl bg-white flex flex-col max-h-[90vh]">
+                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 bg-white shrink-0">
                             <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">Novo Plano</DialogTitle>
                             <p className="text-sm text-slate-500 mt-0.5">Configure as regras de acesso e cobrança.</p>
                         </DialogHeader>
-                        <div className="px-6 py-5 max-h-[72vh] overflow-y-auto">
-                            <PlanForm formId="add-plan-form" onSubmit={handleAddPlan} isLoading={isLoading} showButtons={false} />
+                        <div className="flex-1 overflow-y-auto px-6 py-5">
+                            <PlanForm 
+                                formId="add-plan-form" 
+                                onSubmit={handleAddPlan} 
+                                isLoading={isLoading} 
+                                showButtons={false} 
+                                onDirtyChange={setIsFormDirty}
+                            />
                         </div>
-                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                            <Button type="submit" form="add-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
-                                {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Criando…</> : 'Criar plano'}
+                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <Button variant="ghost" onClick={handleCloseAttempt} className="h-9 rounded-full px-5 text-slate-500 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
+                            <Button type="submit" form="add-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold text-sm shadow-sm transition-all active:scale-[0.98]">
+                                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando…</> : 'Criar plano'}
                             </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
 
                 {/* Edit Dialog */}
-                <Dialog open={!!editingPlan} onOpenChange={(open) => !open && setEditingPlan(null)}>
-                    <DialogContent className="max-w-[560px] p-0 gap-0 rounded-2xl overflow-hidden">
-                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
+                <Dialog open={!!editingPlan} onOpenChange={handleCloseAttempt}>
+                    <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden border-none shadow-2xl bg-white flex flex-col max-h-[90vh]">
+                        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 bg-white shrink-0">
                             <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">{editingPlan?.name || 'Editar Plano'}</DialogTitle>
                             <p className="text-sm text-slate-500 mt-0.5">Atualize as informações de venda.</p>
                         </DialogHeader>
-                        <div className="px-6 py-5 max-h-[72vh] overflow-y-auto">
-                            {editingPlan && <PlanForm formId="edit-plan-form" initialData={editingPlan} onSubmit={handleEditPlan} isLoading={isLoading} showButtons={false} />}
+                        <div className="flex-1 overflow-y-auto px-6 py-5">
+                            {editingPlan && (
+                                <PlanForm 
+                                    formId="edit-plan-form" 
+                                    initialData={editingPlan} 
+                                    onSubmit={handleEditPlan} 
+                                    isLoading={isLoading} 
+                                    showButtons={false} 
+                                    onDirtyChange={setIsFormDirty}
+                                />
+                            )}
                         </div>
-                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                            <Button variant="outline" onClick={() => setEditingPlan(null)} className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
-                            <Button type="submit" form="edit-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm">
-                                {isLoading ? <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</> : 'Salvar alterações'}
+                        <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
+                            <Button variant="ghost" onClick={handleCloseAttempt} className="h-9 rounded-full px-5 text-slate-500 hover:bg-slate-50 text-sm font-medium">Cancelar</Button>
+                            <Button type="submit" form="edit-plan-form" disabled={isLoading} className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-bold text-sm shadow-sm transition-all active:scale-[0.98]">
+                                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Salvando…</> : 'Salvar alterações'}
                             </Button>
                         </div>
                     </DialogContent>
                 </Dialog>
+
+                <ConfirmDiscardDialog 
+                    open={showDiscardDialog}
+                    onOpenChange={setShowDiscardDialog}
+                    onConfirm={closeAllModals}
+                />
             </Card>
         </div>
     );

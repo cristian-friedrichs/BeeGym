@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import { isOrgAdmin } from '@/lib/auth/role-checks';
 
 export default function SupportPage() {
     const supabase = createClient();
+    const { organizationId, profile: authProfile } = useAuth();
     const [tickets, setTickets] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,26 +52,16 @@ export default function SupportPage() {
         async function init() {
             setLoading(true);
             try {
-                const { data: { user }, error: authError } = await supabase.auth.getUser();
-                if (authError || !user || !mounted) return;
+                if (!authProfile || !mounted) return;
 
-                const { data: profile, error: profileError } = await (supabase as any)
-                    .from('profiles')
-                    .select('role, organization_id')
-                    .eq('id', user.id)
-                    .single();
+                setUserRole(authProfile.role ?? null);
 
-                if (profileError || !mounted) return;
+                if (!isOrgAdmin(authProfile.role)) return;
 
-                setUserRole(profile?.role ?? null);
+                if (!organizationId) return;
 
-                if (!isOrgAdmin(profile?.role)) return;
-
-                const organization_id = profile?.organization_id;
-                if (!organization_id) return;
-
-                setOrgId(organization_id);
-                await fetchTickets(organization_id);
+                setOrgId(organizationId);
+                await fetchTickets(organizationId);
             } finally {
                 if (mounted) setLoading(false);
             }

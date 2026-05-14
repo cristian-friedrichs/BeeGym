@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import {
     Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle,
 } from '@/components/ui/sheet';
@@ -26,6 +27,7 @@ interface TicketDetailsSheetProps {
 
 export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: TicketDetailsSheetProps) {
     const supabase = createClient();
+    const { user: authUser, profile: authProfile } = useAuth();
     const { toast } = useToast();
 
     const [messages, setMessages] = useState<any[]>([]);
@@ -64,19 +66,7 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
     useEffect(() => {
         if (!isOpen || !ticket) return;
 
-        // Fetch current user role to know how to label this sender
-        const resolveRole = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: profile } = await (supabase as any)
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
-            setCurrentUserRole(profile?.role ?? null);
-        };
-
-        resolveRole();
+        setCurrentUserRole(authProfile?.role ?? null);
         fetchMessages();
         setTicketStatus(ticket?.status ?? 'open');
     }, [isOpen, ticket]);
@@ -91,13 +81,12 @@ export function TicketDetailsSheet({ ticket, isOpen, onClose, onUpdate }: Ticket
 
         setIsSending(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Não autenticado');
+            if (!authUser) throw new Error('Não autenticado');
 
             // Insert message
             const { error: msgError } = await (supabase as any)
                 .from('support_messages')
-                .insert({ ticket_id: ticket.id, sender_id: user.id, message: msg });
+                .insert({ ticket_id: ticket.id, sender_id: authUser.id, message: msg });
 
             if (msgError) throw msgError;
 

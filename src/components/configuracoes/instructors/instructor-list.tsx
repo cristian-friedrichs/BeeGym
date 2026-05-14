@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { SectionHeader } from '@/components/ui/section-header';
-import { InstructorFormSheet } from './instructor-form-sheet';
+import { InstructorModal } from './instructor-modal';
 import { deleteInstructorAction } from '@/actions/instructors';
 
 interface Instructor {
@@ -172,7 +172,7 @@ export function InstructorList({ instructors, units, roles }: Props) {
             </Card>
 
             {/* Add modal */}
-            <InstructorFormSheet
+            <InstructorModal
                 open={isAddOpen}
                 onOpenChange={setIsAddOpen}
                 mode="create"
@@ -181,7 +181,7 @@ export function InstructorList({ instructors, units, roles }: Props) {
             />
 
             {/* Edit modal */}
-            <InstructorFormSheet
+            <InstructorModal
                 open={!!editingInstructor}
                 onOpenChange={(open) => { if (!open) setEditingInstructor(null); }}
                 mode="edit"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -37,12 +37,13 @@ interface PlanFormProps {
     isLoading?: boolean;
     formId?: string;
     showButtons?: boolean;
+    onDirtyChange?: (isDirty: boolean) => void;
 }
 
 const fieldCls = 'h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0';
 const labelCls = 'text-sm font-medium text-slate-700';
 
-export function PlanForm({ initialData, onSubmit, onClose, isLoading, formId = 'plan-form', showButtons = true }: PlanFormProps) {
+export function PlanForm({ initialData, onSubmit, onClose, isLoading, formId = 'plan-form', showButtons = true, onDirtyChange }: PlanFormProps) {
     const [planType, setPlanType] = useState<'membership' | 'pack'>(initialData?.plan_type || 'membership');
 
     const form = useForm<PlanFormValues>({
@@ -60,6 +61,11 @@ export function PlanForm({ initialData, onSubmit, onClose, isLoading, formId = '
             active: initialData?.active ?? true,
         },
     });
+    const { isDirty } = form.formState;
+
+    useEffect(() => {
+        onDirtyChange?.(isDirty);
+    }, [isDirty, onDirtyChange]);
 
     const handlePlanTypeChange = (value: 'membership' | 'pack') => {
         setPlanType(value);

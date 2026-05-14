@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
     Sheet,
@@ -57,6 +58,7 @@ export function NovoTicketModal({ isOpen, onClose, onSuccess }: NovoTicketModalP
     const [fileError, setFileError] = useState('');
     const { toast } = useToast();
     const supabase = createClient();
+    const { organizationId, user: authUser } = useAuth();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -95,25 +97,15 @@ export function NovoTicketModal({ isOpen, onClose, onSuccess }: NovoTicketModalP
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
         try {
-            // 1. Get authenticated user
-            const { data: { user }, error: authError } = await supabase.auth.getUser();
-            if (authError || !user) throw new Error('Usuário não autenticado.');
-
-            // 2. Fetch organization_id from profile
-            const { data: profile, error: profileError } = await (supabase as any)
-                .from('profiles')
-                .select('organization_id')
-                .eq('id', user.id)
-                .single();
-
-            if (profileError) throw new Error('Não foi possível carregar o perfil do usuário.');
-            if (!profile?.organization_id) throw new Error('Nenhuma organização vinculada ao seu perfil.');
+            if (!authUser) throw new Error('Usuário não autenticado.');
+            if (!organizationId) throw new Error('Nenhuma organização vinculada ao seu perfil.');
+            const user = authUser;
 
             // 3. Upload attachment if provided
             let attachmentUrl: string | null = null;
             if (file) {
                 const fileExt = file.name.split('.').pop();
-                const fileName = `${profile.organization_id}/${user.id}/${Date.now()}.${fileExt}`;
+                const fileName = `${organizationId}/${user.id}/${Date.now()}.${fileExt}`;
                 const { error: uploadError } = await supabase.storage
                     .from('support-attachments')
                     .upload(fileName, file, { upsert: false });
@@ -132,7 +124,7 @@ export function NovoTicketModal({ isOpen, onClose, onSuccess }: NovoTicketModalP
                 .from('support_tickets')
                 .insert({
                     user_id: user.id,
-                    organization_id: profile.organization_id,
+                    organization_id: organizationId,
                     subject: values.subject,
                     description: values.description,
                     priority: values.priority,

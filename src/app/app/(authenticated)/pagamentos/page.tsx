@@ -6,8 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 import { format, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ArrowUpRight, CreditCard, AlertCircle, Loader2, Plus, Search, Info, TrendingUp, DollarSign, Users, CalendarCheck, MoreHorizontal, Settings2 } from 'lucide-react';
-import { PaymentSheet } from '@/components/pagamentos/payment-sheet';
-import { NewPaymentModal } from '@/components/pagamentos/new-payment-modal';
+import dynamic from 'next/dynamic';
+
+const PaymentSheet = dynamic(() => import('@/components/pagamentos/payment-sheet').then(m => ({ default: m.PaymentSheet })), { ssr: false });
+const NewPaymentModal = dynamic(() => import('@/components/pagamentos/new-payment-modal').then(m => ({ default: m.NewPaymentModal })), { ssr: false });
 import { SectionHeader } from '@/components/ui/section-header';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
