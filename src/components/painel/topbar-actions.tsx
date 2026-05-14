@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Bell, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatDistanceToNow } from 'date-fns';
@@ -15,17 +16,12 @@ export function TopbarActions() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [unreadChats, setUnreadChats] = useState<any[]>([]);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const { user: currentUser } = useAuth();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setCurrentUser(user);
-        };
-        fetchUser();
-    }, [supabase]);
+    }, []);
 
     useEffect(() => {
         if (!currentUser) return;

@@ -3,11 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Users, DollarSign, AlertCircle, CalendarCheck, Loader2 } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { KpiCard } from '@/components/ui/kpi-card';
 import { formatK, formatCurrencyK } from '@/lib/formatters';
+import { format } from 'date-fns';
 
 export function KpiCards() {
     const supabase = createClient();
+    const { user: authUser } = useAuth();
     const [loading, setLoading] = useState(true);
 
     const [metrics, setMetrics] = useState({
@@ -19,10 +22,9 @@ export function KpiCards() {
 
     useEffect(() => {
         const fetchMetrics = async () => {
+            if (!authUser) return;
             setLoading(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) return;
 
                 // 1. Alunos Ativos (Incluindo quem está em atraso)
                 const { count: activeCount } = await supabase
@@ -40,16 +42,16 @@ export function KpiCards() {
                 const { count: workoutsCount } = await supabase
                     .from('workouts' as any)
                     .select('*', { count: 'exact', head: true })
-                    .gte('scheduled_at', todayStart.toISOString())
-                    .lte('scheduled_at', todayEnd.toISOString())
+                    .gte('scheduled_at', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
+                    .lte('scheduled_at', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
                     .neq('status', 'Cancelado');
 
                 // Fetch Classes count
                 const { count: classesCount } = await supabase
                     .from('calendar_events' as any)
                     .select('*', { count: 'exact', head: true })
-                    .gte('start_datetime', todayStart.toISOString())
-                    .lte('start_datetime', todayEnd.toISOString())
+                    .gte('start_datetime', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
+                    .lte('start_datetime', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
                     .neq('status', 'CANCELLED');
 
 
@@ -57,7 +59,7 @@ export function KpiCards() {
                 let revenue = 0;
                 let pending = 0;
 
-                const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+                const firstDayOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd HH:mm:ss");
 
                 // Fetch invoices from the start of the month for Revenue
                 const { data: invoicesData } = await supabase
@@ -112,7 +114,7 @@ export function KpiCards() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase]);
+    }, [supabase, authUser]);
 
     if (loading) {
         return <div className="flex justify-center items-center h-24 w-full"><Loader2 className="h-8 w-8 animate-spin text-orange-500" /></div>;

@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { Dumbbell, Flame, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { EventDetailsModal } from '@/components/painel/modals/event-details-modal';
+import dynamic from 'next/dynamic';
+
+const EventDetailsModal = dynamic(() => import('@/components/painel/modals/event-details-modal').then(m => ({ default: m.EventDetailsModal })), { ssr: false });
 
 interface Activity {
     id: string;
@@ -22,18 +25,17 @@ interface Activity {
 export function UpcomingActivities() {
     const supabase = createClient();
     const { toast } = useToast();
+    const { user: authUser } = useAuth();
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchActivities = async () => {
+        if (!authUser) return;
         try {
-            // Trigger status transitions for both classes and workouts
-            await supabase.rpc('update_class_statuses' as any);
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            // Trigger status transitions for both classes and workouts (best effort)
+            try { await supabase.rpc('update_class_statuses' as any); } catch {}
 
             // Definir o intervalo do dia atual (00:00:00 até 23:59:59)
             const todayStart = new Date();
@@ -57,8 +59,8 @@ export function UpcomingActivities() {
                         avatar_url
                     )
                 `)
-                .gte('scheduled_at', todayStart.toISOString())
-                .lte('scheduled_at', todayEnd.toISOString())
+                .gte('scheduled_at', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
+                .lte('scheduled_at', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
                 .order('scheduled_at', { ascending: true });
 
             if (wError) console.error("Erro Treinos:", wError);
@@ -79,8 +81,8 @@ export function UpcomingActivities() {
                     template:class_template_id(icon, color, title)
                 `)
                 .in('type', ['CLASS', 'TRAINING'])
-                .gte('start_datetime', todayStart.toISOString())
-                .lte('start_datetime', todayEnd.toISOString())
+                .gte('start_datetime', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
+                .lte('start_datetime', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
                 .order('start_datetime', { ascending: true });
 
             if (cError) {
@@ -146,6 +148,7 @@ export function UpcomingActivities() {
     };
 
     useEffect(() => {
+        if (!authUser) return;
         fetchActivities();
 
         const channel = supabase.channel('activities_changes')
@@ -156,7 +159,7 @@ export function UpcomingActivities() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [supabase]);
+    }, [supabase, authUser]);
 
     // Cores dinâmicas para todos os tipos de status
     const getStatusBadge = (status: string) => {

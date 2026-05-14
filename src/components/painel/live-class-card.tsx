@@ -1,5 +1,6 @@
 'use client';
 
+import { format } from 'date-fns';
 import { useState, useEffect, useCallback } from 'react';
 import { MapPin, Timer, ChevronLeft, ChevronRight, GraduationCap, Dumbbell, Calendar, Plus, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,11 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { NewTrainingModal } from './modals/new-training-modal';
-import { CreateRecurringClassModal } from './modals/create-recurring-class-modal';
+import dynamic from 'next/dynamic';
+
+const NewTrainingModal = dynamic(() => import('./modals/new-training-modal').then(m => ({ default: m.NewTrainingModal })), { ssr: false });
+const CreateRecurringClassModal = dynamic(() => import('./modals/create-recurring-class-modal').then(m => ({ default: m.CreateRecurringClassModal })), { ssr: false });
 
 interface LiveEvent {
     id: string;
@@ -80,38 +84,20 @@ export function LiveClassCard() {
     const [checkingInIds, setCheckingInIds] = useState<Set<string>>(new Set());
     const [workoutModalOpen, setWorkoutModalOpen] = useState(false);
     const [classModalOpen, setClassModalOpen] = useState(false);
-    const [organizationId, setOrganizationId] = useState<string | null>(null);
+    const { organizationId } = useAuth();
     const supabase = createClient();
     const router = useRouter();
     const { toast } = useToast();
 
     const currentEvent = liveEvents[currentEventIndex];
-    const elapsedTime = useElapsedTime(currentEvent?.start_time || new Date().toISOString());
-
-    // Fetch Organization ID once
-    useEffect(() => {
-        async function fetchOrgId() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: userData } = await (supabase as any)
-                    .from('profiles')
-                    .select('organization_id')
-                    .eq('id', user.id)
-                    .single();
-                if (userData?.organization_id) {
-                    setOrganizationId(userData.organization_id);
-                }
-            }
-        }
-        fetchOrgId();
-    }, [supabase]);
+    const elapsedTime = useElapsedTime(currentEvent?.start_time || format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 
     const fetchLiveEvents = useCallback(async () => {
         // TRAVA DE SEGURANÇA: Só busca se tiver o ID da organização
         if (!organizationId) return;
 
         try {
-            const now = new Date().toISOString();
+            const now = format(new Date(), "yyyy-MM-dd HH:mm:ss");
 
             // Busca eventos que estão acontecendo AGORA na tabela nova
             const { data, error } = await (supabase as any)

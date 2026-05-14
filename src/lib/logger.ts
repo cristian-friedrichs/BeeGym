@@ -1,3 +1,5 @@
+import { format } from 'date-fns';
+
 export interface LogEntry {
     id: string;
     timestamp: string;
@@ -23,7 +25,7 @@ export function logAction(data: LogActionInput) {
         const newLog: LogEntry = {
             ...data,
             id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-            timestamp: new Date().toISOString(),
+            timestamp: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
         };
 
         const existingLogsJSON = localStorage.getItem('system_logs');

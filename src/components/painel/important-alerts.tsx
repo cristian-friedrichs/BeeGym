@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
 import { AlertCircle, CalendarCheck, UserX, Bell, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
@@ -41,7 +42,7 @@ export function ImportantAlerts() {
                         type: 'WORKOUT_PENDING',
                         severity: 'medium',
                         actionLabel: 'Verificar Treinos',
-                        actionLink: '/treinos',
+                        actionLink: '/app/treinos',
                         count: pendingWorkoutsCount
                     });
                 }
@@ -54,7 +55,7 @@ export function ImportantAlerts() {
                     .from('students' as any)
                     .select('id', { count: 'exact', head: true })
                     .eq('status', 'ACTIVE')
-                    .lt('last_activity', tenDaysAgo.toISOString());
+                    .lt('last_activity', format(tenDaysAgo, "yyyy-MM-dd HH:mm:ss"));
 
                 if (!churnError && churnRiskCount && churnRiskCount > 0) {
                     newAlerts.push({
@@ -64,7 +65,7 @@ export function ImportantAlerts() {
                         type: 'CHURN_RISK',
                         severity: 'high',
                         actionLabel: 'Ver Lista',
-                        actionLink: '/alunos?filter=risk',
+                        actionLink: '/app/alunos?filter=risk',
                         count: churnRiskCount
                     });
                 }
@@ -83,7 +84,7 @@ export function ImportantAlerts() {
                         type: 'FINANCIAL_OVERDUE',
                         severity: 'high',
                         actionLabel: 'Enviar Lembrete',
-                        actionLink: '/financial',
+                        actionLink: '/app/pagamentos',
                         count: overdueCount
                     });
                 }

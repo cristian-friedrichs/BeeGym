@@ -8,11 +8,13 @@ import { Search, MoreVertical, Paperclip, Smile, Mic, Send, Archive, Image as Im
 import { format } from 'date-fns';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/lib/auth/AuthContext';
 import { SectionHeader } from '@/components/ui/section-header';
 
 export default function ConversasPage() {
     const router = useRouter();
     const { hasFeature, loading: subLoading } = useSubscription();
+    const { user: authUser, organizationId } = useAuth();
     const supabase = createClient();
     const { toast } = useToast();
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -48,9 +50,9 @@ export default function ConversasPage() {
     }, [subLoading, hasFeature, router]);
 
     useEffect(() => {
+        if (!authUser) return;
+        const user = authUser;
         const initChat = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
             setCurrentUser(user);
             fetchChats(user.id);
 
@@ -79,7 +81,7 @@ export default function ConversasPage() {
             };
         };
         initChat();
-    }, [activeChat?.id]);
+    }, [activeChat?.id, authUser]);
 
     // 1. CARREGAR LISTA LATERAL DE CONVERSAS ATIVAS
     const fetchChats = async (userId: string) => {
@@ -132,8 +134,6 @@ export default function ConversasPage() {
         }
 
         try {
-            const { data: profile } = await (supabase as any).from('profiles').select('organization_id').eq('id', currentUser.id).single();
-
             // 2. Busca os chats onde o usuário logado participa
             const { data: myChats } = await (supabase as any).from('chat_participants').select('chat_id').eq('participant_id', currentUser.id);
             const myChatIds = myChats?.map((c: any) => c.chat_id) || [];
@@ -153,7 +153,7 @@ export default function ConversasPage() {
                 }
             }
 
-            if (!profile?.organization_id) {
+            if (!organizationId) {
                 toast({ title: "Erro", description: "Sua conta não está vinculada a uma organização.", variant: "destructive" });
                 return;
             }
@@ -162,7 +162,7 @@ export default function ConversasPage() {
             if (!chatId) {
                 const { data: newChat, error: chatError } = await (supabase as any)
                     .from('chats')
-                    .insert({ organization_id: profile.organization_id })
+                    .insert({ organization_id: organizationId })
                     .select('id').single();
 
                 if (chatError) throw chatError;

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { UnitProvider } from "@/context/UnitContext";
 import { SetupStatusProvider } from "@/context/SetupStatusContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 import { StatusAutomator } from "@/components/global/status-automator";
 import { SetupChecklist } from "@/components/global/setup-checklist";
 import { Loader2 } from 'lucide-react';
@@ -17,6 +18,17 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { isSuperAdmin } from "@/lib/auth/role-checks";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  // SubscriptionProvider must wrap any child that calls useSubscription(),
+  // including DashboardLayoutInner itself. This single fetch is shared by
+  // all consumers below (sidebar, pages, hooks like useStudentLimit, etc.).
+  return (
+    <SubscriptionProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </SubscriptionProvider>
+  );
+}
+
+function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, profile, loading: authLoading } = useAuth();

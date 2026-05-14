@@ -102,7 +102,7 @@ export default function DashboardPage() {
             <div className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-[#FFBF00] rounded-full" />
-                <h3 className="text-base font-bold text-[#0B0F1A] font-display">Próximas Atividades</h3>
+                <h3 className="text-base font-bold text-[#0B0F1A] font-display">Atividades de Hoje</h3>
               </div>
               <Link href="/agenda?view=day">
                 <Button variant="ghost" size="sm" className="h-9 px-3 gap-2 font-bold text-[11px] uppercase tracking-widest text-slate-500 hover:text-orange-600 hover:bg-amber-50 transition-all rounded-full hover:-translate-y-0.5 active:scale-95">

@@ -33,6 +33,7 @@ import { Button } from "../ui/button"
 import { TopbarActions } from "./topbar-actions"
 import { BeeGymLogo } from "@/components/ui/beegym-logo"
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/auth/AuthContext'
 import { useRouter } from 'next/navigation'
 
 import { useUnit } from '@/context/UnitContext';
@@ -112,6 +113,7 @@ export function Header({ className }: { className?: string }) {
 
   const [units, setUnits] = useState<any[]>([]);
   const { currentUnitId, setCurrentUnitId } = useUnit();
+  const { user: authUser, profile: authProfile } = useAuth();
   const [orgName, setOrgName] = useState<string | null>(null);
 
   // User Data State
@@ -161,31 +163,23 @@ export function Header({ className }: { className?: string }) {
     setMounted(true);
     setIsClient(true);
 
-    // Fetch User Profile from public.users table
+    // User/profile come from AuthContext (no duplicate fetches).
     async function loadUser() {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const user = authUser;
+      const userData = authProfile;
       if (user) {
-        // Fetch from public.profiles table for real data
-        const { data: userData, error: dbError } = await (supabase as any)
-          .from('profiles')
-          .select('full_name, avatar_url, email, organization_id')
-          .eq('id', user.id)
-          .single();
-
-        // Priority fallback for avatar: db → auth metadata → null
         const dbAvatar = userData?.avatar_url;
-        const authAvatar = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        const authAvatar = (user as any).user_metadata?.avatar_url || (user as any).user_metadata?.picture;
         const finalAvatar = dbAvatar || authAvatar || null;
 
         if (userData) {
           setUserProfile({
-            full_name: userData.full_name || user.user_metadata?.full_name || 'Usuário',
+            full_name: userData.full_name || (user as any).user_metadata?.full_name || 'Usuário',
             avatar_url: finalAvatar,
             email: userData.email || user.email || '',
-            business_type: user.user_metadata?.business_type || null
+            business_type: (user as any).user_metadata?.business_type || null
           });
 
-          // Fetch organization name
           if (userData.organization_id) {
             const { data: org } = await (supabase as any)
               .from('organizations')
@@ -198,12 +192,11 @@ export function Header({ className }: { className?: string }) {
             }
           }
         } else {
-          // Fallback to auth metadata if table query fails
           setUserProfile({
-            full_name: user.user_metadata?.full_name || 'Usuário',
+            full_name: (user as any).user_metadata?.full_name || 'Usuário',
             avatar_url: authAvatar,
             email: user.email || '',
-            business_type: user.user_metadata?.business_type || null
+            business_type: (user as any).user_metadata?.business_type || null
           });
         }
       }
@@ -276,7 +269,7 @@ export function Header({ className }: { className?: string }) {
       window.removeEventListener('userProfileUpdated', handleProfileUpdate);
       window.removeEventListener('organizationUpdated', handleOrganizationUpdate);
     }
-  }, [supabase]);
+  }, [supabase, authUser, authProfile]);
 
   const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
     setThemeState(newTheme);

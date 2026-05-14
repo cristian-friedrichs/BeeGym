@@ -32,7 +32,6 @@ export function ActiveSessionBanner() {
 
     useEffect(() => {
         const fetchActiveSessions = async () => {
-            const nowIso = new Date().toISOString();
             const sessions: ActiveSession[] = [];
 
             // Trigger status transitions before fetching to ensure fresh data

@@ -19,18 +19,13 @@ const navItems = [
         matchExact: true
     },
     {
-        title: "Frequência",
-        href: "/frequency",
-        icon: Activity
-    },
-    {
         title: "Treinos",
-        href: "/treinos",
+        href: "/workouts",
         icon: Dumbbell
     },
     {
         title: "Financeiro",
-        href: "/pagamentos",
+        href: "/invoices",
         icon: CreditCard
     },
     {
@@ -46,7 +41,7 @@ interface ClientNavProps {
 
 export function ClientNav({ studentId }: ClientNavProps) {
     const pathname = usePathname();
-    const baseUrl = `/app/painel/alunos/${studentId}`;
+    const baseUrl = `/app/alunos/${studentId}`;
 
     return (
         <nav className="flex items-center space-x-4 lg:space-x-6 overflow-x-auto pb-2 border-b">
