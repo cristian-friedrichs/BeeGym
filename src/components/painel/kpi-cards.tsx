@@ -42,16 +42,16 @@ export function KpiCards() {
                 const { count: workoutsCount } = await supabase
                     .from('workouts' as any)
                     .select('*', { count: 'exact', head: true })
-                    .gte('scheduled_at', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
-                    .lte('scheduled_at', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
+                    .gte('scheduled_at', todayStart.toISOString())
+                    .lte('scheduled_at', todayEnd.toISOString())
                     .neq('status', 'Cancelado');
 
                 // Fetch Classes count
                 const { count: classesCount } = await supabase
                     .from('calendar_events' as any)
                     .select('*', { count: 'exact', head: true })
-                    .gte('start_datetime', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
-                    .lte('start_datetime', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
+                    .gte('start_datetime', todayStart.toISOString())
+                    .lte('start_datetime', todayEnd.toISOString())
                     .neq('status', 'CANCELLED');
 
 
@@ -59,7 +59,7 @@ export function KpiCards() {
                 let revenue = 0;
                 let pending = 0;
 
-                const firstDayOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd HH:mm:ss");
+                const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
 
                 // Fetch invoices from the start of the month for Revenue
                 const { data: invoicesData } = await supabase

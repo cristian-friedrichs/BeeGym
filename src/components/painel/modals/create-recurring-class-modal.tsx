@@ -302,8 +302,8 @@ export function CreateRecurringClassModal({ open, onOpenChange, onSuccess, initi
                     instructor_id: selectedInstructor,
                     organization_id: organizationId,
                     class_template_id: classType, // Using the template ID
-                    start_datetime: format(startDateTime, "yyyy-MM-dd HH:mm:ss"), // Use local format without offset
-                    end_datetime: format(endDateTime, "yyyy-MM-dd HH:mm:ss"), // Use local format without offset
+                    start_datetime: startDateTime.toISOString(),
+                    end_datetime: endDateTime.toISOString(),
                     capacity: capacityNum,
                     status: 'SCHEDULED',
                     type: 'CLASS',

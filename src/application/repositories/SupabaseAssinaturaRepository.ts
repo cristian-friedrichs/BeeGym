@@ -37,8 +37,8 @@ export const SupabaseAssinaturaRepository = {
                 payment_token: data.paymentToken,
                 dia_vencimento: data.diaVencimento,
                 valor_mensal: data.valorMensal,
-                proximo_vencimento: data.proximoVencimento ? format(data.proximoVencimento, 'yyyy-MM-dd HH:mm:ss') : null,
-                inicio_carencia: data.inicioCarencia ? format(data.inicioCarencia, 'yyyy-MM-dd HH:mm:ss') : null,
+                proximo_vencimento: data.proximoVencimento ? data.proximoVencimento.toISOString() : null,
+                inicio_carencia: data.inicioCarencia ? data.inicioCarencia.toISOString() : null,
                 promo_price: data.promoPrice,
                 promo_months_remaining: data.promoMonthsRemaining || 0,
                 cobrancas_pagas: 0,
@@ -75,7 +75,7 @@ export const SupabaseAssinaturaRepository = {
     async updateStatus(id: string, status: AssinaturaStatus): Promise<boolean> {
         const { error } = await supabaseAdmin
             .from('saas_subscriptions')
-            .update({ status, updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss') })
+            .update({ status, updated_at: new Date().toISOString() })
             .eq('id', id);
 
         if (error) {
@@ -88,7 +88,7 @@ export const SupabaseAssinaturaRepository = {
         if (sub?.organization_id) {
             await supabaseAdmin.from('organizations').update({
                 subscription_status: status.toUpperCase(),
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+                updated_at: new Date().toISOString()
             }).eq('id', sub.organization_id);
         }
 
@@ -99,9 +99,9 @@ export const SupabaseAssinaturaRepository = {
         const { error } = await supabaseAdmin
             .from('saas_subscriptions')
             .update({
-                proximo_vencimento: format(proximoVencimento, 'yyyy-MM-dd HH:mm:ss'),
+                proximo_vencimento: proximoVencimento.toISOString(),
                 status: 'ACTIVE',
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+                updated_at: new Date().toISOString()
             })
             .eq('id', id);
 
@@ -118,7 +118,7 @@ export const SupabaseAssinaturaRepository = {
         const updatePayload: any = {
             saas_plan_id: saasPlanId,
             valor_mensal: valorMensal,
-            updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+            updated_at: new Date().toISOString()
         };
 
         if (overrides) {
@@ -143,7 +143,7 @@ export const SupabaseAssinaturaRepository = {
         if (sub?.organization_id) {
             await supabaseAdmin.from('organizations').update({
                 plan_id: saasPlanId,
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+                updated_at: new Date().toISOString()
             }).eq('id', sub.organization_id);
         }
 
@@ -154,8 +154,8 @@ export const SupabaseAssinaturaRepository = {
         const { error } = await supabaseAdmin
             .from('saas_subscriptions')
             .update({
-                inicio_carencia: format(data, 'yyyy-MM-dd HH:mm:ss'),
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+                inicio_carencia: data.toISOString(),
+                updated_at: new Date().toISOString()
             })
             .eq('id', id);
         return !error;
@@ -194,7 +194,7 @@ export const SupabaseAssinaturaRepository = {
             .update({
                 cobrancas_pagas: novasCobrancas,
                 promo_months_remaining: novoPromo,
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss')
+                updated_at: new Date().toISOString()
             })
             .eq('id', id);
 
@@ -211,7 +211,7 @@ export const SupabaseAssinaturaRepository = {
             amount,
             status,
             payment_method: method,
-            paid_at: status === 'PAGO' ? format(new Date(), 'yyyy-MM-dd HH:mm:ss') : null
+            paid_at: status === 'PAGO' ? new Date().toISOString() : null
         });
     },
 

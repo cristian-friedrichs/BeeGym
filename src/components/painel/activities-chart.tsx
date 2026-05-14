@@ -63,15 +63,15 @@ export function ActivitiesChart() {
             const { data: workouts } = await supabase
                 .from('workouts' as any)
                 .select('id, status, scheduled_at')
-                .gte('scheduled_at', format(start, "yyyy-MM-dd HH:mm:ss"))
-                .lte('scheduled_at', format(end, "yyyy-MM-dd HH:mm:ss"));
+                .gte('scheduled_at', start.toISOString())
+                .lte('scheduled_at', end.toISOString());
 
             // 2. Fetch Classes/Events
             const { data: events } = await supabase
                 .from('calendar_events' as any)
                 .select('id, status, start_datetime, type')
-                .gte('start_datetime', format(start, "yyyy-MM-dd HH:mm:ss"))
-                .lte('start_datetime', format(end, "yyyy-MM-dd HH:mm:ss"));
+                .gte('start_datetime', start.toISOString())
+                .lte('start_datetime', end.toISOString());
 
             // 3. Aggregate
             const days = eachDayOfInterval({ start, end });

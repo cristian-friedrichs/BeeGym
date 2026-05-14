@@ -116,19 +116,19 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
             }
 
             const expDate = selectedPlan?.duration_months
-                ? format(addMonths(new Date(), selectedPlan.duration_months), 'yyyy-MM-dd HH:mm:ss')
+                ? addMonths(new Date(), selectedPlan.duration_months).toISOString()
                 : null;
-            const discountEndStr = discountEndDate ? format(discountEndDate, 'yyyy-MM-dd HH:mm:ss') : null;
+            const discountEndStr = discountEndDate ? discountEndDate.toISOString() : null;
             const discountVal = discountActive && discountValue ? parseFloat(discountValue.replace(',', '.')) : null;
 
-            await (supabase as any).from('student_plan_history').update({ ended_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss') }).eq('student_id', studentId).is('ended_at', null);
+            await (supabase as any).from('student_plan_history').update({ ended_at: new Date().toISOString() }).eq('student_id', studentId).is('ended_at', null);
             await (supabase as any).from('student_plan_history').insert({
                 student_id: studentId, plan_id: selectedPlanId,
                 plan_name: selectedPlan?.name, plan_price: selectedPlan?.price,
                 discount_type: discountActive ? discountType : null,
                 discount_value: discountVal, discount_end_date: discountEndStr,
                 final_price: finalPrice,
-                started_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+                started_at: new Date().toISOString(),
                 expiration_date: expDate,
             });
 
@@ -137,7 +137,7 @@ export function ManagePlanModal({ open, onOpenChange, studentId, currentPlanId, 
                 discount_type: discountActive ? discountType : null,
                 discount_value: discountVal,
                 discount_end_date: discountEndStr,
-                updated_at: format(new Date(), 'yyyy-MM-dd HH:mm:ss'),
+                updated_at: new Date().toISOString(),
                 ...(selectedPlan?.plan_type === 'pack' ? { credits_balance: newCredits } : {}),
             }).eq('id', studentId);
 

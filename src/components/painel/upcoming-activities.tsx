@@ -59,8 +59,8 @@ export function UpcomingActivities() {
                         avatar_url
                     )
                 `)
-                .gte('scheduled_at', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
-                .lte('scheduled_at', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
+                .gte('scheduled_at', todayStart.toISOString())
+                .lte('scheduled_at', todayEnd.toISOString())
                 .order('scheduled_at', { ascending: true });
 
             if (wError) console.error("Erro Treinos:", wError);
@@ -81,8 +81,8 @@ export function UpcomingActivities() {
                     template:class_template_id(icon, color, title)
                 `)
                 .in('type', ['CLASS', 'TRAINING'])
-                .gte('start_datetime', format(todayStart, "yyyy-MM-dd HH:mm:ss"))
-                .lte('start_datetime', format(todayEnd, "yyyy-MM-dd HH:mm:ss"))
+                .gte('start_datetime', todayStart.toISOString())
+                .lte('start_datetime', todayEnd.toISOString())
                 .order('start_datetime', { ascending: true });
 
             if (cError) {

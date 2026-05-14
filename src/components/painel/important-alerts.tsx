@@ -55,7 +55,7 @@ export function ImportantAlerts() {
                     .from('students' as any)
                     .select('id', { count: 'exact', head: true })
                     .eq('status', 'ACTIVE')
-                    .lt('last_activity', format(tenDaysAgo, "yyyy-MM-dd HH:mm:ss"));
+                    .lt('last_activity', tenDaysAgo.toISOString());
 
                 if (!churnError && churnRiskCount && churnRiskCount > 0) {
                     newAlerts.push({

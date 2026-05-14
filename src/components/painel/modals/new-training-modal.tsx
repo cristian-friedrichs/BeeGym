@@ -270,9 +270,9 @@ export function NewTrainingModal({
                 
                 // Envia como string ISO que preserva o instante exato. 
                 // O timestamptz do Postgres converterá para UTC corretamente.
-                return { 
-                    start: format(sd, "yyyy-MM-dd HH:mm:ss"), 
-                    end: format(ed, "yyyy-MM-dd HH:mm:ss") 
+                return {
+                    start: sd.toISOString(),
+                    end: ed.toISOString()
                 };
             };
 

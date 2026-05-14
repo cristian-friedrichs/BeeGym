@@ -142,7 +142,7 @@ export default function ClassesPage() {
         .eq('type', 'CLASS') // Only calendar event classes
         // Optimization: Fetch classes ending from 24h ago onwards to include Running & Recent, 
         // preventing ancient history from pushing current classes out of the default limit.
-        .gte('end_datetime', format(subDays(new Date(), 1), 'yyyy-MM-dd HH:mm:ss'))
+        .gte('end_datetime', subDays(new Date(), 1).toISOString())
         .order('start_datetime', { ascending: true }); // Crescente: Mais perto do agora -> Futuro
 
       if (error) {
