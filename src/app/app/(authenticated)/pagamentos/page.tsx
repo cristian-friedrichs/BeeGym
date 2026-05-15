@@ -119,17 +119,19 @@ export default function PagamentosPage() {
           subtitle="Gerencie as finanças do seu negócio."
           action={
             <Button
-              className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-9 px-4 transition-all hover:-translate-y-0.5 active:scale-95"
+              className="font-bold shadow-sm bg-bee-amber hover:bg-amber-500 text-bee-midnight rounded-full font-display uppercase tracking-wider text-[11px] h-9 px-3 md:px-4 transition-all hover:-translate-y-0.5 active:scale-95"
               onClick={() => setIsNewPaymentModalOpen(true)}
             >
-              <Plus className="w-4 h-4 mr-2 text-[#0B0F1A]" /> Novo Pagamento
+              <Plus className="w-4 h-4 md:mr-2 text-[#0B0F1A]" />
+              <span className="hidden sm:inline">Novo Pagamento</span>
+              <span className="sm:hidden ml-1">Novo</span>
             </Button>
           }
         />
       </div>
 
       {/* KPI CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
         <KpiCard
           title="Receita Mensal"
           value={formatCurrencyK(kpis.receitaMes)}
@@ -164,7 +166,7 @@ export default function PagamentosPage() {
       </div>
 
       {/* FILTER BAR */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-center">
+      <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-center">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
@@ -174,14 +176,49 @@ export default function PagamentosPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 text-slate-400">
+        <div className="hidden md:flex items-center gap-2 text-slate-400">
            <Info className="w-4 h-4" />
            <span className="text-[10px] font-black uppercase tracking-widest">Filtros avançados em breve</span>
         </div>
       </div>
 
-      {/* TABELA DE TRANSAÇÕES */}
-      <div className="bg-white border border-slate-100 rounded-[2rem] shadow-sm overflow-hidden">
+      {/* ── Mobile cards ──────────────────────────────────── */}
+      <div className="md:hidden space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <div className="w-1 h-5 bg-bee-amber rounded-full" />
+          <h3 className="text-sm font-bold text-slate-800">Histórico de Transações</h3>
+        </div>
+        {filteredPayments.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-8 text-center text-slate-400 text-sm">Nenhuma transação.</div>
+        ) : filteredPayments.map(payment => (
+          <button
+            key={payment.id}
+            onClick={() => { setSelectedPayment(payment); setIsSheetOpen(true); }}
+            className="w-full text-left bg-white rounded-2xl border border-slate-100 shadow-sm p-3 flex items-center gap-3 active:bg-slate-50 transition-colors"
+          >
+            <Avatar className="h-10 w-10 shrink-0 border border-slate-100">
+              <AvatarFallback className="bg-orange-100 text-bee-amber font-bold text-xs">
+                {payment.student_name ? payment.student_name.charAt(0).toUpperCase() : 'A'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-bold text-slate-900 truncate">{payment.student_name || 'Avulso'}</p>
+                <p className="text-sm font-bold text-slate-900 shrink-0">{formatCurrency(payment.amount)}</p>
+              </div>
+              <div className="flex items-center justify-between gap-2 mt-1">
+                <p className="text-xs text-slate-400 truncate">
+                  {payment.description} · {format(new Date(payment.due_date + 'T00:00:00'), "dd/MM")}
+                </p>
+                <div className="shrink-0">{getStatusBadge(payment.dynamic_status)}</div>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Desktop table ─────────────────────────────────── */}
+      <div className="hidden md:block bg-white border border-slate-100 rounded-[2rem] shadow-sm overflow-hidden">
         {/* Cabeçalho da tabela */}
         <div className="py-4 px-6 border-b border-slate-50 flex flex-row items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">

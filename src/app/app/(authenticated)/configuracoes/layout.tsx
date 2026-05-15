@@ -13,13 +13,13 @@ import {
     Crown,
     Lock,
     LifeBuoy,
+    ArrowLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradePromptModal } from '@/components/ui/upgrade-prompt-modal';
 import { PlanFeature } from '@/config/plans';
-import { SectionHeader } from '@/components/ui/section-header';
 
 type MenuItem = {
     label: string;
@@ -40,22 +40,42 @@ const menuItems: MenuItem[] = [
     { label: 'Logs do Sistema', href: '/app/configuracoes/logs', icon: ScrollText },
 ];
 
-export default function SettingsLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export default function SettingsLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { hasFeature, loading } = useSubscription();
     const [lockedFeature, setLockedFeature] = useState<string | null>(null);
 
-    return (
-        <div className="flex flex-col h-full overflow-hidden pt-4">
+    // Are we on the root /configuracoes (menu page on mobile)?
+    const isRoot = pathname === '/app/configuracoes';
 
-            {/* Main Content with Sidebar */}
+    // Find current subpage to show its label in the mobile back-button bar
+    const currentItem = menuItems.find(i => pathname.startsWith(i.href));
+
+    return (
+        <div className="flex flex-col h-full overflow-hidden pt-2 md:pt-4">
+
+            {/* ── Mobile back bar (only on subpages) ────────────────────────── */}
+            {!isRoot && (
+                <div className="md:hidden flex items-center gap-2 mb-3 shrink-0">
+                    <Link
+                        href="/app/configuracoes"
+                        className="h-9 w-9 rounded-full flex items-center justify-center bg-white border border-slate-200 text-slate-600 active:scale-95 transition-all shadow-sm"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                    </Link>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-1 h-5 bg-bee-amber rounded-full shrink-0" />
+                        <h1 className="text-base font-bold text-slate-800 font-display truncate">
+                            {currentItem?.label || 'Configurações'}
+                        </h1>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Main content with optional sidebar ────────────────────────── */}
             <div className="flex-1 flex gap-0 min-h-0">
-                {/* Sidebar */}
-                <aside className="w-64 flex-shrink-0 border-r bg-background pr-6 overflow-y-auto pb-8 scrollbar-thin">
+                {/* Desktop sidebar */}
+                <aside className="hidden md:block w-64 flex-shrink-0 border-r bg-background pr-6 overflow-y-auto pb-8 scrollbar-thin">
                     <nav className="space-y-1">
                         {menuItems.map((item) => {
                             const isLocked = item.feature && !loading && !hasFeature(item.feature);
@@ -97,8 +117,8 @@ export default function SettingsLayout({
                     </nav>
                 </aside>
 
-                {/* Content Area */}
-                <main className="flex-1 pl-8 overflow-y-auto pb-8 scrollbar-thin">
+                {/* Content */}
+                <main className="flex-1 md:pl-8 overflow-y-auto pb-8 scrollbar-thin">
                     {children}
                 </main>
             </div>
