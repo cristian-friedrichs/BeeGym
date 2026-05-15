@@ -342,6 +342,7 @@ export function Header({ className }: { className?: string }) {
       "bg-white border-b border-[#E2E8F0] px-6 h-16 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-200",
       className
     )}>
+      {/* Search — full width on mobile, max-w-md on desktop */}
       <div className="flex-1 md:flex-none w-full max-w-md">
         <GlobalSearch />
       </div>

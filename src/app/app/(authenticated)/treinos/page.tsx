@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-    Plus, Search, Calendar, Clock, Loader2, Dumbbell, Filter, 
-    MapPin, ArrowLeft, ArrowRight, X, Edit, Trash2, CalendarCheck
+    Plus, Search, Calendar, Clock, Loader2, Dumbbell, Filter,
+    MapPin, ArrowLeft, ArrowRight, X, Edit, Trash2, CalendarCheck, User
 } from "lucide-react";
 import { createClient } from '@/lib/supabase/client';
 import { format } from "date-fns";
@@ -309,7 +309,7 @@ export default function WorkoutsPage() {
                                     id="date"
                                     variant={"outline"}
                                     className={cn(
-                                        "w-[240px] justify-start text-left font-normal rounded-full h-10 transition-all hover:-translate-y-0.5",
+                                        "w-full sm:w-[240px] justify-start text-left font-normal rounded-full h-10 transition-all hover:-translate-y-0.5",
                                         !dateRange && "text-muted-foreground"
                                     )}
                                 >
@@ -363,8 +363,47 @@ export default function WorkoutsPage() {
                 </div>
             </div>
 
-            {/* TABELA */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            {/* ── Mobile cards (< md) ─────────────────────────── */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-orange-500" /></div>
+                ) : filteredWorkouts.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-sm">Nenhum treino encontrado.</div>
+                ) : paginatedWorkouts.map((workout) => (
+                    <div key={workout.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 cursor-pointer active:bg-slate-50"
+                        onClick={() => handleWorkoutClick(workout)}>
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-slate-900 truncate">{workout.displayTitle}</p>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="h-3 w-3 text-orange-400" />
+                                        {workout.scheduled_at && !isNaN(new Date(workout.scheduled_at).getTime())
+                                            ? format(new Date(workout.scheduled_at), "dd MMM, HH:mm", { locale: ptBR })
+                                            : '—'}
+                                    </span>
+                                    {workout.studentName && <span className="flex items-center gap-1"><User className="h-3 w-3" />{workout.studentName}</span>}
+                                </div>
+                            </div>
+                            {getStatusBadge(workout.status)}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-3">
+                            <span className="text-xs text-slate-400 flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {workout.address || workout.room_name || (workout.location_type === 'internal' ? 'Interno' : workout.location_type === 'external' ? 'Externo' : 'Não definido')}
+                            </span>
+                            <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-slate-400 hover:text-bee-amber" onClick={() => handleEdit(workout)}>
+                                    <Edit className="h-3.5 w-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Desktop table (≥ md) ─────────────────────────── */}
+            <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">

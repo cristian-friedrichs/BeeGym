@@ -99,8 +99,8 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
         setSelectedInstructor('');
         setCapacity('');
         setDuration('60');
-        fetchData();
-    }, [open, initialDate, initialTime]);
+        if (organizationId) fetchData();
+    }, [open, initialDate, initialTime, organizationId]);
 
     async function fetchData() {
         if (!organizationId) return;

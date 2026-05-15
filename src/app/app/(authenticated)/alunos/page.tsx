@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Plus, Filter, ArrowUpDown, MoreHorizontal, User, Mail, Phone, Calendar as CalendarIcon, Edit2, Eye, ExternalLink } from "lucide-react";
+import { Search, Plus, Filter, ArrowUpDown, MoreHorizontal, User, Mail, Phone, Calendar as CalendarIcon, Edit2, Eye, ExternalLink, Loader2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -192,7 +192,52 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            {/* ── Mobile cards (< md) ─────────────────────────── */}
+            <div className="md:hidden space-y-3">
+                {loading ? (
+                    <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-bee-amber" /></div>
+                ) : filteredStudents.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400 text-sm">Nenhum aluno encontrado.</div>
+                ) : filteredStudents.map((student) => (
+                    <div key={student.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+                        <div className="flex items-center gap-3">
+                            <Link href={`/app/alunos/${student.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                                <Avatar className="h-11 w-11 shrink-0 border border-slate-100">
+                                    <AvatarImage src={student.avatar_url || ''} className="object-cover" />
+                                    <AvatarFallback className="bg-orange-100 text-bee-amber font-bold text-sm">
+                                        {student.full_name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                    <p className="font-bold text-slate-900 truncate">{student.full_name}</p>
+                                    <p className="text-xs text-slate-400 truncate">{student.email}</p>
+                                </div>
+                            </Link>
+                            {getStatusBadge(student.status)}
+                        </div>
+                        <div className="mt-3 flex items-center justify-between border-t border-slate-50 pt-3">
+                            <div className="flex gap-4 text-xs text-slate-500">
+                                <span><span className="font-semibold text-slate-700">{student.membership_plans?.name || '—'}</span></span>
+                                {student.last_activity && <span>{formatLastActivity(student.last_activity)}</span>}
+                            </div>
+                            <div className="flex gap-1">
+                                <Link href={`/app/alunos/${student.id}`}>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-500 hover:text-bee-amber hover:bg-bee-amber/10">
+                                        <Eye className="w-4 h-4" />
+                                    </Button>
+                                </Link>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-500 hover:text-bee-amber hover:bg-bee-amber/10"
+                                    onClick={() => { setStudentToEdit(student); setIsModalOpen(true); }}>
+                                    <Edit2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Desktop table (≥ md) ─────────────────────────── */}
+            <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">

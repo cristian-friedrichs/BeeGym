@@ -104,10 +104,10 @@ export function NewClassModal({ open, onOpenChange, onSuccess }: NewClassModalPr
     const [selectedDuration, setSelectedDuration] = useState<string>('60');
 
     useEffect(() => {
-        if (open) {
+        if (open && organizationId) {
             fetchData();
         }
-    }, [open]);
+    }, [open, organizationId]);
 
     async function fetchData() {
         if (!organizationId) return;

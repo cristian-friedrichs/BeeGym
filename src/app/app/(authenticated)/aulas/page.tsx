@@ -95,7 +95,7 @@ export default function ClassesPage() {
 
   // Estados dos Filtros
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('future'); // Default changed to future
+  const [statusFilter, setStatusFilter] = useState('all');
   const [instructorFilter, setInstructorFilter] = useState('all');
   const [periodFilter, setPeriodFilter] = useState('all');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
@@ -142,7 +142,7 @@ export default function ClassesPage() {
         .eq('type', 'CLASS') // Only calendar event classes
         // Optimization: Fetch classes ending from 24h ago onwards to include Running & Recent, 
         // preventing ancient history from pushing current classes out of the default limit.
-        .gte('end_datetime', subDays(new Date(), 1).toISOString())
+        .gte('end_datetime', subDays(new Date(), 30).toISOString())
         .order('start_datetime', { ascending: true }); // Crescente: Mais perto do agora -> Futuro
 
       if (error) {
@@ -384,7 +384,7 @@ export default function ClassesPage() {
                   id="date"
                   variant={"outline"}
                   className={cn(
-                    "w-[200px] h-9 justify-start text-left font-normal text-xs rounded-full transition-all hover:-translate-y-0.5 active:scale-95",
+                    "w-full sm:w-[200px] h-9 justify-start text-left font-normal text-xs rounded-full transition-all hover:-translate-y-0.5 active:scale-95",
                     !dateRange && "text-muted-foreground"
                   )}
                 >
@@ -473,7 +473,49 @@ export default function ClassesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+      {/* ── Mobile cards (< md) ─────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="flex justify-center py-12"><div className="h-6 w-6 border-2 border-bee-amber border-t-transparent rounded-full animate-spin" /></div>
+        ) : filteredAndSortedClasses.length === 0 ? (
+          <div className="text-center py-12 text-slate-400 text-sm">Nenhuma aula encontrada.</div>
+        ) : paginatedClasses.map((cls) => {
+          const startDate = new Date(cls.start_datetime);
+          const enrolled = cls.enrollmentCount || 0;
+          const capacity = cls.capacity_limit || 0;
+          return (
+            <div key={cls.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4 cursor-pointer active:bg-slate-50"
+              onClick={() => handleRowClick(cls)}>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: `${cls.color}20`, color: cls.color }}>
+                  <DynamicIcon name={cls.iconName} className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-900 truncate">{cls.title}</p>
+                  <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                    <CalendarIcon className="h-3 w-3 text-bee-amber" />
+                    {format(startDate, "dd MMM • HH:mm", { locale: ptBR })}
+                    {cls.instructor && <span className="ml-2 flex items-center gap-1"><User className="h-3 w-3" />{cls.instructor.name}</span>}
+                  </p>
+                </div>
+                {getStatusBadge(cls.status)}
+              </div>
+              {capacity > 0 && (
+                <div className="mt-3 border-t border-slate-50 pt-3 flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-bee-amber transition-all" style={{ width: `${Math.min((enrolled / capacity) * 100, 100)}%` }} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-500">{enrolled}/{capacity}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop table (≥ md) ─────────────────────────── */}
+      <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">
