@@ -78,21 +78,56 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         let isMounted = true
+        let loadingResolved = false
 
-        // Safety net: force unblock after 15s if everything fails
+        const resolveLoading = () => {
+            if (loadingResolved || !isMounted) return
+            loadingResolved = true
+            clearTimeout(safetyTimeout)
+            setLoading(false)
+        }
+
+        // Safety net: 10s
         const safetyTimeout = setTimeout(() => {
-            if (isMounted) {
+            if (isMounted && !loadingResolved) {
                 console.warn('[AuthContext] Safety timeout triggered — forcing loading=false')
-                setLoading(false)
+                resolveLoading()
             }
-        }, 15000)
+        }, 10000)
 
-        // onAuthStateChange is the single source of truth.
-        // It fires INITIAL_SESSION on first load (including after PKCE code exchange),
-        // SIGNED_IN on login, SIGNED_OUT on logout, TOKEN_REFRESHED, etc.
-        // We do NOT call getSession() separately to avoid race conditions with PKCE.
+        // 1. Immediate session check
+        const initSession = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                if (!isMounted) return
+
+                if (session?.user) {
+                    setUser(session.user)
+                    const profileData = await fetchProfile(session.user.id)
+                    if (isMounted) setProfile(profileData)
+                } else {
+                    setUser(null)
+                    setProfile(null)
+                }
+            } catch (e: any) {
+                const isAbort = e.name === 'AbortError' || e.message?.includes('Lock broken')
+                if (!isAbort) console.error('[AuthContext] initSession error:', e.message)
+            } finally {
+                resolveLoading()
+            }
+        }
+
+        initSession()
+
+        // 2. Listener for future auth changes (login, logout, token refresh)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!isMounted) return
+
+            // Skip INITIAL_SESSION — already handled by initSession
+            if (event === 'INITIAL_SESSION') {
+                resolveLoading()
+                return
+            }
 
             try {
                 if (session?.user) {
@@ -107,11 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const isAbort = e.name === 'AbortError' || e.message?.includes('Lock broken')
                 if (!isAbort) console.error('[AuthContext] onAuthStateChange error:', e.message)
             } finally {
-                // Mark loading done after INITIAL_SESSION or any definitive event
-                if (isMounted && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT')) {
-                    clearTimeout(safetyTimeout)
-                    setLoading(false)
-                }
+                resolveLoading()
             }
         })
 
