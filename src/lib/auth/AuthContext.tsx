@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true)
     const router = useRouter()
 
-    const fetchProfile = async (userId: string) => {
+    const fetchProfile = async (userId: string, attempt = 0): Promise<UserProfile | null> => {
         try {
             const { data, error } = await (supabase as any)
                 .from('profiles')
@@ -43,33 +43,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 .single()
 
             if (error) {
-                // PGRST116 means no rows found - common for new users in onboarding
-                if (error.code === 'PGRST116') {
-                    return null
-                }
+                if (error.code === 'PGRST116') return null
                 throw error
             }
 
-            // 🔒 VALIDAÇÃO: Usuário DEVE ter organization_id
-            if (!data?.organization_id) {
-                console.warn('⚠️ Usuário sem organization_id - o middleware deve redirecionar para onboarding')
-                return data as UserProfile
-            }
-
-            // Retorna o profile independente do status — o layout e middleware gerenciam o acesso
             return data as UserProfile
         } catch (error: any) {
-            // AbortError variants: Web Locks "steal", fetch abort, Supabase internal cancellation
             const isAbort =
                 error.name === 'AbortError' ||
                 error instanceof DOMException ||
                 error.message?.includes('Lock broken') ||
                 error.message?.includes('aborted') ||
                 error.message?.includes('AbortError')
-            if (isAbort) return null
 
-            // Only log real unexpected errors
-            if (error.code !== 'PGRST116') {
+            // Retry up to 3 times on lock/abort — auth lock contention is transient
+            if (isAbort && attempt < 3) {
+                await new Promise(r => setTimeout(r, 300 * (attempt + 1)))
+                return fetchProfile(userId, attempt + 1)
+            }
+
+            if (!isAbort && error.code !== 'PGRST116') {
                 console.error('❌ Erro ao buscar perfil:', error.message || error)
             }
             return null
@@ -86,64 +79,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         let isMounted = true
 
-        // Safety net: if auth doesn't resolve in 8s, unblock the app
+        // Safety net: force unblock after 15s if everything fails
         const safetyTimeout = setTimeout(() => {
             if (isMounted) {
                 console.warn('[AuthContext] Safety timeout triggered — forcing loading=false')
                 setLoading(false)
             }
-        }, 8000)
+        }, 15000)
 
-        const initializeAuth = async () => {
+        // onAuthStateChange is the single source of truth.
+        // It fires INITIAL_SESSION on first load (including after PKCE code exchange),
+        // SIGNED_IN on login, SIGNED_OUT on logout, TOKEN_REFRESHED, etc.
+        // We do NOT call getSession() separately to avoid race conditions with PKCE.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (!isMounted) return
+
             try {
-                // 1. Check initial session
-                const { data: { session } } = await supabase.auth.getSession()
-
-                if (!isMounted) return
-
                 if (session?.user) {
                     setUser(session.user)
                     const profileData = await fetchProfile(session.user.id)
                     if (isMounted) setProfile(profileData)
                 } else {
-                    if (isMounted) {
-                        setUser(null)
-                        setProfile(null)
-                    }
-                }
-            } catch (error: any) {
-                if (isMounted && error.name !== 'AbortError') {
-                    console.error('Erro na inicialização do auth:', error)
-                }
-            } finally {
-                clearTimeout(safetyTimeout)
-                if (isMounted) setLoading(false)
-            }
-        }
-
-        initializeAuth()
-
-        // 2. Setup listener for future changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (!isMounted) return
-            if (event === 'INITIAL_SESSION') return
-
-            try {
-                if (isMounted) setUser(session?.user ?? null)
-
-                if (session?.user) {
-                    const profileData = await fetchProfile(session.user.id)
-                    if (isMounted) setProfile(profileData)
-                } else {
-                    if (isMounted) setProfile(null)
+                    setUser(null)
+                    setProfile(null)
                 }
             } catch (e: any) {
-                // Swallow lock/abort errors from concurrent auth state changes
-                if (!e.message?.includes('Lock broken') && e.name !== 'AbortError') {
-                    console.error('[AuthContext] onAuthStateChange error:', e.message)
-                }
+                const isAbort = e.name === 'AbortError' || e.message?.includes('Lock broken')
+                if (!isAbort) console.error('[AuthContext] onAuthStateChange error:', e.message)
             } finally {
-                if (isMounted) setLoading(false)
+                // Mark loading done after INITIAL_SESSION or any definitive event
+                if (isMounted && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT')) {
+                    clearTimeout(safetyTimeout)
+                    setLoading(false)
+                }
             }
         })
 
