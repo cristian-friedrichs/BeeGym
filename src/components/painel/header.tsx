@@ -339,7 +339,7 @@ export function Header({ className }: { className?: string }) {
 
   return (
     <header className={cn(
-      "bg-white border-b border-[#E2E8F0] px-6 h-16 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-200",
+      "bg-white border-b border-[#E2E8F0] px-4 md:px-6 h-14 md:h-16 flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-colors duration-200",
       className
     )}>
       {/* Search — full width on mobile, max-w-md on desktop */}

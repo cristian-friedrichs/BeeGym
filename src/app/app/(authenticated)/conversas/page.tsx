@@ -4,12 +4,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Search, MoreVertical, Paperclip, Smile, Mic, Send, Archive, Image as ImageIcon, FileText, Check, CheckCheck, MessageSquareOff, Trash2, X, Play, Pause } from 'lucide-react';
+import { Search, MoreVertical, Paperclip, Smile, Mic, Send, Archive, Image as ImageIcon, FileText, Check, CheckCheck, MessageSquareOff, Trash2, X, Play, Pause, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { SectionHeader } from '@/components/ui/section-header';
+import { cn } from '@/lib/utils';
 
 export default function ConversasPage() {
     const router = useRouter();
@@ -388,19 +389,23 @@ export default function ConversasPage() {
     };
 
     return (
-        <div className="h-full flex flex-col space-y-6">
-            {/* Cabeçalho da Página */}
-            <div className="pb-4 shrink-0">
+        <div className="h-full flex flex-col md:space-y-6 -m-4 md:m-0">
+            {/* Cabeçalho — só desktop */}
+            <div className="hidden md:block pb-4 shrink-0">
                 <SectionHeader
                     title="Conversas"
                     subtitle="Gerencie suas conversas e atendimentos em tempo real"
                 />
             </div>
 
-            <div className="flex-1 min-h-0 flex bg-white border border-slate-200 shadow-sm rounded-[2rem] overflow-hidden">
+            <div className="flex-1 min-h-0 flex bg-white md:border md:border-slate-200 md:shadow-sm md:rounded-[2rem] overflow-hidden">
 
-                {/* PAINEL ESQUERDO: SIDEBAR */}
-                <div className="w-1/3 min-w-[300px] max-w-[400px] flex flex-col border-r border-slate-200 bg-slate-50">
+                {/* PAINEL ESQUERDO: SIDEBAR — esconde no mobile quando há chat ativo */}
+                <div className={cn(
+                    "flex-col border-r border-slate-200 bg-slate-50",
+                    "md:flex md:w-1/3 md:min-w-[300px] md:max-w-[400px]",
+                    activeChat ? "hidden md:flex" : "flex w-full"
+                )}>
 
                     {/* Busca e Ações */}
                     <div className="p-3 bg-white border-b border-slate-100 flex items-center gap-2">
@@ -483,37 +488,50 @@ export default function ConversasPage() {
                     </div>
                 </div>
 
-                {/* PAINEL DIREITO: JANELA DE CHAT */}
-                <div className="flex-1 flex flex-col bg-[url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')] bg-cover bg-center relative">
-                    <div className="absolute inset-0 bg-white/80 z-0"></div>
+                {/* PAINEL DIREITO: JANELA DE CHAT — esconde no mobile quando não há chat ativo */}
+                <div className={cn(
+                    "flex-1 flex-col bg-slate-50 relative",
+                    activeChat ? "flex" : "hidden md:flex"
+                )}>
 
                     {activeChat ? (
                         <div className="relative z-10 flex flex-col h-full">
                             {/* Header do Chat Ativo */}
-                            <div className="h-16 flex items-center justify-between px-6 bg-white border-b border-slate-200 shadow-sm shrink-0">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-600">
-                                        {activeChat.contact?.display_name?.charAt(0) || 'U'}
+                            <div className="h-14 md:h-16 flex items-center justify-between px-3 md:px-6 bg-white border-b border-slate-200 shadow-sm shrink-0">
+                                <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                                    {/* Back button — only mobile */}
+                                    <button
+                                        onClick={() => { setActiveChat(null); activeChatRef.current = null; }}
+                                        className="md:hidden h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-100 active:scale-95 text-slate-600 shrink-0"
+                                    >
+                                        <ArrowLeft className="w-5 h-5" />
+                                    </button>
+                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center font-bold text-orange-600 shrink-0 overflow-hidden">
+                                        {activeChat.contact?.avatar_url ? (
+                                            <img src={activeChat.contact.avatar_url} className="w-full h-full object-cover" alt="" />
+                                        ) : (
+                                            activeChat.contact?.display_name?.charAt(0) || 'U'
+                                        )}
                                     </div>
-                                    <div>
-                                        <h3 className="font-bold text-slate-800">{activeChat.contact?.display_name || 'Usuário'}</h3>
-                                        <p className="text-xs text-green-500 font-medium">Online</p>
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="font-bold text-slate-800 truncate text-sm md:text-base">{activeChat.contact?.display_name || 'Usuário'}</h3>
+                                        <p className="text-[11px] md:text-xs text-emerald-500 font-medium">Online</p>
                                     </div>
                                 </div>
-                                <div className="flex gap-4 text-slate-400">
-                                    <button className="hover:text-slate-600 transition-all hover:-translate-y-0.5 active:scale-95 p-2 hover:bg-slate-50 rounded-full" title="Buscar Mensagem"><Search className="w-5 h-5" /></button>
-                                    <button className="hover:text-slate-600 transition-all hover:-translate-y-0.5 active:scale-95 p-2 hover:bg-slate-50 rounded-full" title="Opções"><MoreVertical className="w-5 h-5" /></button>
+                                <div className="flex gap-1 md:gap-2 text-slate-400 shrink-0">
+                                    <button className="hover:text-slate-600 active:scale-95 p-2 hover:bg-slate-50 rounded-full transition-all" title="Buscar"><Search className="w-5 h-5" /></button>
+                                    <button className="hover:text-slate-600 active:scale-95 p-2 hover:bg-slate-50 rounded-full transition-all" title="Opções"><MoreVertical className="w-5 h-5" /></button>
                                 </div>
                             </div>
 
                             {/* Área de Mensagens */}
-                            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-2 md:space-y-4 custom-scrollbar">
                                 {messages.map(msg => renderMessage(msg))}
                                 <div ref={messagesEndRef} />
                             </div>
 
                             {/* Input Area (Rodapé) */}
-                            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center gap-3 shrink-0">
+                            <div className="p-2 md:p-4 bg-white border-t border-slate-200 flex items-center gap-1.5 md:gap-3 shrink-0">
                                 {isRecording ? (
                                     <div className="flex-1 flex items-center justify-between bg-white rounded-xl px-4 py-2 shadow-sm animate-in fade-in slide-in-from-bottom-2">
                                         <div className="flex items-center gap-3">
@@ -541,12 +559,12 @@ export default function ConversasPage() {
                                     </div>
                                 ) : (
                                     <>
-                                        <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition"><Smile className="w-6 h-6" /></button>
+                                        <button className="hidden sm:flex p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition shrink-0"><Smile className="w-5 h-5 md:w-6 md:h-6" /></button>
 
                                         {/* Dropdown de Anexos */}
-                                        <div className="relative group">
-                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-full transition">
-                                                <Paperclip className="w-6 h-6" />
+                                        <div className="relative group shrink-0">
+                                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition">
+                                                <Paperclip className="w-5 h-5 md:w-6 md:h-6" />
                                             </button>
                                             <div className="absolute bottom-full left-0 mb-2 bg-white rounded-xl shadow-xl border border-slate-100 p-2 hidden group-hover:flex flex-col gap-1 animate-in slide-in-from-bottom-2 duration-200 z-50">
                                                 <button
@@ -581,17 +599,17 @@ export default function ConversasPage() {
 
                                         <input
                                             type="text"
-                                            placeholder="Digite uma mensagem..."
-                                            className="flex-1 bg-white border-none py-3 px-6 rounded-full shadow-sm focus:ring-2 focus:ring-orange-500 outline-none font-sans"
+                                            placeholder="Mensagem"
+                                            className="flex-1 bg-slate-100 border-none py-2.5 md:py-3 px-4 md:px-6 rounded-full focus:ring-2 focus:ring-orange-500 outline-none font-sans text-sm md:text-base min-w-0"
                                             value={newMessage}
                                             onChange={(e) => setNewMessage(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                         />
 
                                         {newMessage.trim() ? (
-                                            <button onClick={() => handleSendMessage()} className="p-3 bg-orange-500 text-white hover:bg-orange-600 rounded-full shadow-md transition-transform active:scale-95"><Send className="w-5 h-5" /></button>
+                                            <button onClick={() => handleSendMessage()} className="p-2.5 md:p-3 bg-orange-500 text-white hover:bg-orange-600 rounded-full shadow-md transition-transform active:scale-95 shrink-0"><Send className="w-4 h-4 md:w-5 md:h-5" /></button>
                                         ) : (
-                                            <button onClick={startRecording} className="p-3 bg-slate-200 text-slate-600 hover:bg-slate-300 rounded-full transition"><Mic className="w-5 h-5" /></button>
+                                            <button onClick={startRecording} className="p-2.5 md:p-3 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full transition shrink-0"><Mic className="w-4 h-4 md:w-5 md:h-5" /></button>
                                         )}
                                     </>
                                 )}

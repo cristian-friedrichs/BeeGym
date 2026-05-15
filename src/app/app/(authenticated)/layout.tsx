@@ -162,7 +162,7 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
           <Sidebar className="flex-shrink-0" />
           <div className="flex-1 flex flex-col h-full overflow-hidden">
             <Header className="flex-shrink-0" />
-            <main className="flex-1 flex flex-col p-6 md:p-8 overflow-y-auto overflow-x-hidden pb-20 md:pb-6 relative">
+            <main className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto overflow-x-hidden pb-24 md:pb-6 relative">
               {children}
             </main>
             <SetupChecklist />

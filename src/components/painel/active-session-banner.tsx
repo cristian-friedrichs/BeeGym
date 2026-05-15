@@ -124,7 +124,7 @@ export function ActiveSessionBanner() {
     if (activeSessions.length === 0) return null;
 
     return (
-        <div className="space-y-3 mb-6">
+        <div className="space-y-2 md:space-y-3 mb-3 md:mb-6">
             {activeSessions.map((session) => {
                 const isClass = session.type === 'class';
 
@@ -136,59 +136,66 @@ export function ActiveSessionBanner() {
                 return (
                     <div
                         key={session.id}
-                        className="relative bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-6"
+                        className="relative bg-white rounded-2xl border shadow-sm overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-6 p-3 md:p-6"
                         style={{ borderColor: `${color}40` }}
                     >
-                        {/* Animated left accent bar */}
                         <div
-                            className="absolute left-0 top-0 bottom-0 w-1.5 rounded-r-full"
+                            className="absolute left-0 top-0 bottom-0 w-1 md:w-1.5 rounded-r-full"
                             style={{ backgroundColor: color }}
                         />
 
                         {/* Left: Icon + Info */}
-                        <div className="flex items-center gap-5 z-10 pl-2">
-                            {/* Icon resolved from CLASS_TYPES */}
+                        <div className="flex items-center gap-3 md:gap-5 z-10 pl-1.5 md:pl-2 w-full md:w-auto min-w-0">
                             <div
-                                className="h-16 w-16 rounded-2xl flex items-center justify-center shrink-0"
+                                className="h-11 w-11 md:h-16 md:w-16 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0"
                                 style={{ backgroundColor: `${color}18`, color }}
                             >
-                                <IconComponent className="h-7 w-7" />
+                                <IconComponent className="h-5 w-5 md:h-7 md:w-7" />
                             </div>
 
-                            <div className="space-y-1.5">
-                                {/* Badge row */}
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-bold uppercase tracking-wider">
-                                        <Radio className="h-2.5 w-2.5 animate-pulse" />
-                                        Ao Vivo Agora
+                            <div className="space-y-1 md:space-y-1.5 min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] md:text-[11px] font-bold uppercase tracking-wider">
+                                        <Radio className="h-2 w-2 md:h-2.5 md:w-2.5 animate-pulse" />
+                                        Ao Vivo
                                     </span>
                                     {session.location && (
-                                        <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
+                                        <span className="hidden md:flex items-center gap-1 text-xs text-muted-foreground font-medium">
                                             <MapPin className="h-3 w-3" />
                                             {session.location}
                                         </span>
                                     )}
                                 </div>
-
-                                {/* Title */}
-                                <h2 className="text-xl font-bold text-slate-800 tracking-tight leading-none">
+                                <h2 className="text-base md:text-xl font-bold text-slate-800 tracking-tight leading-tight truncate">
                                     {session.title}
                                 </h2>
-
-                                {/* Subtitle — name only, no label prefix */}
-                                <p className="text-sm text-slate-500 font-medium">
+                                <p className="text-xs md:text-sm text-slate-500 font-medium truncate">
                                     {isClass
-                                        ? (session.instructor_name || 'Sem instrutor definido')
-                                        : `Aluno(a): ${session.student_name}`}
+                                        ? (session.instructor_name || 'Sem instrutor')
+                                        : (session.student_name || 'Aluno')}
                                 </p>
+                            </div>
+
+                            {/* Mobile: inline timer */}
+                            <div className="md:hidden flex flex-col items-end shrink-0" style={{ color }}>
+                                <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span className="text-sm font-bold font-mono tabular-nums">
+                                        {getElapsedTime(session.start_time)}
+                                    </span>
+                                </div>
+                                {isClass && session.capacity != null && (
+                                    <span className="text-[10px] text-slate-500 mt-1 font-bold">
+                                        {session.attendees_count}/{session.capacity}
+                                    </span>
+                                )}
                             </div>
                         </div>
 
-                        {/* Right: Stats */}
-                        <div className="flex items-center gap-8 md:gap-10 w-full md:w-auto z-10 pt-4 md:pt-0 border-t md:border-t-0 border-slate-100 pl-2 md:pl-0">
-                            {/* Attendance (classes only) */}
+                        {/* Desktop: Stats panel */}
+                        <div className="hidden md:flex items-center gap-10 z-10">
                             {isClass && session.capacity != null && (
-                                <div className="flex flex-col items-start md:items-end">
+                                <div className="flex flex-col items-end">
                                     <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Presença</p>
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-lg font-bold text-slate-800">
@@ -207,9 +214,7 @@ export function ActiveSessionBanner() {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Elapsed Timer */}
-                            <div className="flex flex-col items-start md:items-end ml-auto md:ml-0">
+                            <div className="flex flex-col items-end">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tempo Decorrido</p>
                                 <div className="flex items-center gap-2" style={{ color }}>
                                     <Clock className="h-4 w-4" />

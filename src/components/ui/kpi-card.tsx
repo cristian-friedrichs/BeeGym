@@ -28,24 +28,24 @@ export function KpiCard({ title, value, tooltip, variacao, variacaoLabel, color 
     const style = iconStyleMap[color];
 
     return (
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200 flex items-center gap-4">
+        <div className="bg-white rounded-2xl p-3 md:p-5 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4">
             <div className={cn(
-                'h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm',
+                'h-9 w-9 md:h-14 md:w-14 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 shadow-sm [&>svg]:h-4 [&>svg]:w-4 md:[&>svg]:h-6 md:[&>svg]:w-6',
                 style.bg, style.text
             )}>
                 {emoji ? (
-                    <span className="text-2xl">{emoji}</span>
+                    <span className="text-lg md:text-2xl">{emoji}</span>
                 ) : icon}
             </div>
 
-            <div className="flex flex-col min-w-0 flex-1">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap mb-1">
+            <div className="flex flex-col min-w-0 flex-1 w-full">
+                <p className="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap mb-0.5 md:mb-1">
                     {title}
                 </p>
 
                 <div className="flex items-end justify-between gap-2">
                     <h2
-                        className="text-[28px] font-bold text-[#0B0F1A] tracking-tight leading-none"
+                        className="text-xl md:text-[28px] font-bold text-[#0B0F1A] tracking-tight leading-none"
                         title={tooltip}
                     >
                         {value}
@@ -53,7 +53,7 @@ export function KpiCard({ title, value, tooltip, variacao, variacaoLabel, color 
 
                     {variacao !== undefined && (
                         <div className={cn(
-                            'flex items-center gap-1 mb-0.5 px-2 py-0.5 rounded-full text-xs font-bold',
+                            'flex items-center gap-1 mb-0.5 px-1.5 md:px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold',
                             isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
                         )}>
                             {isPositive
