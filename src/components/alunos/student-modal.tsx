@@ -110,7 +110,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             address_street: studentToEdit?.address_street || '',
             address_number: studentToEdit?.address_number || '',
             address_neighborhood: studentToEdit?.address_neighborhood || '',
-            active: studentToEdit ? !!studentToEdit.active : true
+            active: studentToEdit ? studentToEdit.status !== 'INACTIVE' : true
         };
         return JSON.stringify(formData) !== JSON.stringify(initial);
     }, [open, formData, studentToEdit]);
@@ -138,7 +138,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                     address_street: studentToEdit.address_street || '',
                     address_number: studentToEdit.address_number || '',
                     address_neighborhood: studentToEdit.address_neighborhood || '',
-                    active: !!studentToEdit.active
+                    active: studentToEdit.status !== 'INACTIVE'
                 });
                 setPreviewUrl(studentToEdit.avatar_url);
             } else {
@@ -230,10 +230,11 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             if (!authUser) throw new Error('Não autenticado');
             if (!organizationId) throw new Error('Organização não encontrada');
 
+            const { active, ...formDataWithoutActive } = formData;
             const payload = {
-                ...formData,
+                ...formDataWithoutActive,
                 organization_id: organizationId,
-                status: formData.active ? 'ACTIVE' : 'INACTIVE'
+                status: active ? 'ACTIVE' : 'INACTIVE'
             };
 
             let error;
