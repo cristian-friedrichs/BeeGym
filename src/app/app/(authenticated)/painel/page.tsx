@@ -19,24 +19,56 @@ export default function DashboardPage() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [userName, setUserName] = useState('');
 
+  const [orgId, setOrgId] = useState<string | null>(null);
+
   useEffect(() => {
-    // Welcome Logic
-    const welcomeSeen = localStorage.getItem('beegym_welcome_seen');
-    if (!welcomeSeen) {
-      const getUser = async () => {
-        const { data } = await createClient().auth.getUser();
-        if (data.user) {
-          setUserName(data.user.user_metadata?.full_name?.split(' ')[0] || '');
-          setShowWelcome(true);
-        }
-      };
-      getUser();
-    }
+    const checkWelcome = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organization_id')
+        .eq('id', user.id)
+        .single() as { data: { organization_id: string | null } | null };
+
+      if (!profile?.organization_id) return;
+
+      const { data: org } = await supabase
+        .from('organizations')
+        .select('welcome_seen_at')
+        .eq('id', profile.organization_id)
+        .single() as { data: { welcome_seen_at: string | null } | null };
+
+      if (org?.welcome_seen_at) return;
+
+      // Only the org creator (oldest profile in the organization) sees the welcome.
+      const { data: firstProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('organization_id', profile.organization_id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single() as { data: { id: string } | null };
+
+      if (firstProfile?.id !== user.id) return;
+
+      setUserName(user.user_metadata?.full_name?.split(' ')[0] || '');
+      setOrgId(profile.organization_id);
+      setShowWelcome(true);
+    };
+    checkWelcome();
   }, []);
 
-  const handleCloseWelcome = (goToSettings: boolean) => {
+  const handleCloseWelcome = (_goToSettings: boolean) => {
     setShowWelcome(false);
-    localStorage.setItem('beegym_welcome_seen', 'true');
+    if (orgId) {
+      (createClient().from('organizations') as any)
+        .update({ welcome_seen_at: new Date().toISOString() })
+        .eq('id', orgId)
+        .then(() => {});
+    }
   };
 
   return (

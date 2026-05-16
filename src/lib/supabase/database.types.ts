@@ -654,6 +654,7 @@ export type Database = {
           trial_end: string | null
           updated_at: string | null
           website: string | null
+          welcome_seen_at: string | null
         }
         Insert: {
           address?: string | null
@@ -704,6 +705,7 @@ export type Database = {
           trial_end?: string | null
           updated_at?: string | null
           website?: string | null
+          welcome_seen_at?: string | null
         }
         Update: {
           address?: string | null
@@ -754,6 +756,7 @@ export type Database = {
           trial_end?: string | null
           updated_at?: string | null
           website?: string | null
+          welcome_seen_at?: string | null
         }
         Relationships: [
           {
