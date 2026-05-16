@@ -22,6 +22,18 @@ import { addDays, format, addMinutes, differenceInMinutes, addMonths, parseISO, 
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { ConfirmDiscardDialog } from "@/components/ui/confirm-discard-dialog";
+import {
+    modalContent,
+    modalHeader,
+    modalTitle,
+    modalDescription,
+    modalBody,
+    modalFooter,
+    fieldInput,
+    fieldLabel,
+    ctaPrimary,
+    ctaSecondary,
+} from "@/lib/modal-styles";
 
 interface WorkoutModalProps {
     open: boolean;
@@ -38,8 +50,8 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const { toast } = useToast();
     const { organizationId, user: authUser } = useAuth();
     const [loading, setLoading] = useState(false);
-    const fieldCls = "h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0 transition-all";
-    const labelCls = "text-sm font-medium text-slate-700";
+    const fieldCls = fieldInput + " transition-all";
+    const labelCls = fieldLabel;
 
     const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
@@ -442,19 +454,19 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     return (
         <>
             <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden border-none shadow-2xl bg-white flex flex-col max-h-[90vh]">
+                <DialogContent className={modalContent}>
 
-                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100 bg-white shrink-0">
-                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                    <DialogHeader className={modalHeader}>
+                        <DialogTitle className={modalTitle}>
                             {workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
                         </DialogTitle>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <p className={modalDescription}>
                             {workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
                         </p>
                     </DialogHeader>
 
 
-                    <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 max-h-[70vh]">
+                    <div className={modalBody}>
 
                         {/* ABAS INDIVIDUAL / GRUPO */}
                         {!workoutToEdit && (
@@ -472,7 +484,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
                         <div className="space-y-6">
                             {/* ALUNO & MODALIDADE */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <Label className={labelCls}>Aluno</Label>
                                     <div ref={studentSearchRef} className="relative">
@@ -582,7 +594,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
 
                             {/* DATA E HORA */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <Label className={labelCls}>Data *</Label>
                                     <Popover>
@@ -620,7 +632,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
                                     <Label className={labelCls}>Duração (min) *</Label>
                                     <Input
@@ -816,20 +828,20 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 </div>
                     </div>
 
-                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between bg-white shrink-0">
+                    <div className={modalFooter}>
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleCloseAttempt}
                             disabled={loading}
-                            className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+                            className={ctaSecondary}
                         >
                             Cancelar
                         </Button>
                         <Button
                             onClick={handleSave}
                             disabled={loading}
-                            className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
+                            className={ctaPrimary}
                         >
                             {loading ? (
                                 <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>

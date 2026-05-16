@@ -18,9 +18,22 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useStudentLimit } from '@/hooks/useStudentLimit';
 import { useAuth } from '@/lib/auth/AuthContext';
 import { UpgradePromptModal } from '@/components/ui/upgrade-prompt-modal';
-import { cn } from '@/lib/utils';
 import { useState, useEffect, useMemo } from 'react';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
+import {
+    modalContent,
+    modalHeader,
+    modalTitle,
+    modalDescription,
+    modalBody,
+    modalFooter,
+    fieldInput,
+    fieldLabel,
+    gridTwoCol,
+    gridThreeCol,
+    ctaPrimary,
+    ctaSecondary,
+} from '@/lib/modal-styles';
 
 interface StudentModalProps {
     open: boolean;
@@ -48,8 +61,8 @@ const recurrenceLabel: Record<string, string> = {
     one_time: 'Único'
 };
 
-const fieldCls = 'h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0';
-const labelCls = 'text-sm font-medium text-slate-700';
+const fieldCls = fieldInput;
+const labelCls = fieldLabel;
 
 export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: StudentModalProps) {
     const { toast } = useToast();
@@ -103,8 +116,13 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     }, [open, formData, studentToEdit]);
 
     useEffect(() => {
-        if (open) {
+        if (open && organizationId) {
             fetchPlans();
+        }
+    }, [open, organizationId]);
+
+    useEffect(() => {
+        if (open) {
             if (studentToEdit) {
                 setFormData({
                     full_name: studentToEdit.full_name || '',
@@ -252,17 +270,17 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
     return (
         <>
             <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden">
-                    <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
-                        <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                <DialogContent className={modalContent}>
+                    <DialogHeader className={modalHeader}>
+                        <DialogTitle className={modalTitle}>
                             {studentToEdit ? 'Editar Aluno' : 'Novo Aluno'}
                         </DialogTitle>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <p className={modalDescription}>
                             {studentToEdit ? 'Atualize as informações do aluno.' : 'Cadastre um novo aluno no sistema.'}
                         </p>
                     </DialogHeader>
 
-                    <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                    <div className={modalBody}>
                         <div className="flex items-start gap-5">
                             <div className="flex flex-col items-center gap-2">
                                 <div
@@ -300,7 +318,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                     />
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className={gridTwoCol}>
                                     <div className="space-y-1.5">
                                         <Label className={labelCls}>CPF</Label>
                                         <Input
@@ -328,7 +346,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className={gridTwoCol}>
                             <div className="space-y-1.5">
                                 <Label className={labelCls}>E-mail</Label>
                                 <Input
@@ -350,7 +368,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className={gridTwoCol}>
                             <div className="space-y-1.5">
                                 <Label className={labelCls}>Data de Nascimento</Label>
                                 <Input
@@ -380,8 +398,8 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                         <hr className="border-slate-100" />
 
                         <div className="space-y-3">
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="col-span-1 space-y-1.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div className="sm:col-span-1 space-y-1.5">
                                     <Label className={labelCls}>CEP</Label>
                                     <Input
                                         placeholder="00000-000"
@@ -390,7 +408,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                         className={fieldCls}
                                     />
                                 </div>
-                                <div className="col-span-2 space-y-1.5">
+                                <div className="sm:col-span-2 space-y-1.5">
                                     <Label className={labelCls}>Rua</Label>
                                     <Input
                                         placeholder="Nome da rua"
@@ -400,7 +418,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className={gridTwoCol}>
                                 <div className="space-y-1.5">
                                     <Label className={labelCls}>Número</Label>
                                     <Input
@@ -445,19 +463,19 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                         </div>
                     </div>
 
-                    <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                    <div className={modalFooter}>
                         <Button
                             variant="outline"
                             onClick={handleCloseAttempt}
                             disabled={loading}
-                            className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+                            className={ctaSecondary}
                         >
                             Cancelar
                         </Button>
                         <Button
                             onClick={handleSubmit}
                             disabled={loading}
-                            className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm"
+                            className={ctaPrimary}
                         >
                             {loading ? (
                                 <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>

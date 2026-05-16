@@ -18,6 +18,7 @@ import { Loader2, Mail, Lock, ShieldCheck, UserRoundPlus, Check, X, Briefcase, G
 import { createInstructorAction, updateInstructorAction } from '@/actions/instructors';
 import { cn } from '@/lib/utils';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
+import { useSetupStatus } from '@/context/SetupStatusContext';
 
 const formSchema = z.object({
     fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -50,6 +51,7 @@ const labelCls = "text-sm font-medium text-slate-700";
 export function InstructorModal({ open, onOpenChange, mode, units, roles, instructor }: Props) {
     const { toast } = useToast();
     const router = useRouter();
+    const { refresh: refreshSetupStatus } = useSetupStatus();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
@@ -98,6 +100,7 @@ export function InstructorModal({ open, onOpenChange, mode, units, roles, instru
                 toast({ title: 'Instrutor atualizado' });
             }
             onOpenChange(false);
+            if (mode === 'create') refreshSetupStatus();
             router.refresh();
         } finally { setIsSubmitting(false); }
     };

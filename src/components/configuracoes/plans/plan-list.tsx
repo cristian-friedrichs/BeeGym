@@ -26,6 +26,7 @@ import { PlanForm, PlanFormValues } from './plan-form';
 import { createPlanAction, updatePlanAction, togglePlanStatusAction } from '@/actions/plans';
 import { useToast } from '@/hooks/use-toast';
 import { SectionHeader } from '@/components/ui/section-header';
+import { useSetupStatus } from '@/context/SetupStatusContext';
 
 interface Plan {
     id: string;
@@ -50,6 +51,7 @@ interface PlanListProps {
 export function PlanList({ plans: initialPlans, organizationId }: PlanListProps) {
     const { toast } = useToast();
     const router = useRouter();
+    const { refresh: refreshSetupStatus } = useSetupStatus();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -140,6 +142,7 @@ export function PlanList({ plans: initialPlans, organizationId }: PlanListProps)
             toast({ title: 'Sucesso', description: 'Plano criado com sucesso!' });
             setIsAddModalOpen(false);
             setIsFormDirty(false);
+            refreshSetupStatus();
 
             setTimeout(() => {
                 router.refresh();

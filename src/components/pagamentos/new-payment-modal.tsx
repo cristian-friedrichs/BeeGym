@@ -25,6 +25,18 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useMemo } from 'react';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
+import {
+    modalContent,
+    modalHeader,
+    modalTitle,
+    modalDescription,
+    modalBody,
+    modalFooter,
+    fieldInput,
+    fieldLabel,
+    ctaPrimary,
+    ctaSecondary,
+} from '@/lib/modal-styles';
 
 interface NewPaymentModalProps {
     open: boolean;
@@ -34,8 +46,8 @@ interface NewPaymentModalProps {
 
 interface Student { id: string; name: string; }
 
-const fieldCls = "h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0";
-const labelCls = "text-sm font-medium text-slate-700";
+const fieldCls = fieldInput;
+const labelCls = fieldLabel;
 
 export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentModalProps) {
     const { toast } = useToast();
@@ -168,17 +180,17 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
     return (
         <>
             <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className="max-w-[576px] p-0 gap-0 rounded-2xl overflow-hidden">
-                <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
-                    <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
+                <DialogContent className={modalContent}>
+                <DialogHeader className={modalHeader}>
+                    <DialogTitle className={modalTitle}>
                         Novo Pagamento
                     </DialogTitle>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <p className={modalDescription}>
                         Gere uma nova fatura ou registre um recebimento para o aluno.
                     </p>
                 </DialogHeader>
 
-                <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className={modalBody}>
                     <div className="grid gap-4">
                         <div className="space-y-1.5">
                             <Label className={labelCls}>Aluno *</Label>
@@ -206,7 +218,7 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
                                 <Label className={labelCls}>Valor (R$) *</Label>
                                 <Input
@@ -249,7 +261,7 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
 
                         {isPaid && (
                             <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <Label className={labelCls}>Data do pagamento</Label>
                                         <Popover open={isPayDateOpen} onOpenChange={setIsPayDateOpen} modal>
@@ -290,7 +302,7 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                                 </div>
 
                                 {isInterestEnabled && (
-                                    <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-200">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-200">
                                         <div className="space-y-1.5">
                                             <Label className={labelCls}>Juros (R$)</Label>
                                             <Input className={fieldCls} placeholder="0,00" value={interest} onChange={e => setInterest(e.target.value.replace(/[^\d.,]/g, ''))} />
@@ -313,19 +325,19 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                     </div>
                 </div>
 
-                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+                <div className={modalFooter}>
                     <Button
                         variant="outline"
                         onClick={handleCloseAttempt}
                         disabled={loading}
-                        className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+                        className={ctaSecondary}
                     >
                         Cancelar
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="h-9 rounded-full px-6 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-semibold text-sm shadow-sm transition-all active:scale-95"
+                        className={ctaPrimary}
                     >
                         {loading ? (
                             <div className="flex items-center gap-2">

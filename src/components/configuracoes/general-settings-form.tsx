@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { updateOrganizationSettings } from '@/actions/organization';
 import { SectionHeader } from '@/components/ui/section-header';
+import { useSetupStatus } from '@/context/SetupStatusContext';
 
 const BUSINESS_TYPES = [
     { value: 'Personal Trainer', label: 'Personal Trainer' },
@@ -118,6 +119,7 @@ interface GeneralSettingsFormProps {
 
 export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
     const router = useRouter();
+    const { refresh: refreshSetupStatus } = useSetupStatus();
     const [isSaving, setIsSaving] = useState(false);
     const [isUploadingLogo, setIsUploadingLogo] = useState(false);
     const [logoUrl, setLogoUrl] = useState<string>(org?.logo_url || '');
@@ -265,6 +267,7 @@ export function GeneralSettingsForm({ org, orgId }: GeneralSettingsFormProps) {
 
             // Dispatch custom event for Header update
             window.dispatchEvent(new CustomEvent('organizationUpdated'));
+            refreshSetupStatus();
             router.refresh();
         } catch (error: any) {
             console.error('Error saving settings:', error);
