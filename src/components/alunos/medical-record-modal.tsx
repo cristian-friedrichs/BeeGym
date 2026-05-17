@@ -1,15 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ClipboardList, Loader2, Save, X, Check, Info, FileText, AlertCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Loader2, Check, AlertCircle } from 'lucide-react';
+import {
+    ResponsiveDialog,
+    ResponsiveDialogHeader,
+    ResponsiveDialogBody,
+    ResponsiveDialogFooter,
+} from '@/components/ui/responsive-dialog';
+import {
+    fieldLabel,
+    sectionTitle,
+    ctaPrimary,
+    ctaSecondary,
+} from '@/lib/modal-styles';
+import { cn } from '@/lib/utils';
 
 interface MedicalRecordModalProps {
     open: boolean;
@@ -18,6 +28,8 @@ interface MedicalRecordModalProps {
     existingData?: any;
     onSuccess?: () => void;
 }
+
+const MAX_FIELD_LENGTH = 2000;
 
 export function MedicalRecordModal({ open, onOpenChange, studentId, existingData, onSuccess }: MedicalRecordModalProps) {
     const supabase = createClient();
@@ -28,7 +40,7 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
         characteristics: '',
         disabilities: '',
         difficulties: '',
-        other_notes: ''
+        other_notes: '',
     });
 
     useEffect(() => {
@@ -37,12 +49,12 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
                 characteristics: existingData.characteristics || '',
                 disabilities: existingData.disabilities || '',
                 difficulties: existingData.difficulties || '',
-                other_notes: existingData.other_notes || ''
+                other_notes: existingData.other_notes || '',
             });
+        } else {
+            setFormData({ characteristics: '', disabilities: '', difficulties: '', other_notes: '' });
         }
     }, [existingData, open]);
-
-    const MAX_FIELD_LENGTH = 2000;
 
     const handleTextChange = (field: keyof typeof formData, value: string) => {
         if (value.length <= MAX_FIELD_LENGTH) {
@@ -52,205 +64,149 @@ export function MedicalRecordModal({ open, onOpenChange, studentId, existingData
 
     const handleSubmit = async () => {
         if (loading) return;
-
-        // Validate lengths
-        const allFields = Object.values(formData);
-        if (allFields.some(v => v.length > MAX_FIELD_LENGTH)) {
-            toast({ title: "Texto muito longo", description: `Cada campo suporta no máximo ${MAX_FIELD_LENGTH} caracteres.`, variant: "destructive" });
-            return;
-        }
-
         setLoading(true);
         try {
             const payload = {
                 ...formData,
                 student_id: studentId,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
             };
 
             const { error } = await (supabase.from('student_medical_records' as any) as any)
-                .upsert(payload, { 
-                    onConflict: 'student_id',
-                    ignoreDuplicates: false 
-                });
+                .upsert(payload, { onConflict: 'student_id', ignoreDuplicates: false });
 
             if (error) throw error;
 
-            toast({ 
-                title: "Sucesso!",
-                description: "Ficha médica atualizada com sucesso."
-            });
-            
-            if (onSuccess) onSuccess();
+            toast({ title: 'Ficha atualizada', description: 'Ficha médica salva com sucesso.' });
+            onSuccess?.();
             onOpenChange(false);
         } catch (error: any) {
-            console.error('Error saving medical record:', error);
-            
-            let errorMessage = "Ocorreu um erro ao tentar salvar as informações.";
-            
-            if (error.code === '42P01') {
-                errorMessage = "A tabela de prontuários não foi encontrada no banco de dados.";
-            } else if (error.code === '42501') {
-                errorMessage = "Você não tem permissão para realizar esta alteração.";
-            } else if (error.message) {
-                errorMessage = error.message;
-            }
-
-            toast({ 
-                title: "Erro ao salvar", 
-                description: errorMessage,
-                variant: "destructive" 
-            });
+            let msg = 'Ocorreu um erro ao salvar.';
+            if (error.code === '42P01') msg = 'Tabela de prontuários não encontrada.';
+            else if (error.code === '42501') msg = 'Sem permissão para esta alteração.';
+            else if (error.message) msg = error.message;
+            toast({ title: 'Erro ao salvar', description: msg, variant: 'destructive' });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="p-0 border-none bg-white sm:max-w-[600px] flex flex-col h-full overflow-hidden text-left">
-                <SheetHeader className="relative p-8 bg-gradient-to-br from-bee-midnight via-bee-midnight to-slate-900 border-none shrink-0 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full -mr-16 -mt-16" />
+        <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+            <ResponsiveDialogHeader
+                title="Ficha Médica"
+                description="Anamnese, restrições e cuidados especiais"
+                onClose={() => onOpenChange(false)}
+            />
 
-                    <div className="relative flex items-center gap-5">
-                        <div className="h-16 w-16 rounded-[22px] bg-blue-500/10 flex items-center justify-center ring-1 ring-blue-500/20">
-                            <ClipboardList className="h-8 w-8 text-blue-400" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-3 mb-1">
-                                <SheetTitle className="text-2xl font-black text-white tracking-tight text-left">Ficha Médica</SheetTitle>
-                                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 font-black uppercase text-[10px] tracking-tighter h-5 px-2">Anamnese</Badge>
-                            </div>
-                            <SheetDescription className="text-slate-400 font-medium text-sm text-left">
-                                Histórico, restrições e cuidados especiais
-                            </SheetDescription>
-                        </div>
+            <ResponsiveDialogBody>
+                <section>
+                    <h3 className={sectionTitle}>Perfil & Biotipo</h3>
+                    <FieldWithCount
+                        label="Características físicas"
+                        placeholder="Biotipo, postura, histórico esportivo, condicionamento prévio…"
+                        value={formData.characteristics}
+                        onChange={(v) => handleTextChange('characteristics', v)}
+                    />
+                </section>
+
+                <section>
+                    <div className="flex items-center gap-2 mb-3">
+                        <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                        <h3 className={cn(sectionTitle, 'mb-0 text-red-500')}>Restrições & Cuidados</h3>
                     </div>
-                </SheetHeader>
-
-                <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10 scrollbar-hide text-left">
-                    {/* Características Físicas */}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                                <FileText className="h-4 w-4 text-blue-400" />
-                            </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">Perfil & Biotipo</h3>
-                        </div>
-
-                        <div className="space-y-2.5">
-                            <div className="flex justify-between items-center ml-1">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Características Físicas</Label>
-                                <span className="text-[10px] text-slate-300 font-medium">{formData.characteristics.length}/{MAX_FIELD_LENGTH}</span>
-                            </div>
-                            <Textarea
-                                placeholder="Descreva o biotipo, postura, histórico esportivo e outros dados relevantes..."
-                                className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
-                                value={formData.characteristics}
-                                onChange={(e) => handleTextChange('characteristics', e.target.value)}
-                                maxLength={MAX_FIELD_LENGTH}
-                            />
-                        </div>
+                        <FieldWithCount
+                            label="Deficiências ou patologias"
+                            placeholder="Problemas cardíacos, diabetes, asma, deficiências físicas…"
+                            value={formData.disabilities}
+                            onChange={(v) => handleTextChange('disabilities', v)}
+                            danger
+                        />
+                        <FieldWithCount
+                            label="Dificuldades ou lesões"
+                            placeholder="Dores crônicas, lesões anteriores, hérnia, mobilidade reduzida…"
+                            value={formData.difficulties}
+                            onChange={(v) => handleTextChange('difficulties', v)}
+                        />
                     </div>
+                </section>
 
-                    <Separator className="bg-slate-50" />
+                <section>
+                    <h3 className={sectionTitle}>Informações adicionais</h3>
+                    <FieldWithCount
+                        label="Outras observações"
+                        placeholder="Medicamentos em uso, recomendações externas, objetivos específicos…"
+                        value={formData.other_notes}
+                        onChange={(v) => handleTextChange('other_notes', v)}
+                    />
+                </section>
+            </ResponsiveDialogBody>
 
-                    {/* Restrições Médicas */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                                <AlertCircle className="h-4 w-4 text-red-400" />
-                            </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">Restrições & Cuidados</h3>
-                        </div>
+            <ResponsiveDialogFooter>
+                <Button
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={loading}
+                    className={ctaSecondary}
+                >
+                    Cancelar
+                </Button>
+                <Button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className={ctaPrimary}
+                >
+                    {loading ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Salvando…</span>
+                        </>
+                    ) : (
+                        <>
+                            <Check className="h-4 w-4" />
+                            <span>Salvar ficha</span>
+                        </>
+                    )}
+                </Button>
+            </ResponsiveDialogFooter>
+        </ResponsiveDialog>
+    );
+}
 
-                        <div className="grid grid-cols-1 gap-6">
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between items-center ml-1">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-red-500/70">Deficiências ou Patologias</Label>
-                                    <span className="text-[10px] text-slate-300 font-medium">{formData.disabilities.length}/{MAX_FIELD_LENGTH}</span>
-                                </div>
-                                <Textarea
-                                    placeholder="Problemas cardíacos, diabetes, asma, deficiências físicas, etc..."
-                                    className="min-h-[100px] p-4 bg-red-50/20 border-red-100/50 rounded-2xl focus:ring-4 focus:ring-red-500/5 focus:border-red-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
-                                    value={formData.disabilities}
-                                    onChange={(e) => handleTextChange('disabilities', e.target.value)}
-                                    maxLength={MAX_FIELD_LENGTH}
-                                />
-                            </div>
-
-                            <div className="space-y-2.5">
-                                <div className="flex justify-between items-center ml-1">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Dificuldades ou Lesões</Label>
-                                    <span className="text-[10px] text-slate-300 font-medium">{formData.difficulties.length}/{MAX_FIELD_LENGTH}</span>
-                                </div>
-                                <Textarea
-                                    placeholder="Dores crônicas, lesões anteriores, hérnia de disco, falta de mobilidade..."
-                                    className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
-                                    value={formData.difficulties}
-                                    onChange={(e) => handleTextChange('difficulties', e.target.value)}
-                                    maxLength={MAX_FIELD_LENGTH}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <Separator className="bg-slate-50" />
-
-                    {/* Notas Finais */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                                <Info className="h-4 w-4 text-slate-400" />
-                            </div>
-                            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 text-left">Informações Adicionais</h3>
-                        </div>
-
-                        <div className="space-y-2.5">
-                            <div className="flex justify-between items-center ml-1">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Outras Observações</Label>
-                                <span className="text-[10px] text-slate-300 font-medium">{formData.other_notes.length}/{MAX_FIELD_LENGTH}</span>
-                            </div>
-                            <Textarea
-                                placeholder="Medicamentos em uso, recomendações externas, objetivos específicos..."
-                                className="min-h-[100px] p-4 bg-slate-50/50 border-slate-100 rounded-2xl focus:ring-4 focus:ring-slate-500/5 focus:border-slate-500/20 transition-all font-medium text-bee-midnight resize-none leading-relaxed"
-                                value={formData.other_notes}
-                                onChange={(e) => handleTextChange('other_notes', e.target.value)}
-                                maxLength={MAX_FIELD_LENGTH}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <SheetFooter className="p-8 border-t bg-white flex items-center gap-3 shrink-0 sm:justify-end sticky bottom-0 z-30 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
-                    <Button
-                        variant="ghost"
-                        onClick={() => onOpenChange(false)}
-                        disabled={loading}
-                        className="flex-1 sm:flex-none text-slate-400 hover:text-slate-600 hover:bg-slate-100 font-black h-10 rounded-full uppercase text-[10px] tracking-widest transition-all"
-                    >
-                        <X className="mr-2 h-4 w-4" />
-                        Fechar
-                    </Button>
-                    <Button
-                        disabled={loading}
-                        onClick={handleSubmit}
-                        className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white font-black h-10 rounded-full shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5 active:scale-95 uppercase text-[10px] tracking-widest px-10"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Salvando...
-                            </>
-                        ) : (
-                            <>
-                                <Check className="mr-2 h-4 w-4" />
-                                Atualizar Ficha
-                            </>
-                        )}
-                    </Button>
-                </SheetFooter>
-            </SheetContent>
-        </Sheet>
+function FieldWithCount({
+    label,
+    placeholder,
+    value,
+    onChange,
+    danger,
+}: {
+    label: string;
+    placeholder: string;
+    value: string;
+    onChange: (v: string) => void;
+    danger?: boolean;
+}) {
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-1.5">
+                <Label className={fieldLabel}>{label}</Label>
+                <span className="text-[10px] font-medium text-slate-400 tabular-nums">
+                    {value.length}/{MAX_FIELD_LENGTH}
+                </span>
+            </div>
+            <Textarea
+                placeholder={placeholder}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                maxLength={MAX_FIELD_LENGTH}
+                className={cn(
+                    'min-h-[110px] rounded-xl text-base sm:text-sm leading-relaxed resize-none',
+                    'border-slate-200 bg-white placeholder:text-slate-400',
+                    'focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0',
+                    danger && 'border-red-100 bg-red-50/30 focus:border-red-400/40 focus:ring-red-500/10',
+                )}
+            />
+        </div>
     );
 }
