@@ -230,11 +230,22 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             if (!authUser) throw new Error('Não autenticado');
             if (!organizationId) throw new Error('Organização não encontrada');
 
-            const { active, ...formDataWithoutActive } = formData;
-            const payload = {
-                ...formDataWithoutActive,
+            const payload: Record<string, any> = {
+                full_name: formData.full_name,
+                email: formData.email || null,
+                phone: formData.phone,
+                cpf: formData.cpf || null,
+                gender: formData.gender,
+                birth_date: formData.birth_date || null,
+                plan_id: formData.plan_id || null,
+                objective: formData.observations || null,
+                avatar_url: formData.avatar_url,
+                address_zip: formData.address_zip || null,
+                address_street: formData.address_street || null,
+                address_number: formData.address_number || null,
+                address_neighborhood: formData.address_neighborhood || null,
                 organization_id: organizationId,
-                status: active ? 'ACTIVE' : 'INACTIVE'
+                status: formData.active ? 'ACTIVE' : 'INACTIVE',
             };
 
             let error;
