@@ -1,11 +1,5 @@
 'use client';
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,16 +15,16 @@ import { UpgradePromptModal } from '@/components/ui/upgrade-prompt-modal';
 import { useState, useEffect, useMemo } from 'react';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
 import {
-    modalContent,
-    modalHeader,
-    modalTitle,
-    modalDescription,
-    modalBody,
-    modalFooter,
+    ResponsiveDialog,
+    ResponsiveDialogHeader,
+    ResponsiveDialogBody,
+    ResponsiveDialogFooter,
+} from '@/components/ui/responsive-dialog';
+import {
     fieldInput,
     fieldLabel,
+    sectionTitle,
     gridTwoCol,
-    gridThreeCol,
     ctaPrimary,
     ctaSecondary,
 } from '@/lib/modal-styles';
@@ -281,226 +275,252 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className={modalContent}>
-                    <DialogHeader className={modalHeader}>
-                        <DialogTitle className={modalTitle}>
-                            {studentToEdit ? 'Editar Aluno' : 'Novo Aluno'}
-                        </DialogTitle>
-                        <p className={modalDescription}>
-                            {studentToEdit ? 'Atualize as informações do aluno.' : 'Cadastre um novo aluno no sistema.'}
-                        </p>
-                    </DialogHeader>
+            <ResponsiveDialog open={open} onOpenChange={(v) => { if (!v) handleCloseAttempt(); else onOpenChange(true); }} dismissible={!isDirty}>
+                <ResponsiveDialogHeader
+                    title={studentToEdit ? 'Editar Aluno' : 'Novo Aluno'}
+                    description={studentToEdit ? 'Atualize as informações do aluno.' : 'Cadastre um novo aluno no sistema.'}
+                    onClose={handleCloseAttempt}
+                />
 
-                    <div className={modalBody}>
-                        <div className="flex items-start gap-5">
-                            <div className="flex flex-col items-center gap-2">
-                                <div
-                                    className="relative h-20 w-20 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group cursor-pointer"
-                                    onClick={() => document.getElementById('avatar-upload')?.click()}
-                                >
-                                    {previewUrl ? (
-                                        <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
-                                    ) : (
-                                        <div className="h-full w-full flex items-center justify-center">
-                                            <User className="h-8 w-8 text-slate-300" />
-                                        </div>
-                                    )}
-                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Camera className="h-5 w-5 text-white" />
-                                    </div>
-                                    {uploading && (
-                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
-                                            <Loader2 className="h-5 w-5 animate-spin text-bee-amber" />
-                                        </div>
-                                    )}
+                <ResponsiveDialogBody>
+                    {/* Avatar — centered on mobile, prominent */}
+                    <div className="flex flex-col items-center gap-3 pb-2">
+                        <div
+                            className="relative h-24 w-24 sm:h-20 sm:w-20 rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group cursor-pointer active:scale-95 transition-transform"
+                            onClick={() => document.getElementById('avatar-upload')?.click()}
+                        >
+                            {previewUrl ? (
+                                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+                            ) : (
+                                <div className="h-full w-full flex items-center justify-center">
+                                    <User className="h-10 w-10 sm:h-8 sm:w-8 text-slate-300" />
                                 </div>
-                                <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
-                                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Foto</span>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+                                <Camera className="h-6 w-6 sm:h-5 sm:w-5 text-white" />
+                            </div>
+                            {uploading && (
+                                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                    <Loader2 className="h-5 w-5 animate-spin text-bee-amber" />
+                                </div>
+                            )}
+                        </div>
+                        <input id="avatar-upload" type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
+                        <button
+                            type="button"
+                            onClick={() => document.getElementById('avatar-upload')?.click()}
+                            className="text-xs font-semibold text-bee-amber hover:underline"
+                        >
+                            {previewUrl ? 'Alterar foto' : 'Adicionar foto'}
+                        </button>
+                    </div>
+
+                    {/* Section: Pessoal */}
+                    <section>
+                        <h3 className={sectionTitle}>Dados pessoais</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className={fieldLabel}>Nome Completo *</Label>
+                                <Input
+                                    placeholder="Ex: João Silva"
+                                    value={formData.full_name}
+                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                                    className={fieldInput}
+                                    autoComplete="name"
+                                />
                             </div>
 
-                            <div className="flex-1 space-y-3">
-                                <div className="space-y-1.5">
-                                    <Label className={labelCls}>Nome Completo *</Label>
+                            <div className={gridTwoCol}>
+                                <div>
+                                    <Label className={fieldLabel}>CPF</Label>
                                     <Input
-                                        placeholder="Ex: João Silva"
-                                        value={formData.full_name}
-                                        onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                        className={fieldCls}
+                                        placeholder="000.000.000-00"
+                                        value={formData.cpf}
+                                        onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
+                                        className={fieldInput}
+                                        inputMode="numeric"
                                     />
                                 </div>
-
-                                <div className={gridTwoCol}>
-                                    <div className="space-y-1.5">
-                                        <Label className={labelCls}>CPF</Label>
-                                        <Input
-                                            placeholder="000.000.000-00"
-                                            value={formData.cpf}
-                                            onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                                            className={fieldCls}
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <Label className={labelCls}>Gênero</Label>
-                                        <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
-                                            <SelectTrigger className={fieldCls}>
-                                                <SelectValue placeholder="Selecione" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="not_informed">Não informado</SelectItem>
-                                                <SelectItem value="male">Masculino</SelectItem>
-                                                <SelectItem value="female">Feminino</SelectItem>
-                                                <SelectItem value="other">Outro</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                <div>
+                                    <Label className={fieldLabel}>Gênero</Label>
+                                    <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
+                                        <SelectTrigger className={fieldInput}>
+                                            <SelectValue placeholder="Selecione" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="not_informed">Não informado</SelectItem>
+                                            <SelectItem value="male">Masculino</SelectItem>
+                                            <SelectItem value="female">Feminino</SelectItem>
+                                            <SelectItem value="other">Outro</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className={gridTwoCol}>
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>E-mail</Label>
+                            <div>
+                                <Label className={fieldLabel}>Data de Nascimento</Label>
+                                <Input
+                                    type="date"
+                                    value={formData.birth_date}
+                                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                                    className={fieldInput}
+                                />
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Section: Contato */}
+                    <section>
+                        <h3 className={sectionTitle}>Contato</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className={fieldLabel}>Telefone *</Label>
+                                <Input
+                                    placeholder="(00) 00000-0000"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className={fieldInput}
+                                    inputMode="tel"
+                                    autoComplete="tel"
+                                />
+                            </div>
+                            <div>
+                                <Label className={fieldLabel}>E-mail</Label>
                                 <Input
                                     type="email"
                                     placeholder="email@exemplo.com"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    className={fieldCls}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>Telefone *</Label>
-                                <Input
-                                    placeholder="(00) 00000-0000"
-                                    value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                    className={fieldCls}
+                                    className={fieldInput}
+                                    autoComplete="email"
                                 />
                             </div>
                         </div>
+                    </section>
 
-                        <div className={gridTwoCol}>
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>Data de Nascimento</Label>
+                    {/* Section: Plano */}
+                    <section>
+                        <h3 className={sectionTitle}>Matrícula</h3>
+                        <div>
+                            <Label className={fieldLabel}>Plano</Label>
+                            <Select value={formData.plan_id} onValueChange={(v) => setFormData({ ...formData, plan_id: v })}>
+                                <SelectTrigger className={fieldInput}>
+                                    <SelectValue placeholder="Selecione um plano" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {plans.map(plan => (
+                                        <SelectItem key={plan.id} value={plan.id}>
+                                            {plan.name} ({recurrenceLabel[plan.recurrence || ''] || 'Mensal'})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </section>
+
+                    {/* Section: Endereço */}
+                    <section>
+                        <h3 className={sectionTitle}>Endereço</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className={fieldLabel}>CEP</Label>
                                 <Input
-                                    type="date"
-                                    value={formData.birth_date}
-                                    onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-                                    className={fieldCls}
+                                    placeholder="00000-000"
+                                    value={formData.address_zip}
+                                    onChange={(e) => setFormData({ ...formData, address_zip: e.target.value })}
+                                    className={fieldInput}
+                                    inputMode="numeric"
+                                    autoComplete="postal-code"
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>Plano</Label>
-                                <Select value={formData.plan_id} onValueChange={(v) => setFormData({ ...formData, plan_id: v })}>
-                                    <SelectTrigger className={fieldCls}>
-                                        <SelectValue placeholder="Selecione um plano" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {plans.map(plan => (
-                                            <SelectItem key={plan.id} value={plan.id}>
-                                                {plan.name} ({recurrenceLabel[plan.recurrence || ''] || 'Mensal'})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <hr className="border-slate-100" />
-
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div className="sm:col-span-1 space-y-1.5">
-                                    <Label className={labelCls}>CEP</Label>
-                                    <Input
-                                        placeholder="00000-000"
-                                        value={formData.address_zip}
-                                        onChange={(e) => setFormData({ ...formData, address_zip: e.target.value })}
-                                        className={fieldCls}
-                                    />
-                                </div>
-                                <div className="sm:col-span-2 space-y-1.5">
-                                    <Label className={labelCls}>Rua</Label>
-                                    <Input
-                                        placeholder="Nome da rua"
-                                        value={formData.address_street}
-                                        onChange={(e) => setFormData({ ...formData, address_street: e.target.value })}
-                                        className={fieldCls}
-                                    />
-                                </div>
+                            <div>
+                                <Label className={fieldLabel}>Rua</Label>
+                                <Input
+                                    placeholder="Nome da rua"
+                                    value={formData.address_street}
+                                    onChange={(e) => setFormData({ ...formData, address_street: e.target.value })}
+                                    className={fieldInput}
+                                    autoComplete="address-line1"
+                                />
                             </div>
                             <div className={gridTwoCol}>
-                                <div className="space-y-1.5">
-                                    <Label className={labelCls}>Número</Label>
+                                <div>
+                                    <Label className={fieldLabel}>Número</Label>
                                     <Input
                                         placeholder="Ex: 123"
                                         value={formData.address_number}
                                         onChange={(e) => setFormData({ ...formData, address_number: e.target.value })}
-                                        className={fieldCls}
+                                        className={fieldInput}
+                                        inputMode="numeric"
                                     />
                                 </div>
-                                <div className="space-y-1.5">
-                                    <Label className={labelCls}>Bairro</Label>
+                                <div>
+                                    <Label className={fieldLabel}>Bairro</Label>
                                     <Input
                                         placeholder="Ex: Centro"
                                         value={formData.address_neighborhood}
                                         onChange={(e) => setFormData({ ...formData, address_neighborhood: e.target.value })}
-                                        className={fieldCls}
+                                        className={fieldInput}
                                     />
                                 </div>
                             </div>
                         </div>
+                    </section>
 
-                        <div className="space-y-1.5">
-                            <Label className={labelCls}>Observações</Label>
-                            <Input
-                                placeholder="Notas internas sobre o aluno..."
-                                value={formData.observations}
-                                onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                                className={fieldCls}
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                            <div className="space-y-0.5">
-                                <Label className="text-sm font-semibold text-slate-900">Aluno Ativo</Label>
-                                <p className="text-xs text-slate-500">Alunos inativos não podem fazer check-in.</p>
+                    {/* Section: Extras */}
+                    <section>
+                        <h3 className={sectionTitle}>Outros</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className={fieldLabel}>Observações</Label>
+                                <Input
+                                    placeholder="Notas internas sobre o aluno..."
+                                    value={formData.observations}
+                                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
+                                    className={fieldInput}
+                                />
                             </div>
-                            <Switch
-                                checked={formData.active}
-                                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                                className="data-[state=checked]:bg-bee-amber"
-                            />
-                        </div>
-                    </div>
 
-                    <div className={modalFooter}>
-                        <Button
-                            variant="outline"
-                            onClick={handleCloseAttempt}
-                            disabled={loading}
-                            className={ctaSecondary}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={loading}
-                            className={ctaPrimary}
-                        >
-                            {loading ? (
-                                <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Check className="h-4 w-4" />
-                                    <span>{studentToEdit ? 'Salvar alterações' : 'Concluir matrícula'}</span>
+                            <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                                <div className="flex-1 pr-3">
+                                    <Label className="text-sm font-semibold text-slate-900 mb-0.5 block">Aluno Ativo</Label>
+                                    <p className="text-xs text-slate-500 leading-snug">Alunos inativos não podem fazer check-in.</p>
                                 </div>
-                            )}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                                <Switch
+                                    checked={formData.active}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
+                                    className="data-[state=checked]:bg-bee-amber"
+                                />
+                            </div>
+                        </div>
+                    </section>
+                </ResponsiveDialogBody>
+
+                <ResponsiveDialogFooter>
+                    <Button
+                        variant="outline"
+                        onClick={handleCloseAttempt}
+                        disabled={loading}
+                        className={ctaSecondary}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className={ctaPrimary}
+                    >
+                        {loading ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" />Salvando…</>
+                        ) : (
+                            <>
+                                <Check className="h-4 w-4" />
+                                <span>{studentToEdit ? 'Salvar alterações' : 'Concluir matrícula'}</span>
+                            </>
+                        )}
+                    </Button>
+                </ResponsiveDialogFooter>
+            </ResponsiveDialog>
 
             <ConfirmDiscardDialog
                 open={showDiscardDialog}

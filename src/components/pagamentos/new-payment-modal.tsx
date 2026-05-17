@@ -1,14 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -26,14 +18,15 @@ import { ptBR } from 'date-fns/locale';
 import { useMemo } from 'react';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
 import {
-    modalContent,
-    modalHeader,
-    modalTitle,
-    modalDescription,
-    modalBody,
-    modalFooter,
+    ResponsiveDialog,
+    ResponsiveDialogHeader,
+    ResponsiveDialogBody,
+    ResponsiveDialogFooter,
+} from '@/components/ui/responsive-dialog';
+import {
     fieldInput,
     fieldLabel,
+    sectionTitle,
     ctaPrimary,
     ctaSecondary,
 } from '@/lib/modal-styles';
@@ -179,94 +172,97 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className={modalContent}>
-                <DialogHeader className={modalHeader}>
-                    <DialogTitle className={modalTitle}>
-                        Novo Pagamento
-                    </DialogTitle>
-                    <p className={modalDescription}>
-                        Gere uma nova fatura ou registre um recebimento para o aluno.
-                    </p>
-                </DialogHeader>
+            <ResponsiveDialog open={open} onOpenChange={(v) => { if (!v) handleCloseAttempt(); else onOpenChange(true); }} dismissible={!isDirty}>
+                <ResponsiveDialogHeader
+                    title="Novo Pagamento"
+                    description="Gere uma nova fatura ou registre um recebimento para o aluno."
+                    onClose={handleCloseAttempt}
+                />
 
-                <div className={modalBody}>
-                    <div className="grid gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={labelCls}>Aluno *</Label>
-                            <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                                <SelectTrigger className={fieldCls}>
-                                    <SelectValue placeholder="Selecione o aluno…" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                                    {students.map(s => (
-                                        <SelectItem key={s.id} value={s.id} className="py-2.5 focus:bg-bee-amber/10 rounded-lg mx-1 my-0.5">
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                <ResponsiveDialogBody>
+                    <section>
+                        <h3 className={sectionTitle}>Cobrança</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className={fieldLabel}>Aluno *</Label>
+                                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                                    <SelectTrigger className={fieldInput}>
+                                        <SelectValue placeholder="Selecione o aluno…" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                        {students.map(s => (
+                                            <SelectItem key={s.id} value={s.id} className="py-2.5 focus:bg-bee-amber/10 rounded-lg mx-1 my-0.5">
+                                                {s.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        <div className="space-y-1.5">
-                            <Label className={labelCls}>Descrição *</Label>
-                            <Input
-                                className={fieldCls}
-                                placeholder="Ex: Mensalidade Março"
-                                value={description}
-                                onChange={e => setDescription(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>Valor (R$) *</Label>
+                            <div>
+                                <Label className={fieldLabel}>Descrição *</Label>
                                 <Input
-                                    className={fieldCls}
-                                    placeholder="0,00"
-                                    value={amount}
-                                    onChange={e => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
+                                    className={fieldInput}
+                                    placeholder="Ex: Mensalidade Março"
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
                                 />
                             </div>
-                            <div className="space-y-1.5">
-                                <Label className={labelCls}>Vencimento *</Label>
-                                <Popover open={isDueDateOpen} onOpenChange={setIsDueDateOpen} modal>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn(fieldCls, 'w-full justify-start font-normal', !dueDate && 'text-slate-400')}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
-                                            {dueDate ? format(dueDate, 'dd/MM/yyyy') : 'Selecione…'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0 rounded-xl shadow-2xl border-slate-100 overflow-hidden" align="start">
-                                        <Calendar mode="single" selected={dueDate} onSelect={d => { if (d) { setDueDate(d); setIsDueDateOpen(false); } }} initialFocus locale={ptBR} />
-                                    </PopoverContent>
-                                </Popover>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <Label className={fieldLabel}>Valor (R$) *</Label>
+                                    <Input
+                                        className={fieldInput}
+                                        placeholder="0,00"
+                                        value={amount}
+                                        onChange={e => setAmount(e.target.value.replace(/[^\d.,]/g, ''))}
+                                        inputMode="decimal"
+                                    />
+                                </div>
+                                <div>
+                                    <Label className={fieldLabel}>Vencimento *</Label>
+                                    <Popover open={isDueDateOpen} onOpenChange={setIsDueDateOpen} modal>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(fieldInput, 'w-full justify-start font-normal', !dueDate && 'text-slate-400')}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+                                                {dueDate ? format(dueDate, 'dd/MM/yyyy') : 'Selecione…'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0 rounded-xl shadow-2xl border-slate-100 overflow-hidden" align="start">
+                                            <Calendar mode="single" selected={dueDate} onSelect={d => { if (d) { setDueDate(d); setIsDueDateOpen(false); } }} initialFocus locale={ptBR} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </div>
                         </div>
+                    </section>
 
-                        <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                            <div className="space-y-0.5">
-                                <Label className="text-sm font-semibold text-slate-900">Já foi pago?</Label>
-                                <p className="text-xs text-slate-500 text-balance">Marcar fatura como recebida e registrar no financeiro.</p>
-                            </div>
-                            <Switch
-                                checked={isPaid}
-                                onCheckedChange={setIsPaid}
-                                className="data-[state=checked]:bg-bee-amber"
-                            />
+                    <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
+                        <div className="flex-1 pr-3">
+                            <Label className="text-sm font-semibold text-slate-900 mb-0.5 block">Já foi pago?</Label>
+                            <p className="text-xs text-slate-500 leading-snug">Marcar fatura como recebida e registrar no financeiro.</p>
                         </div>
+                        <Switch
+                            checked={isPaid}
+                            onCheckedChange={setIsPaid}
+                            className="data-[state=checked]:bg-bee-amber"
+                        />
+                    </div>
 
-                        {isPaid && (
-                            <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {isPaid && (
+                        <section className="animate-in fade-in slide-in-from-top-2 duration-200">
+                            <h3 className={sectionTitle}>Recebimento</h3>
+                            <div className="space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <Label className={labelCls}>Data do pagamento</Label>
+                                    <div>
+                                        <Label className={fieldLabel}>Data do pagamento</Label>
                                         <Popover open={isPayDateOpen} onOpenChange={setIsPayDateOpen} modal>
                                             <PopoverTrigger asChild>
-                                                <Button variant="outline" className={cn(fieldCls, 'w-full justify-start font-normal')}>
+                                                <Button variant="outline" className={cn(fieldInput, 'w-full justify-start font-normal')}>
                                                     <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
                                                     {format(payDate, 'dd/MM/yyyy')}
                                                 </Button>
@@ -276,10 +272,10 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                                             </PopoverContent>
                                         </Popover>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <Label className={labelCls}>Forma de pagamento</Label>
+                                    <div>
+                                        <Label className={fieldLabel}>Forma de pagamento</Label>
                                         <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                            <SelectTrigger className={fieldCls}>
+                                            <SelectTrigger className={fieldInput}>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
@@ -303,13 +299,13 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
 
                                 {isInterestEnabled && (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-200">
-                                        <div className="space-y-1.5">
-                                            <Label className={labelCls}>Juros (R$)</Label>
-                                            <Input className={fieldCls} placeholder="0,00" value={interest} onChange={e => setInterest(e.target.value.replace(/[^\d.,]/g, ''))} />
+                                        <div>
+                                            <Label className={fieldLabel}>Juros (R$)</Label>
+                                            <Input className={fieldInput} placeholder="0,00" value={interest} onChange={e => setInterest(e.target.value.replace(/[^\d.,]/g, ''))} inputMode="decimal" />
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <Label className={labelCls}>Multa (R$)</Label>
-                                            <Input className={fieldCls} placeholder="0,00" value={penalty} onChange={e => setPenalty(e.target.value.replace(/[^\d.,]/g, ''))} />
+                                        <div>
+                                            <Label className={fieldLabel}>Multa (R$)</Label>
+                                            <Input className={fieldInput} placeholder="0,00" value={penalty} onChange={e => setPenalty(e.target.value.replace(/[^\d.,]/g, ''))} inputMode="decimal" />
                                         </div>
                                     </div>
                                 )}
@@ -321,11 +317,11 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                                     </span>
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </section>
+                    )}
+                </ResponsiveDialogBody>
 
-                <div className={modalFooter}>
+                <ResponsiveDialogFooter>
                     <Button
                         variant="outline"
                         onClick={handleCloseAttempt}
@@ -340,20 +336,19 @@ export function NewPaymentModal({ open, onOpenChange, onSuccess }: NewPaymentMod
                         className={ctaPrimary}
                     >
                         {loading ? (
-                            <div className="flex items-center gap-2">
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                <span>Processando...</span>
-                            </div>
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Processando…</span>
+                            </>
                         ) : (
-                            <div className="flex items-center gap-2">
+                            <>
                                 <Check className="h-4 w-4" />
                                 <span>{isPaid ? 'Confirmar recebimento' : 'Gerar fatura'}</span>
-                            </div>
+                            </>
                         )}
                     </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+                </ResponsiveDialogFooter>
+            </ResponsiveDialog>
 
 
             <ConfirmDiscardDialog

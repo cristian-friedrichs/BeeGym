@@ -1,7 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+    ResponsiveDialog,
+    ResponsiveDialogHeader,
+    ResponsiveDialogBody,
+    ResponsiveDialogFooter,
+} from "@/components/ui/responsive-dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,12 +28,6 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { ConfirmDiscardDialog } from "@/components/ui/confirm-discard-dialog";
 import {
-    modalContent,
-    modalHeader,
-    modalTitle,
-    modalDescription,
-    modalBody,
-    modalFooter,
     fieldInput,
     fieldLabel,
     ctaPrimary,
@@ -453,20 +452,14 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleCloseAttempt}>
-                <DialogContent className={modalContent}>
+            <ResponsiveDialog open={open} onOpenChange={(v) => { if (!v) handleCloseAttempt(); else onOpenChange(true); }} dismissible={!isDirty}>
+                <ResponsiveDialogHeader
+                    title={workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
+                    description={workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
+                    onClose={handleCloseAttempt}
+                />
 
-                    <DialogHeader className={modalHeader}>
-                        <DialogTitle className={modalTitle}>
-                            {workoutToEdit ? 'Editar Treino' : 'Novo Treino'}
-                        </DialogTitle>
-                        <p className={modalDescription}>
-                            {workoutToEdit ? 'Altere as informações abaixo' : 'Agende um novo horário'}
-                        </p>
-                    </DialogHeader>
-
-
-                    <div className={modalBody}>
+                <ResponsiveDialogBody>
 
                         {/* ABAS INDIVIDUAL / GRUPO */}
                         {!workoutToEdit && (
@@ -826,35 +819,34 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                             </div>
                         </div>
                 </div>
-                    </div>
+                </ResponsiveDialogBody>
 
-                    <div className={modalFooter}>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleCloseAttempt}
-                            disabled={loading}
-                            className={ctaSecondary}
-                        >
-                            Cancelar
-                        </Button>
-                        <Button
-                            onClick={handleSave}
-                            disabled={loading}
-                            className={ctaPrimary}
-                        >
-                            {loading ? (
-                                <><Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />Salvando…</>
-                            ) : (
-                                <div className="flex items-center gap-2">
-                                    <Check className="h-4 w-4" />
-                                    <span>{workoutToEdit ? 'Salvar alterações' : 'Agendar treino'}</span>
-                                </div>
-                            )}
-                        </Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
+                <ResponsiveDialogFooter>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCloseAttempt}
+                        disabled={loading}
+                        className={ctaSecondary}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className={ctaPrimary}
+                    >
+                        {loading ? (
+                            <><Loader2 className="h-4 w-4 animate-spin" />Salvando…</>
+                        ) : (
+                            <>
+                                <Check className="h-4 w-4" />
+                                <span>{workoutToEdit ? 'Salvar alterações' : 'Agendar treino'}</span>
+                            </>
+                        )}
+                    </Button>
+                </ResponsiveDialogFooter>
+            </ResponsiveDialog>
 
             <ConfirmDiscardDialog
                 open={showDiscardDialog}
