@@ -18,6 +18,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { getClassType } from '@/lib/class-definitions';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { NewEventSelectionDialog } from '@/components/painel/modals/new-event-selection-dialog';
 
 const WorkoutModal = dynamic(() => import('@/components/treinos/workout-modal').then(m => ({ default: m.WorkoutModal })), { ssr: false });
@@ -245,10 +246,17 @@ export default function AgendaPage() {
     const { organizationId } = useAuth();
     const { toast } = useToast();
 
+    const isMobile = useIsMobile();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [view, setView] = useState<'day' | 'week' | 'month'>('week');
+    const [view, setView] = useState<'day' | 'list' | 'week' | 'month'>('week');
     const [events, setEvents] = useState<AgendaEvent[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Mobile uses 'list' instead of 'day'; keep state coherent across breakpoint changes
+    useEffect(() => {
+        if (isMobile) setView(v => (v === 'day' ? 'list' : v));
+        else setView(v => (v === 'list' ? 'day' : v));
+    }, [isMobile]);
 
     // Modals
     const [selectionOpen, setSelectionOpen] = useState(false);
@@ -265,19 +273,19 @@ export default function AgendaPage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const v = params.get('view');
-        if (v === 'day' || v === 'week' || v === 'month') setView(v);
+        if (v === 'day' || v === 'list' || v === 'week' || v === 'month') setView(v);
         const d = params.get('date');
         if (d) { const parsed = new Date(d); if (!isNaN(parsed.getTime())) setCurrentDate(parsed); }
     }, []);
 
-    // Scroll to business hours on mount / view change
+    // Scroll to business hours on mount / view change (only desktop week has the hour grid)
     useEffect(() => {
-        if (view !== 'month') {
+        if (view === 'week' && !isMobile) {
             requestAnimationFrame(() => {
                 if (scrollRef.current) scrollRef.current.scrollTop = (8 - DAY_START_HOUR) * HOUR_HEIGHT;
             });
         }
-    }, [view]);
+    }, [view, isMobile]);
 
     // ── Fetch range based on view ─────────────────────────────────────────────
     const fetchRange = useMemo(() => {
@@ -293,7 +301,7 @@ export default function AgendaPage() {
                 end: endOfWeek(currentDate, { locale: ptBR }).toISOString(),
             };
         }
-        // month: full padded grid
+        // month and list: full padded grid
         return {
             start: startOfWeek(startOfMonth(currentDate), { locale: ptBR }).toISOString(),
             end: endOfWeek(endOfMonth(currentDate), { locale: ptBR }).toISOString(),
@@ -411,12 +419,12 @@ export default function AgendaPage() {
 
     // ── Navigation ────────────────────────────────────────────────────────────
     const handlePrev = () => {
-        if (view === 'month') setCurrentDate(d => subMonths(d, 1));
+        if (view === 'month' || view === 'list') setCurrentDate(d => subMonths(d, 1));
         else if (view === 'week') setCurrentDate(d => subDays(d, 7));
         else setCurrentDate(d => subDays(d, 1));
     };
     const handleNext = () => {
-        if (view === 'month') setCurrentDate(d => addMonths(d, 1));
+        if (view === 'month' || view === 'list') setCurrentDate(d => addMonths(d, 1));
         else if (view === 'week') setCurrentDate(d => addDays(d, 7));
         else setCurrentDate(d => addDays(d, 1));
     };
@@ -450,6 +458,14 @@ export default function AgendaPage() {
     }, [currentDate, view]);
 
     const totalEventsToday = useMemo(() => getEventsForDay(new Date()).length, [getEventsForDay]);
+
+    // Days for the mobile "list" view: every day in the current padded-month range,
+    // skipping empty days but always keeping today if it falls inside the range.
+    const listDays = useMemo(() => {
+        return daysInMonth
+            .map(day => ({ day, events: getEventsForDay(day) }))
+            .filter(({ day, events }) => events.length > 0 || isToday(day));
+    }, [daysInMonth, getEventsForDay]);
 
     // ── Event handlers ────────────────────────────────────────────────────────
     const handleEventClick = (event: AgendaEvent) => {
@@ -518,7 +534,10 @@ export default function AgendaPage() {
                                 )}
                             </div>
                             <div className="flex items-center bg-slate-100 rounded-full p-0.5 gap-0.5 shrink-0">
-                                {(['day', 'week', 'month'] as const).map(v => (
+                                {(isMobile
+                                    ? (['list', 'week', 'month'] as const)
+                                    : (['day', 'week', 'month'] as const)
+                                ).map(v => (
                                     <button
                                         key={v}
                                         onClick={() => setView(v)}
@@ -529,7 +548,7 @@ export default function AgendaPage() {
                                                 : 'text-slate-500 hover:text-slate-700'
                                         )}
                                     >
-                                        {{ day: 'Dia', week: 'Sem', month: 'Mês' }[v]}
+                                        {{ day: 'Dia', list: 'Lista', week: 'Semana', month: 'Mês' }[v]}
                                     </button>
                                 ))}
                             </div>
@@ -561,8 +580,8 @@ export default function AgendaPage() {
                     {/* ── Calendar Body ─────────────────────────────────────── */}
                     <div className="flex-1 min-h-0 overflow-hidden">
 
-                        {/* ══ MONTH VIEW ══════════════════════════════════════ */}
-                        {view === 'month' && (
+                        {/* ══ MONTH VIEW (desktop) ════════════════════════════ */}
+                        {view === 'month' && !isMobile && (
                             <div className="flex flex-col h-full">
                                 {/* Day names header */}
                                 <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50 shrink-0">
@@ -626,8 +645,8 @@ export default function AgendaPage() {
                             </div>
                         )}
 
-                        {/* ══ WEEK VIEW ════════════════════════════════════════ */}
-                        {view === 'week' && (
+                        {/* ══ WEEK VIEW (desktop) ═════════════════════════════ */}
+                        {view === 'week' && !isMobile && (
                             <div className="flex flex-col h-full">
                                 {/* Day headers (fixed) */}
                                 <div className="flex shrink-0 border-b border-slate-100 bg-white">
@@ -720,7 +739,7 @@ export default function AgendaPage() {
                             </div>
                         )}
 
-                        {/* ══ DAY VIEW ═════════════════════════════════════════ */}
+                        {/* ══ DAY VIEW (desktop only) ═════════════════════════ */}
                         {view === 'day' && (
                             <div className="flex flex-col h-full overflow-hidden">
                                 {loading ? (
@@ -743,6 +762,179 @@ export default function AgendaPage() {
                                         <div className="h-8" />
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* ══ LIST VIEW (mobile default) ══════════════════════ */}
+                        {view === 'list' && (
+                            <div className="flex flex-col h-full overflow-hidden">
+                                {loading ? (
+                                    <CalendarSkeleton />
+                                ) : (
+                                    <div className="flex-1 overflow-y-auto" ref={scrollRef}>
+                                        {listDays.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-48 text-slate-400">
+                                                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                                                    <Clock className="h-5 w-5 text-slate-300" />
+                                                </div>
+                                                <p className="text-sm font-semibold">Nenhum evento</p>
+                                                <p className="text-xs mt-1">Toque em + para criar</p>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-slate-100">
+                                                {listDays.map(({ day, events: dayEvs }) => {
+                                                    const today = isToday(day);
+                                                    return (
+                                                        <div key={day.toISOString()} className="px-3 pt-3 pb-2">
+                                                            <p className={cn(
+                                                                'text-[13px] font-bold mb-2',
+                                                                today ? 'text-rose-500' : 'text-slate-700'
+                                                            )}>
+                                                                {capitalize(format(day, "EEEE", { locale: ptBR }))}
+                                                                {' – '}
+                                                                {format(day, "d 'de' MMM.", { locale: ptBR })}
+                                                            </p>
+                                                            {dayEvs.length === 0 ? (
+                                                                <p className="text-xs text-slate-300 italic pl-1 pb-1">Sem eventos</p>
+                                                            ) : (
+                                                                <div className="space-y-1.5">
+                                                                    {dayEvs.map(ev => (
+                                                                        <ListCard key={ev.id} event={ev} onClick={() => handleEventClick(ev)} />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                        <div className="h-8" />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ══ WEEK VIEW (mobile) ══════════════════════════════ */}
+                        {view === 'week' && isMobile && (
+                            <div className="flex flex-col h-full">
+                                {/* Day headers + numbers */}
+                                <div className="grid grid-cols-7 border-b border-slate-100 bg-white shrink-0">
+                                    {daysInWeek.map((day, i) => {
+                                        const today = isToday(day);
+                                        const weekend = i === 0 || i === 6;
+                                        return (
+                                            <div key={day.toISOString()} className="flex flex-col items-center py-2 gap-0.5">
+                                                <span className={cn(
+                                                    'text-[10px] font-bold uppercase tracking-wider',
+                                                    weekend ? 'text-rose-400' : 'text-slate-400'
+                                                )}>
+                                                    {WEEK_DAYS[i].charAt(0)}
+                                                </span>
+                                                <span className={cn(
+                                                    'text-sm font-bold h-7 w-7 flex items-center justify-center rounded-full',
+                                                    today ? 'bg-bee-amber text-bee-midnight' : weekend ? 'text-rose-400' : 'text-slate-700'
+                                                )}>
+                                                    {format(day, 'd')}
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Event chips per day column */}
+                                {loading ? <CalendarSkeleton /> : (
+                                    <div className="grid grid-cols-7 flex-1 min-h-0 overflow-y-auto px-1 pt-1 pb-3 gap-0.5">
+                                        {daysInWeek.map(day => {
+                                            const dayEvs = getEventsForDay(day);
+                                            return (
+                                                <div
+                                                    key={day.toISOString()}
+                                                    className="flex flex-col gap-1 cursor-pointer rounded-md hover:bg-slate-50/80 p-0.5"
+                                                    onClick={() => handleSlotClick(day)}
+                                                >
+                                                    {dayEvs.map(ev => (
+                                                        <button
+                                                            key={ev.id}
+                                                            onClick={e => { e.stopPropagation(); handleEventClick(ev); }}
+                                                            className="text-left rounded-md px-1 py-0.5 transition-all active:scale-95"
+                                                            style={{
+                                                                backgroundColor: `${ev.color}22`,
+                                                                borderLeft: `2px solid ${ev.color}`,
+                                                            }}
+                                                        >
+                                                            <div className="text-[9px] font-bold leading-tight truncate" style={{ color: ev.color }}>
+                                                                {ev.title}
+                                                            </div>
+                                                            <div className="text-[9px] font-mono leading-tight opacity-80" style={{ color: ev.color }}>
+                                                                {ev.time}
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* ══ MONTH VIEW (mobile, iOS-style bars) ═════════════ */}
+                        {view === 'month' && isMobile && (
+                            <div className="flex flex-col h-full">
+                                {/* Day names header */}
+                                <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50 shrink-0">
+                                    {WEEK_DAYS.map((d, i) => (
+                                        <div key={d} className={cn(
+                                            'py-1.5 text-center text-[10px] font-bold uppercase tracking-widest',
+                                            (i === 0 || i === 6) ? 'text-rose-400' : 'text-slate-400'
+                                        )}>
+                                            {d.charAt(0)}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Calendar grid: number + colored bars only */}
+                                <div
+                                    className="grid grid-cols-7 flex-1 min-h-0 overflow-y-auto"
+                                    style={{ gridTemplateRows: `repeat(${Math.ceil(daysInMonth.length / 7)}, minmax(56px, 1fr))` }}
+                                >
+                                    {daysInMonth.map(day => {
+                                        const dayEvs = getEventsForDay(day);
+                                        const isWeekend = getDay(day) === 0 || getDay(day) === 6;
+                                        const today = isToday(day);
+                                        const currentMonth = day.getMonth() === currentDate.getMonth();
+
+                                        return (
+                                            <button
+                                                key={day.toISOString()}
+                                                onClick={() => { setCurrentDate(day); setView('list'); }}
+                                                className={cn(
+                                                    'flex flex-col items-center pt-1.5 pb-1 gap-1 border-b border-slate-100/70',
+                                                    !currentMonth && 'opacity-40'
+                                                )}
+                                            >
+                                                <span className={cn(
+                                                    'text-sm font-semibold h-6 w-6 flex items-center justify-center rounded-full leading-none',
+                                                    today ? 'bg-rose-500 text-white' : '',
+                                                    !today && isWeekend && currentMonth && 'text-rose-400',
+                                                    !today && !isWeekend && currentMonth && 'text-slate-700',
+                                                    !currentMonth && 'text-slate-400',
+                                                )}>
+                                                    {format(day, 'd')}
+                                                </span>
+                                                <div className="flex flex-col items-stretch w-full gap-0.5 px-1.5">
+                                                    {dayEvs.slice(0, 3).map(ev => (
+                                                        <div
+                                                            key={ev.id}
+                                                            className="h-[3px] rounded-full"
+                                                            style={{ backgroundColor: ev.color }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
                     </div>
