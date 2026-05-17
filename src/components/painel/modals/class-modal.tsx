@@ -22,6 +22,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
 import { CLASS_TYPES } from '@/lib/class-definitions';
+import { useOrgList } from '@/hooks/useOrgList';
 
 interface ClassModalProps {
     open: boolean;
@@ -44,9 +45,28 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     const { organizationId } = useAuth();
     const [loading, setLoading] = useState(false);
 
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [instructors, setInstructors] = useState<Instructor[]>([]);
-    const [templates, setTemplates] = useState<any[]>([]);
+    const { data: rooms } = useOrgList<Room>({
+        table: 'rooms',
+        select: 'id, name, capacity',
+        orderBy: 'name',
+        enabled: open,
+    });
+    const { data: instructorsRaw } = useOrgList<{ id: string; name: string }>({
+        table: 'instructors',
+        select: 'id, name',
+        orderBy: 'name',
+        enabled: open,
+    });
+    const instructors: Instructor[] = useMemo(
+        () => instructorsRaw.map(i => ({ id: i.id, full_name: i.name })),
+        [instructorsRaw]
+    );
+    const { data: templates } = useOrgList<any>({
+        table: 'class_templates',
+        select: '*',
+        orderBy: 'title',
+        enabled: open,
+    });
 
     const [title, setTitle] = useState('');
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
@@ -99,27 +119,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
         setSelectedInstructor('');
         setCapacity('');
         setDuration('60');
-        if (organizationId) fetchData();
-    }, [open, initialDate, initialTime, organizationId]);
-
-    async function fetchData() {
-        if (!organizationId) return;
-        try {
-            const orgId = organizationId;
-
-            const [{ data: roomsData }, { data: instructorsData }, { data: templatesData }] = await Promise.all([
-                (supabase as any).from('rooms').select('id, name, capacity').eq('organization_id', orgId).order('name'),
-                (supabase as any).from('instructors').select('id, name').eq('organization_id', orgId).order('name'),
-                (supabase as any).from('class_templates').select('*').eq('organization_id', orgId).order('title'),
-            ]);
-
-            if (roomsData) setRooms(roomsData);
-            if (instructorsData) setInstructors(instructorsData.map((i: any) => ({ id: i.id, full_name: i.name })));
-            if (templatesData) setTemplates(templatesData);
-        } catch (err) {
-            console.error('ClassModal fetchData error:', err);
-        }
-    }
+    }, [open, initialDate, initialTime]);
 
     async function handleSave() {
         if (!title || !date || !time || !selectedInstructor || !capacity) {

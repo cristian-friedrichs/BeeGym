@@ -33,6 +33,7 @@ import {
     ctaPrimary,
     ctaSecondary,
 } from "@/lib/modal-styles";
+import { useOrgList } from "@/hooks/useOrgList";
 
 interface WorkoutModalProps {
     open: boolean;
@@ -60,6 +61,39 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const [type, setType] = useState("Hipertrofia");
     const [selectedStudentId, setSelectedStudentId] = useState<string>("");
     const [availableStudents, setAvailableStudents] = useState<{ id: string, name: string }[]>([]);
+
+    // ── Resilient list loaders (fetch when org id arrives, log errors) ──
+    const { data: studentsList } = useOrgList<{ id: string; full_name: string }>({
+        table: 'students',
+        select: 'id, full_name',
+        filters: [{ column: 'status', value: 'ACTIVE' }],
+        orderBy: 'full_name',
+        enabled: open,
+    });
+    const { data: instructorsList } = useOrgList<{ id: string; name: string }>({
+        table: 'instructors',
+        select: 'id, name',
+        orderBy: 'name',
+        enabled: open,
+    });
+    const { data: roomsList } = useOrgList<{ id: string; name: string }>({
+        table: 'rooms',
+        select: 'id, name',
+        orderBy: 'name',
+        enabled: open,
+    });
+
+    useEffect(() => {
+        if (!studentsList) return;
+        const list = studentsList.map(s => ({ id: s.id, name: s.full_name }));
+        // Preserve the edited student even if inactive / out of list
+        const editedId = workoutToEdit?.student_id;
+        const editedName = workoutToEdit?.student?.full_name || workoutToEdit?.student_name;
+        if (editedId && editedName && !list.find(s => s.id === editedId)) {
+            list.unshift({ id: editedId, name: editedName });
+        }
+        setAvailableStudents(list);
+    }, [studentsList, workoutToEdit]);
     const [openCommand, setOpenCommand] = useState(false);
     const studentSearchRef = useRef<HTMLDivElement>(null);
     const [studentSearch, setStudentSearch] = useState("");
@@ -87,10 +121,12 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const [locationDetails, setLocationDetails] = useState("");
     const [roomId, setRoomId] = useState<string>("");
     const [rooms, setRooms] = useState<{ id: string, name: string }[]>([]);
+    useEffect(() => { if (roomsList) setRooms(roomsList); }, [roomsList]);
 
     // States - Instrutor
     const [instructorId, setInstructorId] = useState<string>("");
     const [instructors, setInstructors] = useState<{ id: string, name: string }[]>([]);
+    useEffect(() => { if (instructorsList) setInstructors(instructorsList); }, [instructorsList]);
 
     // States - Recorrência
     const [recurrenceType, setRecurrenceType] = useState<"none" | "weekly" | "monthly">("none");
@@ -194,56 +230,16 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             }
 
 
-            const fetchInitialData = async () => {
-                if (!organizationId) return;
-                const orgId = organizationId;
-
-                // Pre-populate the student being edited so the name shows immediately
-                // even before the full list loads (student might be inactive)
-                if (workoutToEdit?.student) {
-                    const s = workoutToEdit.student;
-                    setAvailableStudents([{ id: s.id, name: s.full_name || s.name }]);
-                } else if (workoutToEdit?.student_id && workoutToEdit?.student_name) {
-                    setAvailableStudents([{ id: workoutToEdit.student_id, name: workoutToEdit.student_name }]);
-                }
-
-                // Students (active list for search)
-                const { data: sData } = await (supabase as any)
-                    .from('students')
-                    .select('id, full_name')
-                    .eq('organization_id', orgId)
-                    .eq('status', 'ACTIVE')
-                    .order('full_name');
-                if (sData) {
-                    const list = sData.map((s: any) => ({ id: s.id, name: s.full_name }));
-                    // Ensure the edited student is included even if inactive
-                    const editedId = workoutToEdit?.student_id;
-                    const editedName = workoutToEdit?.student?.full_name || workoutToEdit?.student_name;
-                    if (editedId && editedName && !list.find((s: any) => s.id === editedId)) {
-                        list.unshift({ id: editedId, name: editedName });
-                    }
-                    setAvailableStudents(list);
-                }
-
-                // Instructors
-                const { data: iData } = await (supabase as any)
-                    .from('instructors')
-                    .select('id, name')
-                    .eq('organization_id', orgId)
-                    .order('name');
-                if (iData) setInstructors(iData.map((i: any) => ({ id: i.id, name: i.name })));
-
-                // Rooms
-                const { data: rData } = await (supabase as any)
-                    .from('rooms')
-                    .select('id, name')
-                    .eq('organization_id', orgId)
-                    .order('name');
-                if (rData) setRooms(rData.map((r: any) => ({ id: r.id, name: r.name })));
-            };
-            fetchInitialData();
+            // Pre-populate edited student so the chip renders immediately, even
+            // before the active list loads (and even if the student is inactive).
+            if (workoutToEdit?.student) {
+                const s = workoutToEdit.student;
+                setAvailableStudents(prev => prev.length ? prev : [{ id: s.id, name: s.full_name || s.name }]);
+            } else if (workoutToEdit?.student_id && workoutToEdit?.student_name) {
+                setAvailableStudents(prev => prev.length ? prev : [{ id: workoutToEdit.student_id, name: workoutToEdit.student_name }]);
+            }
         }
-    }, [open, workoutToEdit, defaultStudentId, organizationId]);
+    }, [open, workoutToEdit, defaultStudentId, initialDate, initialTime]);
 
     const generateRecurrencePayloads = (baseDate: Date, orgId: string, resolvedTitle?: string) => {
         const payloads = [];
