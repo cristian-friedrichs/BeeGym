@@ -46,6 +46,12 @@ export async function middleware(request: NextRequest) {
 
     const url = request.nextUrl.clone()
 
+    // Redirect legacy /signup to /register immediately
+    if (url.pathname === '/signup') {
+        url.pathname = '/register'
+        return NextResponse.redirect(url)
+    }
+
     // Base routes
     const isAppAuthPage = url.pathname.startsWith('/login') ||
         url.pathname.startsWith('/register') ||
@@ -95,24 +101,27 @@ export async function middleware(request: NextRequest) {
         .from('profiles')
         .select('organization_id, status, role')
         .eq('id', session.user.id)
-        .single()
+        .maybeSingle()
 
-    // Fetch organization separately (no FK relationship in schema)
     let org: any = null
     if (profile?.organization_id) {
-        const { data: orgData } = await supabase
-            .from('organizations')
-            .select('subscription_status, onboarding_completed')
-            .eq('id', profile.organization_id)
-            .single()
-            
-        const { data: subData } = await supabase
-            .from('saas_subscriptions')
-            .select('status')
-            .eq('organization_id', profile.organization_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
+        const [orgResult, subResult] = await Promise.all([
+            supabase
+                .from('organizations')
+                .select('subscription_status, onboarding_completed')
+                .eq('id', profile.organization_id)
+                .single(),
+            supabase
+                .from('saas_subscriptions')
+                .select('status')
+                .eq('organization_id', profile.organization_id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+        ])
+
+        const orgData = orgResult.data
+        const subData = subResult.data
 
         org = {
             ...orgData,

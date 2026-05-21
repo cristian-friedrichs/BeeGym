@@ -122,8 +122,8 @@ export default function ClassesPage() {
     try {
       setLoading(true);
 
-      // Trigger status update (best effort — non-blocking)
-      try { await supabase.rpc('update_class_statuses' as any); } catch {}
+      // Trigger status update asynchronously (non-blocking)
+      supabase.rpc('update_class_statuses' as any).then(null, () => {});
 
       const orgId = organizationId;
 

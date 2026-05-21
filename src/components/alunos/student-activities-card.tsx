@@ -29,7 +29,9 @@ interface Invoice {
     id: string;
     amount: number;
     due_date: string;
+    paid_at?: string | null;
     status: string;
+    description?: string | null;
 }
 
 interface StudentActivitiesCardProps {
@@ -175,8 +177,16 @@ function WorkoutRow({ item, onClick }: { item: any; onClick?: () => void }) {
 
 function InvoiceRow({ invoice }: { invoice: Invoice }) {
     const st = INVOICE_STATUS[invoice.status] || { label: invoice.status, cls: 'bg-slate-100 text-slate-500 border-slate-200' };
-    const isPaid = invoice.status === 'PAID' || invoice.status === 'PAGO';
+    const isPaid = invoice.status === 'PAID' || invoice.status === 'paid' || invoice.status === 'PAGO';
     const isOverdue = invoice.status === 'OVERDUE' || invoice.status === 'Atrasado';
+    const isPack = invoice.description?.toLowerCase().includes('pack') || invoice.description?.toLowerCase().includes('à vista') || invoice.description?.toLowerCase().includes('a vista');
+    const label = invoice.description
+        ? invoice.description.replace(/\s*\(.*?\)\s*/g, '').trim()
+        : isPack ? 'Pagamento à vista' : 'Mensalidade';
+    const dateToShow = isPaid && invoice.paid_at
+        ? `Pago em: ${format(new Date(invoice.paid_at + (invoice.paid_at.length === 10 ? 'T12:00:00' : '')), 'dd/MM/yyyy')}`
+        : `Vencimento: ${format(new Date(invoice.due_date + 'T12:00:00'), 'dd/MM/yyyy')}`;
+
     return (
         <div className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/60 transition-colors">
             <div className={cn('h-8 w-8 rounded-xl flex items-center justify-center shrink-0',
@@ -185,12 +195,15 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
                 <CreditCard className={cn('h-3.5 w-3.5', isPaid ? 'text-emerald-500' : isOverdue ? 'text-red-500' : 'text-amber-500')} />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">
-                    {invoice.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </p>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                    Vencimento: {format(new Date(invoice.due_date + 'T12:00:00'), 'dd/MM/yyyy')}
-                </p>
+                <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-slate-800 truncate">
+                        {invoice.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                    {isPack && (
+                        <Badge className="bg-blue-50 text-blue-600 border-none text-[9px] font-bold rounded-full px-1.5 py-0 shadow-none shrink-0">Pack</Badge>
+                    )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5 truncate">{label} · {dateToShow}</p>
             </div>
             <Badge className={cn('text-[10px] font-bold border rounded-full px-2 py-0.5 shadow-none shrink-0', st.cls)}>
                 {st.label}
@@ -338,6 +351,82 @@ function Panel({
     );
 }
 
+// ── Payments panel (no tabs, single sorted list) ─────────────────────────────
+
+function PaymentsPanel({ payments }: { payments: (Invoice & { _sortDate: Date })[] }) {
+    const [month, setMonth] = useState('all');
+    const [year, setYear] = useState('all');
+    const [status, setStatus] = useState('all');
+
+    const filtered = useMemo(() => {
+        return payments.filter(inv => {
+            const d = inv._sortDate;
+            if (month !== 'all' && (d.getMonth() + 1) !== parseInt(month)) return false;
+            if (year !== 'all' && d.getFullYear() !== parseInt(year)) return false;
+            if (status !== 'all' && inv.status.toUpperCase() !== status.toUpperCase()
+                && inv.status !== status) return false;
+            return true;
+        });
+    }, [payments, month, year, status]);
+
+    return (
+        <div className="flex flex-col min-h-0">
+            <div className="flex items-center gap-2 px-4 pt-4 pb-3 border-b border-slate-100">
+                <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-slate-100 shrink-0">
+                    <ReceiptText className="h-3.5 w-3.5 text-emerald-500" />
+                </div>
+                <span className="text-sm font-bold text-slate-700 flex-1">Pagamentos</span>
+                <span className="text-[11px] font-semibold text-slate-400">{payments.length} registro{payments.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-slate-50 bg-slate-50/50">
+                <Filter className="h-3 w-3 text-slate-400 shrink-0" />
+                <Select value={month} onValueChange={setMonth}>
+                    <SelectTrigger className="h-7 text-[11px] rounded-lg border-slate-200 bg-white w-[100px] font-medium">
+                        <SelectValue placeholder="Mês" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl text-sm">
+                        <SelectItem value="all">Todos os meses</SelectItem>
+                        {MONTHS.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger className="h-7 text-[11px] rounded-lg border-slate-200 bg-white w-[80px] font-medium">
+                        <SelectValue placeholder="Ano" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl text-sm">
+                        <SelectItem value="all">Todos</SelectItem>
+                        {YEARS.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="h-7 text-[11px] rounded-lg border-slate-200 bg-white w-[110px] font-medium">
+                        <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl text-sm">
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="paid">Pago</SelectItem>
+                        <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="overdue">Atrasado</SelectItem>
+                        <SelectItem value="cancelled">Cancelado</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="flex-1 overflow-y-auto divide-y divide-slate-50 max-h-[380px]">
+                {filtered.length === 0 ? (
+                    <EmptyState
+                        icon={<ReceiptText className="h-6 w-6 text-slate-200" />}
+                        text="Nenhum pagamento encontrado"
+                    />
+                ) : (
+                    filtered.map(inv => <InvoiceRow key={inv.id} invoice={inv} />)
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function StudentActivitiesCard({ studentId, workouts, invoices, onWorkoutClick }: StudentActivitiesCardProps) {
@@ -402,12 +491,16 @@ export function StudentActivitiesCard({ studentId, workouts, invoices, onWorkout
         return filtered.map(w => ({ ...w, kind: 'workout' as const, sub: w.type || '' }));
     }, [workouts]);
 
-    // Split invoices
-    const invoiceUpcoming = useMemo(() =>
-        (invoices || []).filter(inv => !isPast(new Date(inv.due_date + 'T23:59:59'))),
-    [invoices]);
-    const invoiceHistory = useMemo(() =>
-        (invoices || []).filter(inv => isPast(new Date(inv.due_date + 'T23:59:59'))),
+    // All payments sorted newest first — packs (paid_at) and recurring (due_date)
+    const allPayments = useMemo(() =>
+        [...(invoices || [])]
+            .map(inv => ({
+                ...inv,
+                _sortDate: inv.paid_at
+                    ? new Date(inv.paid_at + (inv.paid_at.length === 10 ? 'T12:00:00' : ''))
+                    : new Date(inv.due_date + 'T12:00:00'),
+            }))
+            .sort((a, b) => b._sortDate.getTime() - a._sortDate.getTime()),
     [invoices]);
 
     return (
@@ -433,19 +526,9 @@ export function StudentActivitiesCard({ studentId, workouts, invoices, onWorkout
                 />
             </div>
 
-            {/* ── Card: Faturas ── */}
+            {/* ── Card: Pagamentos ── */}
             <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                <Panel
-                    title="Faturas"
-                    icon={<ReceiptText className="h-3.5 w-3.5 text-emerald-500" />}
-                    upcoming={invoiceUpcoming.map(i => ({ ...i, scheduled_at: i.due_date, sub: '' }))}
-                    history={invoiceHistory.map(i => ({ ...i, scheduled_at: i.due_date, sub: '' }))}
-                    renderRow={(item) => <InvoiceRow invoice={item} />}
-                    upcomingStatusOptions={['PENDENTE']}
-                    historyStatusOptions={['PAGO', 'Atrasado', 'PENDENTE', 'CANCELADO']}
-                    emptyUpcoming="Nenhuma fatura pendente"
-                    emptyHistory="Nenhuma fatura no histórico"
-                />
+                <PaymentsPanel payments={allPayments} />
             </div>
         </div>
     );

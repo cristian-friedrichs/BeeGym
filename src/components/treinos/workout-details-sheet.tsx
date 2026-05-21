@@ -79,16 +79,6 @@ export function WorkoutDetailsSheet({ workoutId, isOpen, onClose, onUpdate }: Wo
 
             if (error) throw error;
 
-            // 2. Lógica de Créditos (Simplificada)
-            if (newStatus === 'Concluido' || newStatus === 'Faltou') {
-                await (supabase as any).rpc('deduct_credit', {
-                    p_student_id: workout.student_id,
-                    p_amount: 1, // Consome 1 crédito
-                    p_reason: newStatus === 'Concluido' ? 'Treino Realizado' : 'Falta Registrada',
-                    p_ref_id: workout.id
-                });
-            }
-
             // 3. Salvar Exercícios (Se for conclusão)
             if (newStatus === 'Concluido' && exercises.length > 0) {
                 const executionPayload = exercises

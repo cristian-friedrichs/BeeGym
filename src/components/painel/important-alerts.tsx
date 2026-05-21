@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { createClient } from '@/lib/supabase/client';
 import { AlertCircle, CalendarCheck, UserX, Bell, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
@@ -42,7 +43,7 @@ export function ImportantAlerts() {
                         type: 'WORKOUT_PENDING',
                         severity: 'medium',
                         actionLabel: 'Verificar Treinos',
-                        actionLink: '/app/treinos',
+                        actionLink: '/app/treinos?status=Pendente',
                         count: pendingWorkoutsCount
                     });
                 }
@@ -86,6 +87,37 @@ export function ImportantAlerts() {
                         actionLabel: 'Enviar Lembrete',
                         actionLink: '/app/pagamentos',
                         count: overdueCount
+                    });
+                }
+
+                // 4. Expiring Extra Credits (< 7 days)
+                const sevenDaysFromNow = new Date();
+                sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+                const { data: expiringCredits, error: creditsError } = await supabase
+                    .from('student_credits' as any)
+                    .select('id, expires_at, students(full_name)')
+                    .eq('status', 'Disponivel')
+                    .gte('expires_at', new Date().toISOString())
+                    .lte('expires_at', sevenDaysFromNow.toISOString());
+
+                if (!creditsError && expiringCredits && expiringCredits.length > 0) {
+                    newAlerts.push({
+                        id: 'expiring-credits',
+                        title: 'Créditos Extras Expirando',
+                        description: (
+                            <span className="text-xs text-slate-500 mt-1">
+                                {expiringCredits.length} crédito{expiringCredits.length > 1 ? 's' : ''} extra{expiringCredits.length > 1 ? 's' : ''} vencendo nos próximos 7 dias:{' '}
+                                <span className="font-bold text-slate-700">
+                                    {expiringCredits.map((c: any) => `${c.students?.full_name} (${format(new Date(c.expires_at), 'dd/MM', { locale: ptBR })})`).join(', ')}
+                                </span>
+                            </span>
+                        ),
+                        type: 'WORKOUT_PENDING',
+                        severity: 'medium',
+                        actionLabel: 'Ver Alunos',
+                        actionLink: '/app/alunos',
+                        count: expiringCredits.length
                     });
                 }
 

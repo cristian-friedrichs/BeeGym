@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,6 +40,18 @@ import { useSetupStatus } from "@/context/SetupStatusContext";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function WorkoutsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col h-[400px] w-full items-center justify-center gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-bee-amber" />
+            </div>
+        }>
+            <WorkoutsList />
+        </Suspense>
+    );
+}
+
+function WorkoutsList() {
     const supabase = createClient();
     const { toast } = useToast();
     const { organizationId } = useAuth();
@@ -46,11 +59,24 @@ export default function WorkoutsPage() {
     const treinoBlocker = !hasBusinessData ? 'Dados do Negócio' : !hasStudent ? 'Aluno' : null;
     const [workouts, setWorkouts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const searchParams = useSearchParams();
 
     // Filtros
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('active'); // Default to active (hide completed)
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+    // Detect status parameter in URL
+    useEffect(() => {
+        const queryStatus = searchParams?.get('status') || searchParams?.get('filter');
+        if (queryStatus) {
+            const validStatuses = ['active', 'all', 'Agendado', 'Em Execução', 'Concluido', 'Faltou', 'CANCELLED', 'Pendente'];
+            const normalized = validStatuses.find(s => s.toLowerCase() === queryStatus.toLowerCase());
+            if (normalized) {
+                setStatusFilter(normalized);
+            }
+        }
+    }, [searchParams]);
 
     // Paginação
     const [currentPage, setCurrentPage] = useState(1);
@@ -108,8 +134,8 @@ export default function WorkoutsPage() {
         if (!organizationId) return;
         setLoading(true);
         try {
-            // Trigger status transitions for both classes and workouts (best effort)
-            try { await supabase.rpc('update_class_statuses' as any); } catch {}
+            // Trigger status transitions for both classes and workouts asynchronously (non-blocking)
+            supabase.rpc('update_class_statuses' as any).then(null, () => {});
 
             // Individual workouts (workouts table — single student)
             const { data: workoutsData, error: workoutsError } = await (supabase as any)
@@ -210,6 +236,18 @@ export default function WorkoutsPage() {
         const status = workout.status || '';
         if (statusFilter === 'active') {
             matchesStatus = ['SCHEDULED', 'IN_PROGRESS', 'PENDING', 'Agendado', 'Em Execução', 'Pendente'].includes(status);
+        } else if (statusFilter === 'Pendente') {
+            matchesStatus = status === 'Pendente' || status === 'PENDING' || status === 'Pendente de Ação';
+        } else if (statusFilter === 'Agendado') {
+            matchesStatus = status === 'Agendado' || status === 'SCHEDULED';
+        } else if (statusFilter === 'Em Execução') {
+            matchesStatus = status === 'Em Execução' || status === 'IN_PROGRESS';
+        } else if (statusFilter === 'Concluido') {
+            matchesStatus = status === 'Concluido' || status === 'COMPLETED';
+        } else if (statusFilter === 'Faltou') {
+            matchesStatus = status === 'Faltou' || status === 'MISSED';
+        } else if (statusFilter === 'CANCELLED') {
+            matchesStatus = status === 'CANCELLED' || status === 'Cancelado';
         } else if (statusFilter !== 'all') {
             matchesStatus = status === statusFilter;
         }
@@ -353,11 +391,13 @@ export default function WorkoutsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="active">Próximos / Ativos</SelectItem>
-                            <SelectItem value="all">Todos os Status</SelectItem>
                             <SelectItem value="Agendado">Agendados</SelectItem>
                             <SelectItem value="Em Execução">Em Execução</SelectItem>
-                            <SelectItem value="Concluido">Concluídos</SelectItem>
+                            <SelectItem value="Pendente">Pendentes de Ação</SelectItem>
+                            <SelectItem value="Concluido">Realizados</SelectItem>
+                            <SelectItem value="Faltou">Faltas</SelectItem>
                             <SelectItem value="CANCELLED">Cancelados</SelectItem>
+                            <SelectItem value="all">Todos os Status</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

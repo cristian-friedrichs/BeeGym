@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client';
 import { SectionHeader } from '@/components/ui/section-header';
 
 const StudentModal = dynamic(() => import('@/components/alunos/student-modal').then(m => ({ default: m.StudentModal })), { ssr: false });
+import { StudentStatusDialog } from '@/components/painel/dialogs/student-status-dialog';
 import Link from 'next/link';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -63,11 +64,8 @@ export default function StudentsPage() {
             return;
         }
 
-        try {
-            await (supabase.rpc as any)('update_finished_classes_status');
-        } catch {
-            // RPC optional — ignore errors
-        }
+        // Trigger status update asynchronously (non-blocking)
+        (supabase.rpc as any)('update_finished_classes_status').then(null, () => {});
 
         try {
             let query = supabase
@@ -93,6 +91,22 @@ export default function StudentsPage() {
         }
     };
 
+    const handleStatusChange = async (studentId: string, newStatus: 'ACTIVE' | 'INACTIVE', reason?: string) => {
+        const { error } = await (supabase.from('students') as any)
+            .update({ 
+                status: newStatus,
+                inactive_reason: newStatus === 'INACTIVE' ? reason : null
+            })
+            .eq('id', studentId);
+
+        if (error) {
+            throw error;
+        }
+
+        await fetchStudents();
+        refreshSetup();
+    };
+
     useEffect(() => {
         fetchStudents();
     }, [currentUnitId]);
@@ -104,11 +118,12 @@ export default function StudentsPage() {
         return matchesSearch && matchesStatus;
     });
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadge = (rawStatus: string) => {
+        const status = rawStatus?.toUpperCase();
         switch (status) {
-            case 'ACTIVE': return <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 shadow-none border border-emerald-100 rounded-full font-sans text-[11px] font-bold px-2 py-0.5">ATIVO</Badge>;
-            case 'OVERDUE': return <Badge className="bg-red-50 text-red-600 hover:bg-red-50 shadow-none border border-red-100 rounded-full font-sans text-[11px] font-bold px-2 py-0.5">INADIMPLENTE</Badge>;
-            case 'INACTIVE': return <Badge variant="secondary" className="rounded-full font-sans text-[11px] font-bold px-2 py-0.5">INATIVO</Badge>;
+            case 'ACTIVE': return <Badge className="bg-emerald-50 text-emerald-600 hover:bg-emerald-50 shadow-none border border-emerald-100 rounded-full font-sans text-[11px] font-bold px-2 py-0.5">Ativo</Badge>;
+            case 'OVERDUE': return <Badge className="bg-orange-50 text-orange-600 hover:bg-orange-50 shadow-none border border-orange-100 rounded-full font-sans text-[11px] font-bold px-2 py-0.5">Pagamento Pendente</Badge>;
+            case 'INACTIVE': return <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-100 shadow-none border border-slate-200 rounded-full font-sans text-[11px] font-bold px-2 py-0.5">Inativo</Badge>;
             default: return <Badge variant="outline" className="rounded-full font-sans text-[11px] font-bold px-2 py-0.5">{status}</Badge>;
         }
     };
@@ -185,7 +200,7 @@ export default function StudentsPage() {
                         <SelectContent className="rounded-[8px]">
                             <SelectItem value="all">Todos os status</SelectItem>
                             <SelectItem value="ACTIVE">Ativo</SelectItem>
-                            <SelectItem value="OVERDUE">Inadimplente</SelectItem>
+                            <SelectItem value="OVERDUE">Pagamento Pendente</SelectItem>
                             <SelectItem value="INACTIVE">Inativo</SelectItem>
                         </SelectContent>
                     </Select>
@@ -220,7 +235,7 @@ export default function StudentsPage() {
                                 <span><span className="font-semibold text-slate-700">{student.membership_plans?.name || '—'}</span></span>
                                 {student.last_activity && <span>{formatLastActivity(student.last_activity)}</span>}
                             </div>
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 items-center">
                                 <Link href={`/app/alunos/${student.id}`}>
                                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-500 hover:text-bee-amber hover:bg-bee-amber/10">
                                         <Eye className="w-4 h-4" />
@@ -230,6 +245,12 @@ export default function StudentsPage() {
                                     onClick={() => { setStudentToEdit(student); setIsModalOpen(true); }}>
                                     <Edit2 className="w-4 h-4" />
                                 </Button>
+                                <StudentStatusDialog
+                                    studentId={student.id}
+                                    studentName={student.full_name}
+                                    currentStatus={student.status}
+                                    onStatusChange={(newStatus, reason) => handleStatusChange(student.id, newStatus, reason)}
+                                />
                             </div>
                         </div>
                     </div>
@@ -282,7 +303,7 @@ export default function StudentsPage() {
                                     <TableCell>{formatLastActivity(student.last_activity)}</TableCell>
                                     <TableCell>{getStatusBadge(student.status)}</TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
+                                        <div className="flex justify-end gap-1 items-center">
                                             <Link href={`/app/alunos/${student.id}`}>
                                                 <Button 
                                                     variant="ghost" 
@@ -304,6 +325,12 @@ export default function StudentsPage() {
                                             >
                                                 <Edit2 className="w-4 h-4" />
                                             </Button>
+                                            <StudentStatusDialog
+                                                studentId={student.id}
+                                                studentName={student.full_name}
+                                                currentStatus={student.status}
+                                                onStatusChange={(newStatus, reason) => handleStatusChange(student.id, newStatus, reason)}
+                                            />
                                         </div>
                                     </TableCell>
                                 </TableRow>

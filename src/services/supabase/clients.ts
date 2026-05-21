@@ -17,9 +17,9 @@ export type Client = {
 export async function getClients(unitId?: string, search?: string): Promise<Client[]> {
     const supabase = createClient();
 
-    // Opcional: Atualizar status das aulas antes de buscar
+    // Opcional: Atualizar status das aulas antes de buscar (de forma assíncrona)
     // @ts-ignore
-    await supabase.rpc('update_finished_classes_status');
+    supabase.rpc('update_finished_classes_status').then(null, () => {});
 
     let query = supabase
         .from('students')

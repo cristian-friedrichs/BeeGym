@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 import { UnitProvider } from "@/context/UnitContext";
 import { SetupStatusProvider } from "@/context/SetupStatusContext";
 import { SubscriptionProvider } from "@/context/SubscriptionContext";
+import { PendingWorkoutProvider } from "@/context/PendingWorkoutContext";
+import { PendingWorkoutsModal } from "@/components/painel/pending-workouts-modal";
 import { StatusAutomator } from "@/components/global/status-automator";
 import { SetupChecklist } from "@/components/global/setup-checklist";
 import { Loader2 } from 'lucide-react';
@@ -23,7 +25,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   // all consumers below (sidebar, pages, hooks like useStudentLimit, etc.).
   return (
     <SubscriptionProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      <PendingWorkoutProvider>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </PendingWorkoutProvider>
     </SubscriptionProvider>
   );
 }
@@ -31,7 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, authStatus, retryAuth } = useAuth();
   const { status, hasFeature, loading: subLoading } = useSubscription();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
@@ -42,99 +46,115 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
   const isPendingPayment = !!status && BLOCKING_STATUSES.includes(status.toLowerCase());
 
   useEffect(() => {
-    const checkAccess = async () => {
-      // 1. Wait for auth initialization
-      if (authLoading) {
-        console.log('[AccessCheck] Auth loading, waiting...');
-        return;
+    // 1. Wait for auth/profile to finish loading
+    if (authStatus === 'checking_auth' || authStatus === 'checking_profile') {
+      console.log(`[Route] auth status: ${authStatus}, waiting...`);
+      return;
+    }
+
+    // 2. Error states — do NOT redirect, let UI show retry
+    if (authStatus === 'auth_error' || authStatus === 'profile_error') {
+      console.error(`[Route] error state: ${authStatus}`);
+      setIsAuthorized(null); // keep showing loading/error UI
+      return;
+    }
+
+    // 3. No user — redirect to login
+    if (authStatus === 'unauthenticated') {
+      console.log('[Route] redirect to login');
+      setIsAuthorized(false);
+      if (!pathname.startsWith('/login')) {
+        router.push('/login');
       }
+      return;
+    }
 
-      if (!user) {
-        console.log('[AccessCheck] No user found, setting unauthorized.');
-        setIsAuthorized(false);
-        if (!pathname.startsWith('/login')) {
-          router.push('/login');
-        }
-        return;
-      }
-
-      // 👑 SUPER_ADMIN BYPASS: BeeGym staff sempre tem acesso
-      const isMasterAdmin = isSuperAdmin(profile?.role as string | undefined);
-
-      if (isMasterAdmin) {
-        console.log(`[AccessCheck] SUPER_ADMIN recognized: ${user?.email}. Bypassing all checks.`);
+    // 4. No profile — redirect to onboarding
+    if (authStatus === 'profile_missing') {
+      if (pathname.startsWith('/app/onboarding')) {
+        console.log('[Route] already on onboarding, allowing');
         setIsAuthorized(true);
         return;
       }
+      console.log('[Route] redirect to onboarding');
+      router.push('/app/onboarding');
+      return;
+    }
 
-      // Se não é admin master e o profile ainda está carregando, não tomamos decisão abrupta
-      if (!profile && !isMasterAdmin) {
-        // Só redireciona para onboarding se já terminou de carregar E a rota não é onboarding
-        if (!authLoading && !pathname.startsWith('/app/onboarding')) {
-          console.log('[AccessCheck] Auth loaded but no profile — redirecting to onboarding.');
-          router.push('/app/onboarding');
-          return;
-        }
-        // Se já estamos no onboarding ou ainda carregando, deixa passar
-        if (pathname.startsWith('/app/onboarding')) {
-          setIsAuthorized(true);
-          return;
-        }
-        console.log('[AccessCheck] Profile not ready and not master admin, waiting...');
-        return;
-      }
+    // 5. profile_found — continue with access checks
+    // 👑 SUPER_ADMIN BYPASS: BeeGym staff sempre tem acesso
+    const isMasterAdmin = isSuperAdmin(profile?.role as string | undefined);
 
-      // Se o status é pendente e não é master admin, bloqueia tudo
-      if (isPendingPayment && !isMasterAdmin && !subLoading) {
-         console.log('[AccessCheck] Hard paywall triggered: user must pay.');
-         setIsAuthorized(false);
-         router.push('/app/pending-activation');
-         return;
-      }
-
-      // 2. Proteção de rota dinâmica baseada em feature
-      // Mapeia o path para a feature correspondente
-      const routeFeatureMap: Record<string, PlanFeature> = {
-        '/app/painel': 'painel',
-        '/app/agenda': 'agenda',
-        '/app/aulas': 'aulas',
-        '/app/treinos': 'treinos',
-        '/app/alunos': 'alunos',
-        '/app/conversas': 'conversas',
-        '/app/pagamentos': 'pagamentos',
-        '/app/exercicios': 'exercicios',
-        '/app/relatorios': 'relatorios',
-        '/app/configuracoes': 'configuracoes',
-      };
-
-      const currentRoute = Object.keys(routeFeatureMap).find(route => pathname.startsWith(route));
-
-      if (currentRoute && !subLoading) {
-        const requiredFeature = routeFeatureMap[currentRoute];
-        const hasAccess = hasFeature(requiredFeature);
-
-        console.log(`[AccessCheck] Route: ${pathname} | Feature: ${requiredFeature} | HasAccess: ${hasAccess}`);
-
-        if (!hasAccess) {
-          console.warn(`[AccessDenied] User lacks feature: ${requiredFeature}. Redirecting to painel.`);
-          if (currentRoute !== '/app/painel') {
-            router.push('/app/painel');
-            return;
-          }
-        }
-      }
-
-      // If we are waiting for subLoading, don't set authorized yet to avoid flicker
-      if (currentRoute && subLoading) {
-        console.log(`[AccessCheck] Waiting for subscription features for: ${currentRoute}`);
-        return;
-      }
-
+    if (isMasterAdmin) {
+      console.log(`[Route] SUPER_ADMIN recognized: ${user?.email}. Bypassing all checks.`);
       setIsAuthorized(true);
+      return;
+    }
+
+    // Se o status é pendente e não é master admin, bloqueia tudo
+    if (isPendingPayment && !isMasterAdmin && !subLoading) {
+       console.log('[Route] hard paywall triggered: user must pay.');
+       setIsAuthorized(false);
+       router.push('/app/pending-activation');
+       return;
+    }
+
+    // 6. Proteção de rota dinâmica baseada em feature
+    const routeFeatureMap: Record<string, PlanFeature> = {
+      '/app/painel': 'painel',
+      '/app/agenda': 'agenda',
+      '/app/aulas': 'aulas',
+      '/app/treinos': 'treinos',
+      '/app/alunos': 'alunos',
+      '/app/conversas': 'conversas',
+      '/app/pagamentos': 'pagamentos',
+      '/app/exercicios': 'exercicios',
+      '/app/relatorios': 'relatorios',
+      '/app/configuracoes': 'configuracoes',
     };
 
-    checkAccess();
-  }, [user, profile, authLoading, subLoading, pathname, router, hasFeature]);
+    const currentRoute = Object.keys(routeFeatureMap).find(route => pathname.startsWith(route));
+
+    if (currentRoute && !subLoading) {
+      const requiredFeature = routeFeatureMap[currentRoute];
+      const hasAccess = hasFeature(requiredFeature);
+
+      console.log(`[Route] route: ${pathname} | feature: ${requiredFeature} | hasAccess: ${hasAccess}`);
+
+      if (!hasAccess) {
+        console.warn(`[Route] access denied: ${requiredFeature}. Redirecting to painel.`);
+        if (currentRoute !== '/app/painel') {
+          router.push('/app/painel');
+          return;
+        }
+      }
+    }
+
+    // If we are waiting for subLoading, don't set authorized yet to avoid flicker
+    if (currentRoute && subLoading) {
+      console.log(`[Route] waiting for subscription features for: ${currentRoute}`);
+      return;
+    }
+
+    console.log('[Route] allow painel');
+    setIsAuthorized(true);
+  }, [user, profile, authStatus, subLoading, pathname, router, hasFeature]);
+
+  // Error states — show retry screen, never redirect
+  if (authStatus === 'auth_error' || authStatus === 'profile_error') {
+    return (
+      <div className="flex flex-col h-screen w-full items-center justify-center bg-background p-6 text-center">
+         <h2 className="text-xl font-bold font-display text-bee-midnight">Erro de Conexão</h2>
+         <p className="text-slate-500 font-sans mt-2">Não foi possível carregar seus dados. Verifique sua conexão e tente novamente.</p>
+         <button
+           onClick={retryAuth}
+           className="mt-6 px-6 py-3 bg-bee-amber text-bee-midnight font-bold rounded-full hover:bg-amber-400 transition-colors"
+         >
+           Tentar Novamente
+         </button>
+      </div>
+    );
+  }
 
   if (isAuthorized === null) {
     return (
@@ -154,10 +174,13 @@ function DashboardLayoutInner({ children }: { children: ReactNode }) {
     );
   }
 
+  const showPendingModal = pathname.startsWith('/app/treinos') || pathname.startsWith('/app/aulas');
+
   return (
     <UnitProvider>
       <SetupStatusProvider>
         <StatusAutomator />
+        {showPendingModal && <PendingWorkoutsModal />}
         <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
           <Sidebar className="flex-shrink-0" />
           <div className="flex-1 flex flex-col h-full overflow-hidden">

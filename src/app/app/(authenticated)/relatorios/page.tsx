@@ -57,7 +57,7 @@ const REPORT_TYPES = [
         name: 'Alunos',
         description: 'Cadastros, planos e status',
         icon: Users,
-        statuses: ['TODOS', 'ATIVO', 'INATIVO', 'ATRASADO'],
+        statuses: ['TODOS', 'ATIVO', 'INATIVO', 'PAGAMENTO PENDENTE'],
         accentClass: 'text-orange-600',
         bgClass: 'bg-orange-50',
         borderClass: 'border-orange-200',
@@ -88,7 +88,7 @@ const REPORT_TYPES = [
 ];
 
 const STATUS_MAP: Record<string, string> = {
-    'ACTIVE': 'ATIVO', 'INACTIVE': 'INATIVO', 'OVERDUE': 'ATRASADO',
+    'ACTIVE': 'ATIVO', 'INACTIVE': 'INATIVO', 'OVERDUE': 'PAGAMENTO PENDENTE',
     'COMPLETED': 'CONCLUÍDO', 'Concluido': 'CONCLUÍDO',
     'SCHEDULED': 'AGENDADO', 'Agendado': 'AGENDADO',
     'CANCELLED': 'CANCELADO', 'CANCELADO': 'CANCELADO', 'Cancelado': 'CANCELADO',
@@ -97,7 +97,7 @@ const STATUS_MAP: Record<string, string> = {
 };
 
 const DB_STATUS_MAP: Record<string, string> = {
-    'ATIVO': 'ACTIVE', 'INATIVO': 'INACTIVE', 'ATRASADO': 'OVERDUE',
+    'ATIVO': 'ACTIVE', 'INATIVO': 'INACTIVE', 'PAGAMENTO PENDENTE': 'OVERDUE',
     'CONCLUÍDO': 'Concluido', 'AGENDADO': 'Agendado',
     'CANCELADO': 'Cancelado', 'CONFIRMADO': 'Confirmado', 'FALTOU': 'Faltou',
     'PAGO': 'PAGO', 'PENDENTE': 'PENDENTE',
@@ -110,7 +110,7 @@ const STATUS_BADGE: Record<string, string> = {
     'CONFIRMADO': 'bg-emerald-100 text-emerald-700',
     'PENDENTE': 'bg-orange-100 text-orange-700',
     'AGENDADO': 'bg-blue-100 text-blue-700',
-    'ATRASADO': 'bg-red-100 text-red-700',
+    'PAGAMENTO PENDENTE': 'bg-orange-100 text-orange-700',
     'CANCELADO': 'bg-slate-100 text-slate-600',
     'FALTOU': 'bg-red-100 text-red-700',
     'INATIVO': 'bg-slate-100 text-slate-600',
@@ -122,7 +122,7 @@ function computeKpis(tab: string, rows: any[]) {
     if (tab === 'finance') {
         const pago = rows.filter(r => r['Status'] === 'PAGO');
         const pendente = rows.filter(r => r['Status'] === 'PENDENTE');
-        const atrasado = rows.filter(r => r['Status'] === 'ATRASADO');
+        const atrasado = rows.filter(r => r['Status'] === 'PAGAMENTO PENDENTE');
         const totalPago = pago.reduce((acc, r) => acc + parseFloat(r['Valor (R$)'] || '0'), 0);
         return [
             { title: 'Total de registros', value: String(rows.length), icon: <BarChart3 className="w-5 h-5" /> },
@@ -134,7 +134,7 @@ function computeKpis(tab: string, rows: any[]) {
     if (tab === 'students') {
         const ativos = rows.filter(r => r['Status'] === 'ATIVO').length;
         const inativos = rows.filter(r => r['Status'] === 'INATIVO').length;
-        const atrasados = rows.filter(r => r['Status'] === 'ATRASADO').length;
+        const atrasados = rows.filter(r => r['Status'] === 'PAGAMENTO PENDENTE').length;
         return [
             { title: 'Total de alunos', value: String(rows.length), icon: <Users className="w-5 h-5" /> },
             { title: 'Ativos', value: String(ativos), icon: <CheckCircle2 className="w-5 h-5" /> },
@@ -208,7 +208,7 @@ export default function RelatoriosPage() {
                 if (activeTab === 'students' || activeTab === 'finance') {
                     if (status === 'ATIVO') dbStatus = 'ACTIVE';
                     else if (status === 'INATIVO') dbStatus = 'INACTIVE';
-                    else if (status === 'ATRASADO') dbStatus = 'OVERDUE';
+                    else if (status === 'ATRASADO' || status === 'PAGAMENTO PENDENTE') dbStatus = 'OVERDUE';
                     else dbStatus = status;
                 } else {
                     dbStatus = DB_STATUS_MAP[status] || status;

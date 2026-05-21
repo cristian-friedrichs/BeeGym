@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -62,6 +62,7 @@ export type Database = {
           id: string
           instructor_id: string | null
           instructor_name: string | null
+          is_recurrence: boolean | null
           organization_id: string | null
           room_id: string | null
           start_datetime: string
@@ -84,6 +85,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           instructor_name?: string | null
+          is_recurrence?: boolean | null
           organization_id?: string | null
           room_id?: string | null
           start_datetime: string
@@ -106,6 +108,7 @@ export type Database = {
           id?: string
           instructor_id?: string | null
           instructor_name?: string | null
+          is_recurrence?: boolean | null
           organization_id?: string | null
           room_id?: string | null
           start_datetime?: string
@@ -338,26 +341,29 @@ export type Database = {
       event_enrollments: {
         Row: {
           created_at: string
+          credit_type: string
           event_id: string
           id: string
           organization_id: string
-          status: string | null
+          status: string
           student_id: string
         }
         Insert: {
           created_at?: string
+          credit_type?: string
           event_id: string
           id?: string
           organization_id: string
-          status?: string | null
+          status?: string
           student_id: string
         }
         Update: {
           created_at?: string
+          credit_type?: string
           event_id?: string
           id?: string
           organization_id?: string
-          status?: string | null
+          status?: string
           student_id?: string
         }
         Relationships: [
@@ -1996,6 +2002,77 @@ export type Database = {
           total_paid: number | null
         }
         Relationships: []
+      }
+      student_credits: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          organization_id: string
+          source_event_id: string | null
+          status: string
+          student_id: string
+          type: string
+          updated_at: string
+          used_at: string | null
+          used_in_event_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          organization_id: string
+          source_event_id?: string | null
+          status?: string
+          student_id: string
+          type?: string
+          updated_at?: string
+          used_at?: string | null
+          used_in_event_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          organization_id?: string
+          source_event_id?: string | null
+          status?: string
+          student_id?: string
+          type?: string
+          updated_at?: string
+          used_at?: string | null
+          used_in_event_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_credits_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_credits_used_in_event_id_fkey"
+            columns: ["used_in_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Functions: {

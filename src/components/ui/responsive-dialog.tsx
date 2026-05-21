@@ -51,6 +51,7 @@ export function ResponsiveDialog({ open, onOpenChange, children, dismissible = t
                         )}
                     >
                         <Drawer.Title className="sr-only">Dialog</Drawer.Title>
+                        <Drawer.Description className="sr-only">Conteúdo do diálogo</Drawer.Description>
                         {/* Drag handle */}
                         <div className="mx-auto mt-3 mb-1 h-1.5 w-12 shrink-0 rounded-full bg-slate-200" />
                         {children}
@@ -68,6 +69,7 @@ export function ResponsiveDialog({ open, onOpenChange, children, dismissible = t
                 onEscapeKeyDown={(e) => { if (!dismissible) e.preventDefault(); }}
             >
                 <ShadDialogTitle className="sr-only">Dialog</ShadDialogTitle>
+                <ShadDialogDescription className="sr-only">Conteúdo do diálogo</ShadDialogDescription>
                 {children}
             </DialogContent>
         </Dialog>

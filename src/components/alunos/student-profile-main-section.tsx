@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import {
 import { differenceInYears } from "date-fns";
 import { formatDate, formatNumber, formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { StudentCreditHistoryModal } from "./student-credit-history-modal";
 
 interface StudentProfileMainSectionProps {
     student: {
@@ -55,9 +57,9 @@ interface StudentProfileMainSectionProps {
 }
 
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-    ACTIVE:   { label: 'Ativo',        cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    INACTIVE: { label: 'Inativo',      cls: 'bg-slate-100 text-slate-500 border-slate-200' },
-    OVERDUE:  { label: 'Inadimplente', cls: 'bg-red-50 text-red-600 border-red-100' },
+    ACTIVE:   { label: 'Ativo',              cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    INACTIVE: { label: 'Inativo',            cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+    OVERDUE:  { label: 'Pagamento Pendente', cls: 'bg-orange-50 text-orange-600 border-orange-100' },
 };
 
 export function StudentProfileMainSection({
@@ -73,6 +75,7 @@ export function StudentProfileMainSection({
     onPlan,
     onInactivate,
 }: StudentProfileMainSectionProps) {
+    const [creditHistoryOpen, setCreditHistoryOpen] = useState(false);
     const initials = student.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     const age = student.birth_date ? differenceInYears(new Date(), new Date(student.birth_date)) : null;
     const statusInfo = STATUS_BADGE[student.status || 'ACTIVE'] || STATUS_BADGE.ACTIVE;
@@ -117,8 +120,17 @@ export function StudentProfileMainSection({
                                 <CreditCard className="h-4 w-4 mr-2 text-slate-400" /> Gerenciar plano
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={onInactivate} className="cursor-pointer py-2.5 text-red-600 focus:text-red-700 focus:bg-red-50">
-                                <Power className="h-4 w-4 mr-2" /> Inativar aluno
+                            <DropdownMenuItem 
+                                onClick={onInactivate} 
+                                className={cn(
+                                    "cursor-pointer py-2.5 font-bold text-xs uppercase tracking-wider",
+                                    student.status === 'ACTIVE' || student.status === 'OVERDUE'
+                                        ? "text-red-600 focus:text-red-700 focus:bg-red-50"
+                                        : "text-emerald-600 focus:text-emerald-700 focus:bg-emerald-50"
+                                    )}
+                            >
+                                <Power className="h-4 w-4 mr-2" />
+                                {student.status === 'ACTIVE' || student.status === 'OVERDUE' ? 'Inativar aluno' : 'Ativar aluno'}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -178,7 +190,18 @@ export function StudentProfileMainSection({
                         <Button onClick={onPlan} variant="outline" size="sm" className="h-8 gap-1.5 rounded-lg border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold">
                             <CreditCard className="h-3.5 w-3.5" /> Plano
                         </Button>
-                        <Button onClick={onInactivate} variant="outline" size="sm" aria-label="Inativar aluno" className="h-8 w-8 p-0 rounded-lg border-slate-200 text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors">
+                        <Button 
+                            onClick={onInactivate} 
+                            variant="outline" 
+                            size="sm" 
+                            aria-label={student.status === 'ACTIVE' || student.status === 'OVERDUE' ? 'Inativar aluno' : 'Ativar aluno'} 
+                            className={cn(
+                                "h-8 w-8 p-0 rounded-lg border-slate-200 transition-colors",
+                                student.status === 'ACTIVE' || student.status === 'OVERDUE'
+                                    ? "text-slate-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200"
+                                    : "text-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200"
+                            )}
+                        >
                             <Power className="h-3.5 w-3.5" />
                         </Button>
                     </div>
@@ -230,10 +253,15 @@ export function StudentProfileMainSection({
                                 <p className="text-[13px] font-bold text-slate-700 mt-0.5">{formatCurrency(student.plan.price)}<span className="text-slate-400 font-normal text-[11px]">/mês</span></p>
                             )}
                             {planLabel.isCredits && (
-                                <div className="mt-1 flex items-center gap-1.5">
-                                    <span className="text-xl font-black text-bee-amber">{student.credits_balance ?? 0}</span>
+                                <button
+                                    onClick={() => setCreditHistoryOpen(true)}
+                                    className="mt-1 flex items-center gap-1.5 hover:opacity-80 transition-opacity text-left group"
+                                    type="button"
+                                >
+                                    <span className="text-xl font-black text-bee-amber group-hover:underline">{student.credits_balance ?? 0}</span>
                                     <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">créditos</span>
-                                </div>
+                                    <span className="text-[10px] text-slate-400 font-semibold group-hover:text-slate-500 ml-0.5">(histórico)</span>
+                                </button>
                             )}
                         </>
                     ) : (
@@ -247,6 +275,13 @@ export function StudentProfileMainSection({
                     </button>
                 </div>
             </div>
+
+            <StudentCreditHistoryModal
+                open={creditHistoryOpen}
+                onOpenChange={setCreditHistoryOpen}
+                studentId={student.id}
+                studentName={student.full_name}
+            />
         </div>
     );
 }

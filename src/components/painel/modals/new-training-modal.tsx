@@ -83,7 +83,7 @@ export function NewTrainingModal({
 }: NewTrainingModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
-    const { organizationId } = useAuth();
+    const { organizationId, isAdmin } = useAuth();
     const { currentUnitId } = useUnit();
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
@@ -325,6 +325,23 @@ export function NewTrainingModal({
                             const limitCheck = await checkStudentScheduleLimits(selectedStudent, dateStr);
                             if (!limitCheck.allowed) throw new Error(limitCheck.message);
                         }
+                        if (!forceSchedule) {
+                            const { start, end } = processDates(selectedDate);
+                            const { data: conflictRows } = await (supabase as any).rpc('check_scheduling_conflict', {
+                                p_start_time: start, p_end_time: end, p_org_id: organizationId,
+                                p_instructor_id: selectedInstructor || null,
+                                p_student_id: selectedStudent || null,
+                                p_room_id: locationType === 'internal' ? (selectedRoom || null) : null,
+                            });
+                            const c = Array.isArray(conflictRows) ? conflictRows[0] : conflictRows;
+                            if (c?.has_conflict) {
+                                const typeLabel = c.conflict_type === 'instructor' ? 'instrutor já tem evento'
+                                    : c.conflict_type === 'student' ? 'aluno já tem evento'
+                                    : c.conflict_type === 'room' ? 'sala já está ocupada'
+                                    : 'horário em conflito';
+                                throw new Error(`O ${typeLabel} neste horário${c.conflict_detail ? `: "${c.conflict_detail}"` : ''}.${isAdmin ? ' Marque "Forçar agendamento" para prosseguir.' : ''}`);
+                            }
+                        }
                         const workout = await insertWorkout(selectedDate);
                         if (workout) await saveLinkedExercises(workout[0].id);
                         toast({ title: 'Treino agendado.' });
@@ -353,6 +370,21 @@ export function NewTrainingModal({
                     if (error) throw error;
                     toast({ title: 'Treino em grupo atualizado.' });
                 } else {
+                    if (!forceSchedule) {
+                        const { data: conflictRows } = await (supabase as any).rpc('check_scheduling_conflict', {
+                            p_start_time: start, p_end_time: end, p_org_id: organizationId,
+                            p_instructor_id: selectedInstructor || null,
+                            p_student_id: null,
+                            p_room_id: locationType === 'internal' ? (selectedRoom || null) : null,
+                        });
+                        const c = Array.isArray(conflictRows) ? conflictRows[0] : conflictRows;
+                        if (c?.has_conflict) {
+                            const typeLabel = c.conflict_type === 'instructor' ? 'instrutor já tem evento'
+                                : c.conflict_type === 'room' ? 'sala já está ocupada'
+                                : 'horário em conflito';
+                            throw new Error(`O ${typeLabel} neste horário${c.conflict_detail ? `: "${c.conflict_detail}"` : ''}.${isAdmin ? ' Marque "Forçar agendamento" para prosseguir.' : ''}`);
+                        }
+                    }
                     const { data: eventData, error: eventError } = await (supabase as any).from('calendar_events').insert(eventPayload).select().single();
                     if (eventError) throw eventError;
                     if (eventData && selectedStudents.length > 0) {
@@ -481,10 +513,12 @@ export function NewTrainingModal({
                                         <Checkbox checked={isMakeup} onCheckedChange={c => setIsMakeup(!!c)} />
                                         <span className="text-sm text-slate-600">Aula de reposição</span>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer select-none">
-                                        <Checkbox checked={forceSchedule} onCheckedChange={c => setForceSchedule(!!c)} />
-                                        <span className="text-sm text-slate-600">Forçar agendamento</span>
-                                    </label>
+                                    {isAdmin && (
+                                        <label className="flex items-center gap-2 cursor-pointer select-none" title="Apenas administradores podem forçar agendamento em conflito">
+                                            <Checkbox checked={forceSchedule} onCheckedChange={c => setForceSchedule(!!c)} />
+                                            <span className="text-sm text-slate-600">Forçar agendamento</span>
+                                        </label>
+                                    )}
                                 </div>
 
                                 {/* Exercises */}

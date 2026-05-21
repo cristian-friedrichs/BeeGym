@@ -100,9 +100,9 @@ export async function saveRecurringWorkouts(data: {
     const caller = await getCallerContext();
 
     // Verify student belongs to caller's org before any mutation
-    const { data: student } = await supabase
+    const { data: student } = await (supabase as any)
         .from('students')
-        .select('organization_id')
+        .select('organization_id, plan_id, credits_balance, membership_plans(plan_type)')
         .eq('id', data.studentId)
         .maybeSingle();
 
@@ -110,8 +110,12 @@ export async function saveRecurringWorkouts(data: {
         return { success: false, error: 'Aluno não encontrado nesta organização' };
     }
 
-    // 1. Deletar treinos PENDENTES futuros que possuem recurrence_id
-    // A regra diz: A grade é soberana para o futuro.
+    const planType = student.membership_plans?.plan_type ?? 'membership';
+    // For pack plans each workout consumes 1 credit; limit total scheduled to available balance.
+    // For membership plans no credit check needed (weekly allowance via trigger).
+    const creditBalance: number = planType === 'pack' ? Math.max(0, student.credits_balance ?? 0) : Infinity;
+
+    // 1. Delete future recurring pending workouts (schedule is the source of truth)
     const now = new Date().toISOString();
     const { error: deleteError } = await supabase
         .from('workouts')
@@ -126,40 +130,33 @@ export async function saveRecurringWorkouts(data: {
         return { success: false, error: deleteError.message };
     }
 
-    // Se a grade estiver vazia, apenas limpamos o futuro (feito acima)
     if (!data.schedule || data.schedule.length === 0) {
         revalidatePath(`/app/alunos/${data.studentId}`);
         revalidatePath(`/app/agenda`);
         return { success: true, message: 'Grade de treinos removida.' };
     }
 
-    // 2. Gerar novos treinos para os próximos 3 meses
+    // 2. Generate candidates for the next 3 months, sorted by date
     const recurrenceId = randomUUID();
-    const workoutsToInsert: any[] = [];
+    const candidates: any[] = [];
     const startDate = new Date();
     const endDate = addMonths(startDate, 3);
-
-    const [defaultHours, defaultMinutes] = [10, 0]; // Fallback
+    const [defaultHours, defaultMinutes] = [10, 0];
 
     for (const item of data.schedule) {
         let currentDate = startOfDay(startDate);
-        
-        // Encontrar a primeira ocorrência do dia da semana
-        // getDay: 0=Dom, 1=Seg...
         while (getDay(currentDate) !== item.day) {
             currentDate = addDays(currentDate, 1);
         }
-
-        const [hours, minutes] = item.time.includes(':') 
-            ? item.time.split(':').map(Number) 
+        const [hours, minutes] = item.time.includes(':')
+            ? item.time.split(':').map(Number)
             : [defaultHours, defaultMinutes];
-            
+
         while (currentDate <= endDate) {
             const scheduledAt = setMinutes(setHours(currentDate, hours), minutes);
             const endDateTime = setMinutes(setHours(currentDate, hours + 1), minutes);
-            
             if (isAfter(scheduledAt, new Date())) {
-                workoutsToInsert.push({
+                candidates.push({
                     organization_id: caller.organizationId,
                     student_id: data.studentId,
                     title: data.title,
@@ -168,32 +165,41 @@ export async function saveRecurringWorkouts(data: {
                     end_time: endDateTime.toISOString(),
                     status: 'Agendado',
                     recurrence_id: recurrenceId,
-                    recurrence_type: 'WEEKLY'
+                    recurrence_type: 'WEEKLY',
                 });
             }
             currentDate = addDays(currentDate, 7);
         }
     }
 
-    if (workoutsToInsert.length > 0) {
-        const { error: insertError } = await supabase
-            .from('workouts')
-            .insert(workoutsToInsert);
+    // Sort by date and cap to available credit balance for pack plans
+    candidates.sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+    const workoutsToInsert = candidates.slice(0, creditBalance === Infinity ? candidates.length : creditBalance);
+    const skipped = candidates.length - workoutsToInsert.length;
 
-        if (insertError) {
-            console.error('Error inserting recurring workouts:', insertError);
-            return { success: false, error: insertError.message };
-        }
+    if (workoutsToInsert.length === 0) {
+        revalidatePath(`/app/alunos/${data.studentId}`);
+        return {
+            success: false,
+            error: planType === 'pack'
+                ? 'Saldo de créditos insuficiente para criar treinos recorrentes. Adicione créditos ao aluno.'
+                : 'Nenhum treino gerado para o período informado.',
+        };
     }
 
-    // Log activity
+    const { error: insertError } = await supabase.from('workouts').insert(workoutsToInsert);
+    if (insertError) {
+        console.error('Error inserting recurring workouts:', insertError);
+        return { success: false, error: insertError.message };
+    }
+
     try {
         const { logActivity } = await import('@/services/logger');
         await logActivity({
             action: 'UPDATE',
             resource: 'workouts',
             details: `Atualizou grade de treinos recorrentes (ID: ${data.studentId})`,
-            metadata: { student_id: data.studentId, schedule: data.schedule },
+            metadata: { student_id: data.studentId, schedule: data.schedule, created: workoutsToInsert.length, skipped },
         });
     } catch (e) {
         console.warn('Logging failed:', e);
@@ -201,7 +207,12 @@ export async function saveRecurringWorkouts(data: {
 
     revalidatePath(`/app/alunos/${data.studentId}`);
     revalidatePath(`/app/agenda`);
-    return { success: true };
+
+    const msg = skipped > 0
+        ? `${workoutsToInsert.length} treino${workoutsToInsert.length !== 1 ? 's' : ''} agendado${workoutsToInsert.length !== 1 ? 's' : ''} conforme saldo disponível (${skipped} não criado${skipped !== 1 ? 's' : ''} por saldo insuficiente).`
+        : undefined;
+
+    return { success: true, message: msg };
 }
 
 /**

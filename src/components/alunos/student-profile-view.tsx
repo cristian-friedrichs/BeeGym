@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { QuickMessageModal } from "./quick-message-modal";
+import { StudentStatusDialog } from "@/components/painel/dialogs/student-status-dialog";
 
 // Define os tipos de visualização
 export type StudentViewType = 'dashboard' | 'workouts' | 'measurements' | 'plans' | 'invoices';
@@ -61,6 +62,7 @@ export function StudentProfileView({
     const { toast } = useToast();
     const supabase = createClient();
     const [messageModalOpen, setMessageModalOpen] = useState(false);
+    const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
     const names = student.full_name.split(' ');
     const firstName = names[0];
@@ -112,17 +114,18 @@ export function StudentProfileView({
 
     const scheduleLabel = getScheduleLabel();
 
-    const handleInactivate = async () => {
-        if (!confirm("Tem certeza que deseja INATIVAR este aluno?\nEle perderá acesso ao aplicativo imediatamente.")) return;
-
+    const handleStatusChange = async (newStatus: 'ACTIVE' | 'INACTIVE', reason?: string) => {
         const { error } = await (supabase.from('students') as any)
-            .update({ status: 'INACTIVE' })
+            .update({ 
+                status: newStatus,
+                inactive_reason: newStatus === 'INACTIVE' ? reason : null
+            })
             .eq('id', student.id);
 
         if (error) {
-            toast({ title: "Erro ao inativar", variant: "destructive" });
+            toast({ title: "Erro ao atualizar status", variant: "destructive" });
         } else {
-            toast({ title: "Aluno inativado com sucesso" });
+            toast({ title: newStatus === 'INACTIVE' ? "Aluno inativado com sucesso" : "Aluno ativado com sucesso" });
             onRefresh();
         }
     };
@@ -268,13 +271,13 @@ export function StudentProfileView({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <button
-                                    onClick={handleInactivate}
-                                    className="p-2.5 bg-red-50 text-red-500 rounded-[8px] border border-red-100 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
+                                    onClick={() => setStatusDialogOpen(true)}
+                                    className={`p-2.5 rounded-[8px] border transition-all flex items-center justify-center ${student.status === 'ACTIVE' ? 'bg-red-50 text-red-500 border-red-100 hover:bg-red-500 hover:text-white' : 'bg-emerald-50 text-emerald-500 border-emerald-100 hover:bg-emerald-500 hover:text-white'}`}
                                 >
                                     <Power className="h-5 w-5" />
                                 </button>
                             </TooltipTrigger>
-                            <TooltipContent>Inativar Aluno</TooltipContent>
+                            <TooltipContent>{student.status === 'ACTIVE' ? 'Inativar Aluno' : 'Ativar Aluno'}</TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </div>
@@ -286,6 +289,15 @@ export function StudentProfileView({
                 studentId={student.id}
                 studentName={student.full_name}
                 studentEmail={student.email}
+            />
+
+            <StudentStatusDialog
+                open={statusDialogOpen}
+                onOpenChange={setStatusDialogOpen}
+                studentId={student.id}
+                studentName={student.full_name}
+                currentStatus={student.status}
+                onStatusChange={handleStatusChange}
             />
         </aside>
     );

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -42,7 +43,8 @@ const labelCls = 'text-sm font-medium text-slate-700';
 export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initialTime, eventId }: ClassModalProps) {
     const { toast } = useToast();
     const supabase = createClient();
-    const { organizationId } = useAuth();
+    const { organizationId, isAdmin } = useAuth();
+    const [forceOverbooking, setForceOverbooking] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const { data: rooms } = useOrgList<Room>({
@@ -148,6 +150,27 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 type: 'CLASS',
                 status: 'SCHEDULED',
             };
+
+            if (!forceOverbooking) {
+                const { data: conflictRows } = await (supabase as any).rpc('check_scheduling_conflict', {
+                    p_start_time: startDateTime.toISOString(),
+                    p_end_time: endDateTime.toISOString(),
+                    p_org_id: orgId,
+                    p_instructor_id: selectedInstructor || null,
+                    p_student_id: null,
+                    p_room_id: selectedRoom || null,
+                });
+                const conflict = Array.isArray(conflictRows) ? conflictRows[0] : conflictRows;
+                if (conflict?.has_conflict) {
+                    const typeLabel = conflict.conflict_type === 'instructor' ? 'instrutor já tem evento'
+                        : conflict.conflict_type === 'room' ? 'sala já está ocupada'
+                        : 'horário em conflito';
+                    const desc = `O ${typeLabel} neste horário${conflict.conflict_detail ? `: "${conflict.conflict_detail}"` : ''}.${isAdmin ? ' Marque "Forçar Agendamento" para prosseguir.' : ''}`;
+                    toast({ title: 'Conflito de Horário', description: desc, variant: 'destructive' });
+                    setLoading(false);
+                    return;
+                }
+            }
 
             const { error } = await (supabase as any).from('calendar_events').insert(payload);
             if (error) throw error;
@@ -336,15 +359,23 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <Button
-                        variant="outline"
-                        onClick={handleCloseAttempt}
-                        disabled={loading}
-                        className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
-                    >
-                        Cancelar
-                    </Button>
+                <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                        <Button
+                            variant="outline"
+                            onClick={handleCloseAttempt}
+                            disabled={loading}
+                            className="h-9 rounded-full px-5 border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium"
+                        >
+                            Cancelar
+                        </Button>
+                        {isAdmin && (
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="force-overbooking" checked={forceOverbooking} onCheckedChange={(c) => setForceOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-4 w-4" />
+                                <Label htmlFor="force-overbooking" className="text-xs font-medium text-slate-500 cursor-pointer" title="Apenas administradores podem forçar agendamento em conflito">Forçar Agendamento</Label>
+                            </div>
+                        )}
+                    </div>
                     <Button
                         onClick={handleSave}
                         disabled={loading}

@@ -37,69 +37,72 @@ export async function checkStudentScheduleLimits(
 
     if (!plan) return { allowed: true };
 
+    // Fetch available active credits count
+    const { count: availableCredits } = await supabase
+        .from('student_credits')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId)
+        .eq('status', 'Disponivel')
+        .gt('expires_at', new Date().toISOString());
+
+    const creditsCount = availableCredits ?? 0;
+
     // ─── Pack Plan: credit check ────────────────────────
-    if (plan.plan_type === 'pack' && plan.credits != null && plan.credits > 0) {
-        // Count used credits (all non-cancelled scheduled workouts OR class enrollments)
-        const { count: usedInWorkouts } = await supabase
-            .from('workouts')
-            .select('id', { count: 'exact', head: true })
-            .eq('student_id', studentId)
-            .not('status', 'in', '("Cancelado","CANCELLED")');
-
-        const { count: usedInEvents } = await supabase
-            .from('event_enrollments')
-            .select('id', { count: 'exact', head: true })
-            .eq('student_id', studentId)
-            .not('status', 'in', '("Cancelado","CANCELLED")');
-
-        const totalUsed = (usedInWorkouts ?? 0) + (usedInEvents ?? 0);
-
-        if (totalUsed >= plan.credits) {
+    if (plan.plan_type === 'pack') {
+        if (creditsCount <= 0) {
             return {
                 allowed: false,
-                message: `Limite de créditos do plano atingido. O aluno tem ${plan.credits} aula(s) no pacote e já utilizou todas.`
+                message: `Saldo de créditos insuficiente. Adicione mais créditos para realizar este agendamento.`
             };
         }
     }
 
     // ─── Membership Plan: weekly frequency limit ────────
     if (plan.plan_type === 'membership' && plan.days_per_week != null && plan.days_per_week > 0) {
-        // Get the week boundaries (Mon–Sun) for the proposed date
-        const d = new Date(proposedDate);
-        const day = d.getDay(); // 0=Sun
-        const diffToMon = (day === 0 ? -6 : 1 - day);
-        const weekStart = new Date(d);
-        weekStart.setDate(d.getDate() + diffToMon);
-        weekStart.setHours(0, 0, 0, 0);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        weekEnd.setHours(23, 59, 59, 999);
+        // Get the week boundaries (Sun–Sat) for the proposed date in America/Sao_Paulo timezone (UTC-3)
+        const [year, month, dayOfMonth] = proposedDate.split('-').map(Number);
+        const d = new Date(Date.UTC(year, month - 1, dayOfMonth));
+        const day = d.getUTCDay(); // 0 = Sunday, ..., 6 = Saturday
 
-        // Count workouts this week (not cancelled)
+        const weekStart = new Date(d);
+        weekStart.setUTCDate(d.getUTCDate() - day);
+        weekStart.setUTCHours(3, 0, 0, 0); // Sunday 00:00 Sao Paulo
+
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 1);
+        weekEnd.setUTCHours(2, 59, 59, 999); // Saturday 23:59:59.999 Sao Paulo
+
+        // Count weekly workouts (excluding makeup workouts)
         const { count: weekWorkoutCount } = await supabase
             .from('workouts')
             .select('id', { count: 'exact', head: true })
             .eq('student_id', studentId)
+            .eq('is_makeup', false)
             .gte('scheduled_at', weekStart.toISOString())
             .lte('scheduled_at', weekEnd.toISOString())
-            .not('status', 'in', '("Cancelado","CANCELLED")');
+            .not('status', 'eq', 'Cancelado');
 
-        // Count event enrollments this week
+        // Count weekly event enrollments using weekly quota
         const { count: weekEnrollmentCount } = await supabase
             .from('event_enrollments')
             .select('id, calendar_events!inner(start_datetime)', { count: 'exact', head: true })
             .eq('student_id', studentId)
+            .eq('credit_type', 'Semanal')
             .gte('calendar_events.start_datetime', weekStart.toISOString())
             .lte('calendar_events.start_datetime', weekEnd.toISOString())
-            .not('status', 'in', '("Cancelado","CANCELLED")');
+            .not('status', 'eq', 'Cancelado');
 
         const totalThisWeek = (weekWorkoutCount ?? 0) + (weekEnrollmentCount ?? 0);
 
         if (totalThisWeek >= plan.days_per_week) {
-            return {
-                allowed: false,
-                message: `Limite semanal do plano atingido. O aluno pode treinar no máximo ${plan.days_per_week}x por semana.`
-            };
+            // Over the weekly limit - must use extra credit
+            if (creditsCount <= 0) {
+                return {
+                    allowed: false,
+                    message: `Limite semanal de ${plan.days_per_week}x atingido e saldo de créditos extras insuficiente.`
+                };
+            }
         }
     }
 
@@ -186,16 +189,16 @@ export async function enrollStudent(eventId: string, studentId: string) {
 
         if (insertError) {
             console.error('Enrollment error:', insertError);
-            return { error: 'Erro ao inscrever aluno.' };
+            return { error: insertError.message || 'Erro ao inscrever aluno.' };
         }
 
         revalidatePath('/agenda');
         revalidatePath('/aulas');
         return { success: true };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Unexpected error:', error);
-        return { error: 'Erro interno do servidor.' };
+        return { error: error.message || 'Erro interno do servidor.' };
     }
 }
 
@@ -215,13 +218,13 @@ export async function removeStudent(eventId: string, studentId: string) {
 
         if (error) {
             console.error('Remove error:', error);
-            return { error: 'Erro ao remover aluno.' };
+            return { error: error.message || 'Erro ao remover aluno.' };
         }
 
         revalidatePath('/agenda');
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Unexpected error:', error);
-        return { error: 'Erro interno do servidor.' };
+        return { error: error.message || 'Erro interno do servidor.' };
     }
 }

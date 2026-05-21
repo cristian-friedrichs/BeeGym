@@ -48,7 +48,7 @@ interface WorkoutModalProps {
 export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEdit, onSuccess, initialDate, initialTime }: WorkoutModalProps) {
     const supabase = createClient();
     const { toast } = useToast();
-    const { organizationId, user: authUser } = useAuth();
+    const { organizationId, user: authUser, isAdmin } = useAuth();
     const [loading, setLoading] = useState(false);
     const fieldCls = fieldInput + " transition-all";
     const labelCls = fieldLabel;
@@ -321,11 +321,22 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
         setLoading(true);
         try {
             if (!ignoreOverbooking) {
-                const { data: isOverbooked } = await (supabase as any).rpc('check_overbooking', {
-                    p_start_time: scheduledDate.toISOString(), p_end_time: endDateTime.toISOString(), p_org_id: organizationId
+                const { data: conflictRows } = await (supabase as any).rpc('check_scheduling_conflict', {
+                    p_start_time: scheduledDate.toISOString(),
+                    p_end_time: endDateTime.toISOString(),
+                    p_org_id: organizationId,
+                    p_instructor_id: (instructorId && instructorId !== 'none') ? instructorId : null,
+                    p_student_id: selectedStudentId || null,
+                    p_room_id: (roomId && roomId !== 'none') ? roomId : null,
                 });
-                if (isOverbooked) {
-                    toast({ title: "Conflito de Horário!", description: "Marque 'Forçar Agendamento' para prosseguir.", variant: "destructive" });
+                const conflict = Array.isArray(conflictRows) ? conflictRows[0] : conflictRows;
+                if (conflict?.has_conflict) {
+                    const typeLabel = conflict.conflict_type === 'instructor' ? 'instrutor já tem evento'
+                        : conflict.conflict_type === 'student' ? 'aluno já tem evento'
+                        : conflict.conflict_type === 'room' ? 'sala já está ocupada'
+                        : 'horário em conflito';
+                    const desc = `O ${typeLabel} neste horário${conflict.conflict_detail ? `: "${conflict.conflict_detail}"` : ''}.${isAdmin ? ' Marque "Forçar Agendamento" para prosseguir.' : ''}`;
+                    toast({ title: "Conflito de Horário", description: desc, variant: "destructive" });
                     setLoading(false); return;
                 }
             }
@@ -656,10 +667,10 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     <Checkbox id="makeup" checked={isMakeup} onCheckedChange={(c) => setIsMakeup(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-4 w-4" />
                                     <Label htmlFor="makeup" className="text-sm font-medium text-slate-600 cursor-pointer group-hover:text-bee-midnight transition-colors">Aula de Reposição</Label>
                                 </div>
-                                {!workoutToEdit && (
+                                {!workoutToEdit && isAdmin && (
                                     <div className="flex items-center gap-2 group cursor-pointer">
                                         <Checkbox id="overbooking" checked={ignoreOverbooking} onCheckedChange={(c) => setIgnoreOverbooking(c as boolean)} className="border-slate-300 data-[state=checked]:bg-bee-amber data-[state=checked]:border-bee-amber rounded-md h-4 w-4" />
-                                        <Label htmlFor="overbooking" className="text-sm font-medium text-slate-600 cursor-pointer group-hover:text-bee-midnight transition-colors">Forçar Agendamento</Label>
+                                        <Label htmlFor="overbooking" className="text-sm font-medium text-slate-600 cursor-pointer group-hover:text-bee-midnight transition-colors" title="Apenas administradores podem forçar agendamento em conflito">Forçar Agendamento</Label>
                                     </div>
                                 )}
                             </div>

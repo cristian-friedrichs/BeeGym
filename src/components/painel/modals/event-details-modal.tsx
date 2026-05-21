@@ -49,7 +49,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     const supabase = createClient();
     const { organizationId } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [showParticipants, setShowParticipants] = useState(false);
+    const [showParticipants, setShowParticipants] = useState(true);
 
     // Participants
     const [participants, setParticipants] = useState<any[]>([]);
@@ -66,13 +66,13 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
 
     useEffect(() => {
         if (open) {
-            setShowParticipants(false);
+            setShowParticipants(true);
             setParticipants([]);
             setSearchTerm('');
             setSearchResults([]);
             setViewExercises([]);
         }
-    }, [open, event]);
+    }, [open, event?.id]);
 
     // Fetch participants for CLASS / TRAINING
     useEffect(() => {
@@ -179,7 +179,11 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     const handleCancelConfirm = async () => {
         setLoading(true);
         try {
-            const { error } = await (supabase as any).from('calendar_events').update({ status: 'CANCELLED' }).eq('id', event.id);
+            const isModern = !!event.calendar_event_id || event.source === 'calendar';
+            const table = isModern ? 'calendar_events' : 'workouts';
+            const status = isModern ? 'CANCELLED' : 'Cancelado';
+
+            const { error } = await (supabase as any).from(table).update({ status }).eq('id', event.id);
             if (error) throw error;
             toast({ title: 'Agendamento cancelado.' });
             onSuccess?.(); onOpenChange(false);
@@ -191,8 +195,13 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
     const handleMissedConfirm = async () => {
         setLoading(true);
         try {
-            const { error } = await (supabase as any).from('calendar_events').update({ status: 'MISSED' }).eq('id', event.id);
+            const isModern = !!event.calendar_event_id || event.source === 'calendar';
+            const table = isModern ? 'calendar_events' : 'workouts';
+            const status = isModern ? 'MISSED' : 'Faltou';
+
+            const { error } = await (supabase as any).from(table).update({ status }).eq('id', event.id);
             if (error) throw error;
+
             toast({ title: 'Falta registrada.' });
             onSuccess?.(); onOpenChange(false);
         } catch {
@@ -207,6 +216,7 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
             const table = isModern ? 'calendar_events' : 'workouts';
             const { error } = await (supabase as any).from(table).update({ status: isModern ? 'COMPLETED' : 'Concluido' }).eq('id', event.id);
             if (error) throw error;
+
             toast({ title: 'Treino concluído!' });
             onSuccess?.(); onOpenChange(false);
         } catch {
@@ -350,13 +360,9 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                     {/* Participants section for CLASS / TRAINING */}
                     {(isClass || isTraining) && (
                         <div className="space-y-3">
-                            <button
-                                className="w-full flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors"
-                                onClick={() => setShowParticipants(p => !p)}
-                            >
+                            <div className="w-full flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
                                 <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Alunos inscritos ({participants.length})</span>
-                                <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', showParticipants && 'rotate-90')} />
-                            </button>
+                            </div>
 
                             {showParticipants && (
                                 <div className="space-y-3">
@@ -455,7 +461,17 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                 </div>
 
                 {/* ── Footer ─────────────────────────────────────────────── */}
-                {!isFinished && (
+                {isFinished ? (
+                    <DialogFooter className="px-6 py-4 border-t border-slate-100 flex flex-row items-center justify-end">
+                        <Button
+                            size="sm"
+                            onClick={() => onOpenChange(false)}
+                            className="h-9 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs shadow-none"
+                        >
+                            OK
+                        </Button>
+                    </DialogFooter>
+                ) : (
                     <DialogFooter className="px-6 py-4 border-t border-slate-100 flex flex-row items-center gap-2 sm:justify-between">
                         <div className="flex items-center gap-2">
                             <Button
@@ -500,10 +516,10 @@ export function EventDetailsModal({ open, onOpenChange, event, onSuccess, onEdit
                             {(isClass || isTraining) && (
                                 <Button
                                     size="sm"
-                                    onClick={() => { setShowParticipants(true); }}
-                                    className="h-9 gap-1.5 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-bold text-xs shadow-none"
+                                    onClick={() => onOpenChange(false)}
+                                    className="h-9 px-6 rounded-xl bg-bee-amber hover:bg-bee-amber/90 text-bee-midnight font-bold text-xs shadow-none"
                                 >
-                                    <Users className="h-3.5 w-3.5" /> Ver Alunos
+                                    OK
                                 </Button>
                             )}
                         </div>

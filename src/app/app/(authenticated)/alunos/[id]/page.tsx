@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { startOfISOWeek, endOfISOWeek, isWithinInterval, parseISO } from 'date-fns';
 import { StudentProfileMainSection } from '@/components/alunos/student-profile-main-section';
+import { StudentStatusDialog } from '@/components/painel/dialogs/student-status-dialog';
 import dynamic from 'next/dynamic';
 
 const StudentModal = dynamic(() => import('@/components/alunos/student-modal').then(m => ({ default: m.StudentModal })), { ssr: false });
@@ -39,12 +40,13 @@ export default function StudentDetailsPage() {
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
     const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false);
     const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+    const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
     const fetchStudentData = async () => {
         if (!id) return;
         try {
-            // Trigger status transitions for both classes and workouts
-            await supabase.rpc('update_class_statuses' as any);
+            // Trigger status transitions for both classes and workouts asynchronously (non-blocking)
+            supabase.rpc('update_class_statuses' as any).then(null, () => {});
 
             // 1. Fetch Student
             const { data: studentData, error: studentError } = await supabase
@@ -95,10 +97,10 @@ export default function StudentDetailsPage() {
                 .eq('student_id', id)
                 .order('created_at', { ascending: false });
 
-            // 5. Fetch Invoices
+            // 5. Fetch Invoices/Payments (pack + recurring)
             const { data: invoicesData } = await supabase
                 .from('invoices')
-                .select('*')
+                .select('id, amount, status, due_date, paid_at, description')
                 .eq('student_id', id)
                 .order('due_date', { ascending: false });
 
@@ -108,9 +110,17 @@ export default function StudentDetailsPage() {
                 .eq('student_id', id)
                 .maybeSingle();
 
+            // 7. Fetch QUEUED plan (if any) — pack -> recurring switch with active credits
+            const { data: queuedData } = await (supabase.from('student_plan_history' as any) as any)
+                .select('id, plan_id, plan_name, plan_price, final_price, requested_activation_at')
+                .eq('student_id', id)
+                .eq('status', 'QUEUED')
+                .maybeSingle();
+
             setStudent({
                 ...student,
                 plan: planData,
+                queuedPlan: queuedData,
                 unitName: unitData,
                 measurements: measurementsData || [],
                 workouts: workoutsData || [],
@@ -130,17 +140,17 @@ export default function StudentDetailsPage() {
         fetchStudentData();
     }, [id]);
 
-    const handleInactivate = async () => {
-        if (!confirm("Tem certeza que deseja INATIVAR este aluno?\nEle perderá acesso ao aplicativo imediatamente.")) return;
-
+    const handleStatusChange = async (newStatus: 'ACTIVE' | 'INACTIVE', reason?: string) => {
         const { error } = await (supabase.from('students') as any)
-            .update({ status: 'INACTIVE' })
+            .update({ 
+                status: newStatus,
+                inactive_reason: newStatus === 'INACTIVE' ? reason : null
+            })
             .eq('id', student.id);
 
         if (error) {
-            toast({ title: "Erro ao inativar", variant: "destructive" });
+            throw error;
         } else {
-            toast({ title: "Aluno inativado com sucesso" });
             fetchStudentData();
         }
     };
@@ -193,8 +203,25 @@ export default function StudentDetailsPage() {
                 onWorkout={() => setIsRecurringModalOpen(true)}
                 onMeasurement={() => setIsMeasurementModalOpen(true)}
                 onPlan={() => setIsPlanModalOpen(true)}
-                onInactivate={handleInactivate}
+                onInactivate={() => setIsStatusDialogOpen(true)}
             />
+
+            {/* Queued plan banner */}
+            {student.queuedPlan && (
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-5 py-4 flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-bee-amber/15 flex items-center justify-center shrink-0">
+                        <Loader2 className="h-4 w-4 text-bee-amber" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-800">
+                            Plano mensal em fila: {student.queuedPlan.plan_name}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Será ativado automaticamente quando o aluno usar todos os créditos restantes. A partir daí a fatura passa a ser gerada conforme a configuração da organização (X dias antes do vencimento).
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Chart + Medical side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
@@ -263,6 +290,17 @@ export default function StudentDetailsPage() {
                 studentName={student.full_name}
                 studentEmail={student.email}
             />
+            {student && (
+                <StudentStatusDialog
+                    open={isStatusDialogOpen}
+                    onOpenChange={setIsStatusDialogOpen}
+                    studentId={student.id}
+                    studentName={student.full_name}
+                    currentStatus={student.status}
+                    onStatusChange={handleStatusChange}
+                    triggerButton={<span />}
+                />
+            )}
         </div>
     );
 }

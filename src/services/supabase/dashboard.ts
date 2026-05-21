@@ -47,8 +47,8 @@ export async function getKPIs(unitId?: string): Promise<KPI[]> {
     const supabase = createClient();
 
     try {
-        // 1. Active Students
-        let studentsQuery = supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'ACTIVE');
+        // 1. Active Students (ACTIVE + OVERDUE both occupy a seat)
+        let studentsQuery = supabase.from('students').select('id', { count: 'exact', head: true }).in('status', ['ACTIVE', 'OVERDUE']);
         if (unitId && unitId.length > 10) studentsQuery = studentsQuery.eq('organization_id', unitId);
 
         const { count: activeStudents, error: studentsError } = await studentsQuery;

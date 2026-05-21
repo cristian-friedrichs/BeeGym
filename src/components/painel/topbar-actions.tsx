@@ -8,6 +8,7 @@ import { Bell, MessageSquare, CheckCircle2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePendingWorkouts } from '@/context/PendingWorkoutContext';
 
 function Badge({ count }: { count: number }) {
     if (count === 0) return null;
@@ -21,11 +22,14 @@ function Badge({ count }: { count: number }) {
 export function TopbarActions() {
     const supabase = createClient();
     const router = useRouter();
+    const { pendingCount } = usePendingWorkouts();
 
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadChatCount, setUnreadChatCount] = useState(0);
     const [unreadChats, setUnreadChats] = useState<any[]>([]);
-    const { user: currentUser } = useAuth();
+    const [expiringCreditsCount, setExpiringCreditsCount] = useState(0);
+    const [pendingWorkoutsCount, setPendingWorkoutsCount] = useState(0);
+    const { user: currentUser, organizationId } = useAuth();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
@@ -61,6 +65,31 @@ export function TopbarActions() {
                 setUnreadChats([]);
                 setUnreadChatCount(0);
             }
+
+            // Créditos extras expirando nos próximos 7 dias
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+            const { count: expiringCount } = await supabase
+                .from('student_credits')
+                .select('id', { count: 'exact', head: true })
+                .eq('status', 'Disponivel')
+                .gte('expires_at', new Date().toISOString())
+                .lte('expires_at', sevenDaysFromNow.toISOString());
+
+            setExpiringCreditsCount(expiringCount || 0);
+
+            // Treinos individuais pendentes (workouts table)
+            if (organizationId) {
+                const { count: wCount } = await supabase
+                    .from('workouts')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('organization_id', organizationId)
+                    .in('status', ['Pendente', 'PENDENTE', 'Pendente de Ação']);
+                setPendingWorkoutsCount(wCount || 0);
+            } else {
+                setPendingWorkoutsCount(0);
+            }
         };
 
         fetchData();
@@ -68,10 +97,12 @@ export function TopbarActions() {
         const channel = supabase.channel('topbar_alerts')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, fetchData)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_participants', filter: `participant_id=eq.${currentUser.id}` }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'student_credits' }, fetchData)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts', filter: `organization_id=eq.${organizationId}` }, fetchData)
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [supabase, currentUser]);
+    }, [supabase, currentUser, organizationId]);
 
     const handleReadNotification = async (id: string, link: string) => {
         await (supabase.from('notifications') as any).update({ is_read: true }).eq('id', id);
@@ -148,20 +179,77 @@ export function TopbarActions() {
                 <PopoverTrigger asChild>
                     <button className="relative p-2 rounded-full text-slate-400 hover:text-slate-600 hover:-translate-y-0.5 active:scale-95 transition-all">
                         <Bell className="h-5 w-5" />
-                        <Badge count={notifications.length} />
+                        <Badge count={notifications.length + pendingCount + expiringCreditsCount + pendingWorkoutsCount} />
                     </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-0 shadow-xl rounded-2xl border-slate-100 bg-white" align="end" sideOffset={8}>
                     <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
                         <h4 className="text-sm font-bold text-slate-800">Notificações</h4>
-                        {notifications.length > 0 && (
+                        {(notifications.length + pendingCount + expiringCreditsCount + pendingWorkoutsCount) > 0 && (
                             <span className="text-[11px] font-bold bg-amber-50 text-bee-amber px-2 py-0.5 rounded-full border border-amber-200">
-                                {notifications.length} nova{notifications.length > 1 ? 's' : ''}
+                                {notifications.length + pendingCount + expiringCreditsCount + pendingWorkoutsCount} nova{ (notifications.length + pendingCount + expiringCreditsCount + pendingWorkoutsCount) > 1 ? 's' : '' }
                             </span>
                         )}
                     </div>
                     <div className="max-h-72 overflow-y-auto">
-                        {notifications.length === 0 ? (
+                        {pendingCount > 0 && (
+                            <button
+                                onClick={() => router.push('/app/aulas')}
+                                className="w-full text-left px-4 py-3 border-b border-amber-100 bg-amber-50/40 hover:bg-amber-50 transition-colors group flex items-start gap-2.5"
+                            >
+                                <span className="mt-2 h-2.5 w-2.5 rounded-full bg-bee-amber shrink-0 animate-pulse" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-black uppercase tracking-wider text-bee-amber">Avaliação Pendente</p>
+                                    <p className="text-sm font-bold text-slate-800 mt-0.5">Treinos Aguardando Avaliação</p>
+                                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        Você possui {pendingCount} treino{pendingCount > 1 ? 's' : ''} concluído{pendingCount > 1 ? 's' : ''} que necessita{pendingCount > 1 ? 'm' : ' de'} lançamento de presença/falta.
+                                    </p>
+                                    <span className="text-[10px] text-bee-midnight font-bold mt-2 inline-flex items-center gap-1 group-hover:underline">
+                                        Avaliar Check-ins agora →
+                                    </span>
+                                </div>
+                            </button>
+                        )}
+
+                        {pendingWorkoutsCount > 0 && (
+                            <button
+                                onClick={() => router.push('/app/treinos?status=Pendente')}
+                                className="w-full text-left px-4 py-3 border-b border-orange-100 bg-orange-50/40 hover:bg-orange-50 transition-colors group flex items-start gap-2.5"
+                            >
+                                <span className="mt-2 h-2.5 w-2.5 rounded-full bg-bee-amber shrink-0 animate-pulse" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-black uppercase tracking-wider text-bee-amber">Avaliação Pendente</p>
+                                    <p className="text-sm font-bold text-slate-800 mt-0.5">Treinos Individuais Pendentes</p>
+                                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        Você possui {pendingWorkoutsCount} treino{pendingWorkoutsCount > 1 ? 's' : ''} individual{pendingWorkoutsCount > 1 ? 's' : ''} aguardando validação de presença.
+                                    </p>
+                                    <span className="text-[10px] text-bee-midnight font-bold mt-2 inline-flex items-center gap-1 group-hover:underline">
+                                        Validar treinos agora →
+                                    </span>
+                                </div>
+                            </button>
+                        )}
+
+                        {expiringCreditsCount > 0 && (
+                            <button
+                                onClick={() => router.push('/app/alunos')}
+                                className="w-full text-left px-4 py-3 border-b border-rose-100 bg-rose-50/40 hover:bg-rose-50 transition-colors group flex items-start gap-2.5"
+                            >
+                                <span className="mt-2 h-2.5 w-2.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-black uppercase tracking-wider text-rose-500">Crédito Vencendo</p>
+                                    <p className="text-sm font-bold text-slate-800 mt-0.5">Créditos Extras a Expirar</p>
+                                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                                        Há {expiringCreditsCount} crédito{expiringCreditsCount > 1 ? 's' : ''} extra{expiringCreditsCount > 1 ? 's' : ''} com vencimento nos próximos 7 dias.
+                                    </p>
+                                    <span className="text-[10px] text-rose-600 font-bold mt-2 inline-flex items-center gap-1 group-hover:underline">
+                                        Gerenciar Alunos agora →
+                                    </span>
+                                </div>
+                            </button>
+                        )}
+
+                        {notifications.length === 0 && pendingCount === 0 && expiringCreditsCount === 0 && pendingWorkoutsCount === 0 ? (
                             <div className="p-6 flex flex-col items-center text-center gap-2">
                                 <CheckCircle2 className="h-8 w-8 text-emerald-200" />
                                 <p className="text-sm text-slate-400 font-medium">Tudo em dia!</p>

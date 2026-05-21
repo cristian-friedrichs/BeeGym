@@ -30,7 +30,7 @@ import { generateFixedScheduleEvents } from '@/lib/generate-fixed-schedule';
 import { useOrganizationSettings } from '@/hooks/use-organization-settings';
 import { AlertCircle, Calendar, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { format } from 'date-fns';
+import { format, addMonths } from 'date-fns';
 
 const DAYS_OF_WEEK = [
   { value: 'monday', label: 'Segunda' },
@@ -206,6 +206,22 @@ export function SchedulingStep() {
         .single();
 
       if (studentError) throw studentError;
+
+      // 1.1. Insert package credits into student_credits if plan is package
+      if (planType === 'PACKAGE' && totalCredits && totalCredits > 0) {
+        const expDate = addMonths(new Date(), 12).toISOString(); // Default to 12 months validity
+        const creditsToInsert = Array.from({ length: totalCredits }).map(() => ({
+          organization_id: userData.organization_id,
+          student_id: student.id,
+          type: 'Pacote',
+          status: 'Disponivel',
+          expires_at: expDate,
+        }));
+        const { error: creditsError } = await (supabase.from('student_credits' as any) as any).insert(creditsToInsert);
+        if (creditsError) {
+          console.error('Error inserting student package credits:', creditsError);
+        }
+      }
 
       // 2. Create student plan history entry (replaces non-existent 'subscriptions' table)
       const { error: subscriptionError } = await (supabase as any)
