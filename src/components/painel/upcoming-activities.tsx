@@ -43,14 +43,14 @@ export function UpcomingActivities() {
             const todayEnd = new Date();
             todayEnd.setHours(23, 59, 59, 999);
 
-            // 1. Busca TODOS os Treinos do dia (sem filtro de status)
+            // 1. Busca Treinos do dia (excluindo cancelados)
             const { data: workouts, error: wError } = await supabase
                 .from('workouts')
                 .select(`
-                    id, 
-                    title, 
-                    scheduled_at, 
-                    status, 
+                    id,
+                    title,
+                    scheduled_at,
+                    status,
                     notes,
                     goal,
                     students (
@@ -61,6 +61,7 @@ export function UpcomingActivities() {
                 `)
                 .gte('scheduled_at', todayStart.toISOString())
                 .lte('scheduled_at', todayEnd.toISOString())
+                .not('status', 'in', '(CANCELADO,CANCELADA,CANCELLED,CANCELED,Cancelado)')
                 .order('scheduled_at', { ascending: true });
 
             if (wError) console.error("Erro Treinos:", wError);
@@ -83,6 +84,7 @@ export function UpcomingActivities() {
                 .in('type', ['CLASS', 'TRAINING'])
                 .gte('start_datetime', todayStart.toISOString())
                 .lte('start_datetime', todayEnd.toISOString())
+                .not('status', 'in', '(CANCELLED,CANCELED,CANCELADO,CANCELADA)')
                 .order('start_datetime', { ascending: true });
 
             if (cError) {

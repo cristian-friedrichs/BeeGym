@@ -261,6 +261,7 @@ export default function AgendaPage() {
     // Modals
     const [selectionOpen, setSelectionOpen] = useState(false);
     const [classModalOpen, setClassModalOpen] = useState(false);
+    const [classToEditId, setClassToEditId] = useState<string | null>(null);
     const [workoutModalOpen, setWorkoutModalOpen] = useState(false);
     const [workoutToEdit, setWorkoutToEdit] = useState<any>(null);
     const [detailsOpen, setDetailsOpen] = useState(false);
@@ -330,7 +331,8 @@ export default function AgendaPage() {
                 .eq('organization_id', organizationId)
                 .in('type', ['CLASS', 'TRAINING'])
                 .gte('start_datetime', fetchRange.start)
-                .lte('start_datetime', fetchRange.end),
+                .lte('start_datetime', fetchRange.end)
+                .not('status', 'in', '(CANCELLED,CANCELED,CANCELADO,CANCELADA)'),
 
             (supabase as any)
                 .from('workouts')
@@ -343,7 +345,8 @@ export default function AgendaPage() {
                 .eq('organization_id', organizationId)
                 .gte('scheduled_at', fetchRange.start)
                 .lte('scheduled_at', fetchRange.end)
-                .not('scheduled_at', 'is', null),
+                .not('scheduled_at', 'is', null)
+                .not('status', 'in', '(CANCELADO,CANCELADA,CANCELLED,CANCELED,Cancelado)'),
         ]);
 
         const classEvents: AgendaEvent[] = (classRes.data || []).map((row: any) => {
@@ -484,6 +487,7 @@ export default function AgendaPage() {
             setWorkoutToEdit(event);
             setWorkoutModalOpen(true);
         } else {
+            setClassToEditId(event.id);
             setClassModalOpen(true);
         }
     };
@@ -954,10 +958,11 @@ export default function AgendaPage() {
 
             <ClassModal
                 open={classModalOpen}
-                onOpenChange={setClassModalOpen}
+                onOpenChange={open => { setClassModalOpen(open); if (!open) setClassToEditId(null); }}
                 onSuccess={fetchEvents}
-                initialDate={selectedDateForNew}
-                initialTime={selectedDateForNew ? format(selectedDateForNew, 'HH:mm') : undefined}
+                initialDate={classToEditId ? undefined : selectedDateForNew}
+                initialTime={classToEditId ? undefined : (selectedDateForNew ? format(selectedDateForNew, 'HH:mm') : undefined)}
+                eventId={classToEditId ?? undefined}
             />
 
             <WorkoutModal

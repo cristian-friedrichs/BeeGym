@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 import { randomUUID } from 'crypto';
 import { requirePermission } from '@/lib/rbac';
+import { hasServerFeature } from '@/lib/server-plan';
 
 // Resolves the organization_id of the currently authenticated user (server-side).
 async function getCallerOrgId(): Promise<string | null> {
@@ -60,6 +61,19 @@ export async function createTeamMemberAction(formData: {
     // Security: require role when system access is enabled
     if (formData.hasSystemAccess && !formData.roleId) {
         return { success: false, error: 'Selecione um perfil de acesso antes de habilitar o acesso ao sistema.' };
+    }
+
+    // Plan-tier gate: additional members (beyond the first) require multiplos_usuarios.
+    const hasMultiUser = await hasServerFeature(formData.organizationId, 'multiplos_usuarios');
+    if (!hasMultiUser) {
+        const { count } = await supabaseAdmin
+            .from('profiles')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', formData.organizationId)
+            .neq('role', 'INSTRUCTOR');
+        if ((count ?? 0) >= 1) {
+            return { success: false, error: 'Múltiplos usuários estão disponíveis apenas nos planos STUDIO ou superior.' };
+        }
     }
 
     try {

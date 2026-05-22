@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { logActivity } from '@/services/logger';
 import { requirePermission } from '@/lib/rbac';
 import { getCallerContext, assertRowBelongsToOrg } from '@/lib/auth/tenant-guard';
+import { hasServerFeature } from '@/lib/server-plan';
 import { randomUUID } from 'crypto';
 
 /**
@@ -32,6 +33,18 @@ export async function createInstructorAction(formData: {
 }) {
     await requirePermission('settings', 'manage');
     const caller = await getCallerContext();
+
+    // Plan-tier gate: additional instructors (beyond the first) require multiplos_usuarios.
+    const hasMultiUser = await hasServerFeature(caller.organizationId, 'multiplos_usuarios');
+    if (!hasMultiUser) {
+        const { count } = await supabaseAdmin
+            .from('instructors')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', caller.organizationId);
+        if ((count ?? 0) >= 1) {
+            return { success: false, error: 'Múltiplos usuários estão disponíveis apenas nos planos STUDIO ou superior.' };
+        }
+    }
 
     // Validate per-mode requirements
     if (formData.hasSystemAccess) {

@@ -207,6 +207,10 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             toast({ title: 'Campos obrigatórios', description: 'Nome e telefone são obrigatórios.', variant: 'destructive' });
             return;
         }
+        if (!studentToEdit && !formData.plan_id) {
+            toast({ title: 'Selecione um plano', description: 'É obrigatório vincular o aluno a um plano antes de criar.', variant: 'destructive' });
+            return;
+        }
 
         // Block creating a new ACTIVE student if limit is reached
         const willBeActive = formData.active !== false;

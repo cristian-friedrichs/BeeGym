@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { ConfirmDiscardDialog } from '@/components/ui/confirm-discard-dialog';
 import { CLASS_TYPES } from '@/lib/class-definitions';
 import { useOrgList } from '@/hooks/useOrgList';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
 
 interface ClassModalProps {
     open: boolean;
@@ -44,6 +45,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
     const { toast } = useToast();
     const supabase = createClient();
     const { organizationId, isAdmin } = useAuth();
+    const canUseRooms = useFeatureGate('salas');
     const [forceOverbooking, setForceOverbooking] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -89,7 +91,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
             selectedRoom !== '' ||
             selectedInstructor !== '' ||
             capacity !== '' ||
-            time !== (initialTime || '08:00') ||
+            time !== (initialTime ?? '') ||
             duration !== '60'
         );
     }, [open, title, selectedTemplateId, selectedRoom, selectedInstructor, capacity, time, duration, initialTime]);
@@ -113,8 +115,9 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
 
     useEffect(() => {
         if (!open) return;
-        setDate(initialDate || new Date());
-        setTime(initialTime || '08:00');
+        // Reset to creation defaults; edit-mode load below will overwrite if eventId is set.
+        setDate(initialDate);
+        setTime(initialTime ?? '');
         setTitle('');
         setSelectedTemplateId('');
         setSelectedRoom('');
@@ -123,9 +126,47 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
         setDuration('60');
     }, [open, initialDate, initialTime]);
 
+    // Load event when in edit mode
+    useEffect(() => {
+        if (!open || !eventId || !organizationId) return;
+        let cancelled = false;
+        (async () => {
+            const { data, error } = await (supabase as any)
+                .from('calendar_events')
+                .select('id, title, start_datetime, end_datetime, instructor_id, room_id, capacity, class_template_id, status')
+                .eq('id', eventId)
+                .eq('organization_id', organizationId)
+                .single();
+            if (cancelled) return;
+            if (error || !data) {
+                toast({ title: 'Não foi possível carregar a aula', description: error?.message, variant: 'destructive' });
+                onOpenChange(false);
+                return;
+            }
+            const start = new Date(data.start_datetime);
+            const end = data.end_datetime ? new Date(data.end_datetime) : null;
+            setTitle(data.title || '');
+            setDate(start);
+            setTime(format(start, 'HH:mm'));
+            if (end) {
+                const mins = Math.round((end.getTime() - start.getTime()) / 60000);
+                if (mins > 0) setDuration(mins.toString());
+            }
+            setSelectedInstructor(data.instructor_id || '');
+            setSelectedRoom(data.room_id || '');
+            setCapacity(data.capacity != null ? String(data.capacity) : '');
+            setSelectedTemplateId(data.class_template_id || '');
+        })();
+        return () => { cancelled = true; };
+    }, [open, eventId, organizationId]);
+
     async function handleSave() {
         if (!title || !date || !time || !selectedInstructor || !capacity) {
             toast({ title: 'Preencha os campos obrigatórios', variant: 'destructive' });
+            return;
+        }
+        if (!selectedTemplateId) {
+            toast({ title: 'Selecione uma modalidade', description: 'Use "Outros" caso a modalidade não esteja listada.', variant: 'destructive' });
             return;
         }
 
@@ -151,6 +192,24 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 status: 'SCHEDULED',
             };
 
+            // Edit-mode: validate new capacity >= current enrollments
+            if (eventId) {
+                const newCap = parseInt(capacity);
+                const { count: enrolledCount } = await (supabase as any)
+                    .from('event_enrollments')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('event_id', eventId);
+                if (typeof newCap === 'number' && !Number.isNaN(newCap) && (enrolledCount ?? 0) > newCap) {
+                    toast({
+                        title: 'Capacidade insuficiente',
+                        description: `Esta aula já tem ${enrolledCount} aluno(s) inscrito(s). Defina uma capacidade igual ou superior.`,
+                        variant: 'destructive',
+                    });
+                    setLoading(false);
+                    return;
+                }
+            }
+
             if (!forceOverbooking) {
                 const { data: conflictRows } = await (supabase as any).rpc('check_scheduling_conflict', {
                     p_start_time: startDateTime.toISOString(),
@@ -159,6 +218,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                     p_instructor_id: selectedInstructor || null,
                     p_student_id: null,
                     p_room_id: selectedRoom || null,
+                    p_exclude_event_id: eventId ?? null,
                 });
                 const conflict = Array.isArray(conflictRows) ? conflictRows[0] : conflictRows;
                 if (conflict?.has_conflict) {
@@ -172,14 +232,25 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 }
             }
 
-            const { error } = await (supabase as any).from('calendar_events').insert(payload);
-            if (error) throw error;
+            if (eventId) {
+                const { status: _ignored, ...updatePayload } = payload;
+                const { error } = await (supabase as any)
+                    .from('calendar_events')
+                    .update(updatePayload)
+                    .eq('id', eventId)
+                    .eq('organization_id', orgId);
+                if (error) throw error;
+                toast({ title: 'Aula atualizada com sucesso!' });
+            } else {
+                const { error } = await (supabase as any).from('calendar_events').insert(payload);
+                if (error) throw error;
+                toast({ title: 'Aula criada com sucesso!' });
+            }
 
-            toast({ title: 'Aula criada com sucesso!' });
             onSuccess?.();
             onOpenChange(false);
         } catch (error: any) {
-            toast({ title: 'Erro ao criar aula', description: error.message, variant: 'destructive' });
+            toast({ title: eventId ? 'Erro ao atualizar aula' : 'Erro ao criar aula', description: error.message, variant: 'destructive' });
         } finally {
             setLoading(false);
         }
@@ -193,9 +264,11 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                 {/* Header */}
                 <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-100">
                     <DialogTitle className="text-[17px] font-semibold text-slate-900 leading-tight">
-                        Nova Aula
+                        {eventId ? 'Editar Aula' : 'Nova Aula'}
                     </DialogTitle>
-                    <p className="text-sm text-slate-500 mt-0.5">Agende uma aula coletiva para sua turma.</p>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                        {eventId ? 'Atualize os dados desta aula.' : 'Agende uma aula coletiva para sua turma.'}
+                    </p>
                 </DialogHeader>
 
                 {/* Body */}
@@ -203,7 +276,7 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label className={labelCls}>Modalidade</Label>
+                            <Label className={labelCls}>Modalidade *</Label>
                             <Select
                                 value={selectedTemplateId || ''}
                                 onValueChange={v => {
@@ -278,9 +351,12 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <Label className={labelCls}>Sala</Label>
-                            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                                <SelectTrigger className={fieldCls}>
-                                    <SelectValue placeholder="Selecione…" />
+                            <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={!canUseRooms}>
+                                <SelectTrigger
+                                    className={fieldCls}
+                                    title={!canUseRooms ? 'Disponível a partir do plano STUDIO' : undefined}
+                                >
+                                    <SelectValue placeholder={canUseRooms ? 'Selecione…' : 'Disponível no STUDIO+'} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {rooms.map(r => (
@@ -290,6 +366,9 @@ export function ClassModal({ open, onOpenChange, onSuccess, initialDate, initial
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {!canUseRooms && (
+                                <p className="text-xs text-slate-400">Recurso disponível no plano STUDIO ou superior.</p>
+                            )}
                         </div>
                         <div className="space-y-1.5">
                             <Label className={labelCls}>Capacidade *</Label>

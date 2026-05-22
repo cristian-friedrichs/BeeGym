@@ -83,6 +83,7 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState<ClassEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [classToEditId, setClassToEditId] = useState<string | null>(null);
 
   // Guard: O plano agora permite aulas coletivas para todos os administradores SaaS
   /* 
@@ -684,8 +685,9 @@ export default function ClassesPage() {
       {/* Create Modal */}
       <ClassModal
         open={createModalOpen}
-        onOpenChange={setCreateModalOpen}
+        onOpenChange={open => { setCreateModalOpen(open); if (!open) setClassToEditId(null); }}
         onSuccess={fetchClasses}
+        eventId={classToEditId ?? undefined}
       />
 
       {/* Details/Enrollment Modal */}
@@ -696,6 +698,11 @@ export default function ClassesPage() {
           ...selectedEvent,
           eventType: 'CLASS'
         } : null}
+        onEdit={(event: any) => {
+          setDetailsModalOpen(false);
+          setClassToEditId(event.id);
+          setCreateModalOpen(true);
+        }}
         onSuccess={() => {
           fetchClasses(); // Refresh list to update counts
         }}

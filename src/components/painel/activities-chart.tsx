@@ -59,19 +59,21 @@ export function ActivitiesChart() {
                 end = endOfMonth(now);
             }
 
-            // 1. Fetch Workouts
+            // 1. Fetch Workouts (excluindo cancelados)
             const { data: workouts } = await supabase
                 .from('workouts' as any)
                 .select('id, status, scheduled_at')
                 .gte('scheduled_at', start.toISOString())
-                .lte('scheduled_at', end.toISOString());
+                .lte('scheduled_at', end.toISOString())
+                .not('status', 'in', '(CANCELADO,CANCELADA,CANCELLED,CANCELED,Cancelado)');
 
-            // 2. Fetch Classes/Events
+            // 2. Fetch Classes/Events (excluindo cancelados)
             const { data: events } = await supabase
                 .from('calendar_events' as any)
                 .select('id, status, start_datetime, type')
                 .gte('start_datetime', start.toISOString())
-                .lte('start_datetime', end.toISOString());
+                .lte('start_datetime', end.toISOString())
+                .not('status', 'in', '(CANCELLED,CANCELED,CANCELADO,CANCELADA)');
 
             // 3. Aggregate
             const days = eachDayOfInterval({ start, end });

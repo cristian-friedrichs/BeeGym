@@ -29,9 +29,27 @@ export default async function RoomsPage() {
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
     const canManage = isOrgAdmin((profile as any).role);
+    const hasSalasFeature = isActive && plan.allowedFeatures.includes('salas');
 
-    if (!canManage && (!isActive || !plan.allowedFeatures.includes('salas'))) {
+    if (!canManage && !hasSalasFeature) {
         redirect('/app/configuracoes');
+    }
+
+    if (!hasSalasFeature) {
+        return (
+            <div className="p-8 text-center bg-card rounded-lg border space-y-3">
+                <h2 className="text-lg font-semibold text-slate-900">Salas indisponíveis neste plano</h2>
+                <p className="text-sm text-slate-500">
+                    O recurso de gerenciamento de salas está disponível a partir do plano <strong>STUDIO</strong>.
+                </p>
+                <a
+                    href="/app/configuracoes/billing"
+                    className="inline-flex items-center justify-center rounded-lg bg-bee-amber px-4 py-2 text-sm font-medium text-white hover:bg-bee-amber/90"
+                >
+                    Ver planos disponíveis
+                </a>
+            </div>
+        );
     }
 
     // 3. Fetch Units first (Active units for this Org)

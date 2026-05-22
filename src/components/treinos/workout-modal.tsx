@@ -34,6 +34,7 @@ import {
     ctaSecondary,
 } from "@/lib/modal-styles";
 import { useOrgList } from "@/hooks/useOrgList";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 
 interface WorkoutModalProps {
     open: boolean;
@@ -49,6 +50,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const supabase = createClient();
     const { toast } = useToast();
     const { organizationId, user: authUser, isAdmin } = useAuth();
+    const canUseRooms = useFeatureGate('salas');
     const [loading, setLoading] = useState(false);
     const fieldCls = fieldInput + " transition-all";
     const labelCls = fieldLabel;
@@ -58,7 +60,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     // States - Geral
     const [sessionType, setSessionType] = useState<"individual" | "group">("individual");
     const [title, setTitle] = useState("");
-    const [type, setType] = useState("Hipertrofia");
+    const [type, setType] = useState("");
     const [selectedStudentId, setSelectedStudentId] = useState<string>("");
     const [availableStudents, setAvailableStudents] = useState<{ id: string, name: string }[]>([]);
 
@@ -111,7 +113,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
 
     // States - Tempo e Regras
     const [date, setDate] = useState<Date | undefined>(undefined);
-    const [time, setTime] = useState("08:00");
+    const [time, setTime] = useState("");
     const [duration, setDuration] = useState("60");
     const [isMakeup, setIsMakeup] = useState(false);
     const [ignoreOverbooking, setIgnoreOverbooking] = useState(false);
@@ -175,6 +177,14 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const [editScopeDialog, setEditScopeDialog] = useState(false);
     const [pendingEditPayload, setPendingEditPayload] = useState<any>(null);
 
+    // When current plan doesn't include rooms, force external location.
+    useEffect(() => {
+        if (open && !canUseRooms && locationType === 'internal') {
+            setLocationType('external');
+            setRoomId('');
+        }
+    }, [open, canUseRooms]);
+
     // Gerador de Horários (06:00 às 23:00)
     const timeSlots = useMemo(() => {
         const slots = [];
@@ -190,7 +200,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
             if (workoutToEdit) {
                 // MODO EDIÇÃO
                 setTitle(workoutToEdit.title || "");
-                setType(workoutToEdit.type || "Hipertrofia");
+                setType(workoutToEdit.type || "");
                 setIsMakeup(workoutToEdit.is_makeup || false);
                 setSelectedStudentId(workoutToEdit.student_id || defaultStudentId || "");
                 setSessionType("individual");
@@ -209,12 +219,11 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                     }
                 }
             } else {
-                // MODO CRIAÇÃO
-                const now = initialDate || new Date();
-                setDate(now);
-                setTime(initialTime || "08:00");
+                // MODO CRIAÇÃO — sem default de data/hora para forçar escolha consciente
+                setDate(initialDate);
+                setTime(initialTime ?? "");
                 setTitle("");
-                setType("Hipertrofia");
+                setType("");
                 setDuration("60");
                 setSessionType("individual");
                 setIsMakeup(false);
@@ -224,7 +233,7 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                 setInstructorId("");
                 setRoomId("");
                 setRecurrenceType("none");
-                setEndDate(addDays(now, 30));
+                setEndDate(addDays(initialDate ?? new Date(), 30));
                 setSelectedStudentId(defaultStudentId || "");
                 setExercises([]);
             }
@@ -284,6 +293,14 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
     const handleSave = async () => {
         if (!date || !time || !selectedStudentId || (locationType === 'external' && !locationDetails)) {
             toast({ title: "Preencha os campos obrigatórios", variant: "destructive" });
+            return;
+        }
+        if (!instructorId || instructorId === 'none') {
+            toast({ title: "Selecione um instrutor", variant: "destructive" });
+            return;
+        }
+        if (!type) {
+            toast({ title: "Selecione uma modalidade", description: 'Use "Outros" caso não esteja listada.', variant: "destructive" });
             return;
         }
 
@@ -545,16 +562,17 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     </div>
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label className={labelCls}>Modalidade</Label>
+                                    <Label className={labelCls}>Modalidade *</Label>
                                     <Select value={type} onValueChange={setType}>
                                         <SelectTrigger className={fieldCls}>
-                                            <SelectValue />
+                                            <SelectValue placeholder="Selecione…" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                                             <SelectItem value="Hipertrofia" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Hipertrofia</SelectItem>
                                             <SelectItem value="Força" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Força</SelectItem>
                                             <SelectItem value="Cardio" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Cardio</SelectItem>
                                             <SelectItem value="Pilates" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Pilates</SelectItem>
+                                            <SelectItem value="Outros" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium">Outros</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -681,9 +699,28 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                     <Label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
                                         <MapPin className="h-3.5 w-3.5 text-bee-amber" /> Localização
                                     </Label>
-                                    <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
-                                        <button onClick={() => setLocationType('internal')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", locationType === 'internal' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600")}>Interno</button>
-                                        <button onClick={() => setLocationType('external')} className={cn("px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all", locationType === 'external' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600")}>Externo</button>
+                                    <div
+                                        className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm"
+                                        title={!canUseRooms ? 'Salas disponíveis a partir do plano STUDIO' : undefined}
+                                    >
+                                        <button
+                                            type="button"
+                                            disabled={!canUseRooms}
+                                            onClick={() => canUseRooms && setLocationType('internal')}
+                                            className={cn(
+                                                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+                                                locationType === 'internal' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600",
+                                                !canUseRooms && "opacity-50 cursor-not-allowed"
+                                            )}
+                                        >Interno</button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setLocationType('external')}
+                                            className={cn(
+                                                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all",
+                                                locationType === 'external' ? "bg-bee-amber/10 text-bee-amber" : "text-slate-400 hover:text-slate-600"
+                                            )}
+                                        >Externo</button>
                                     </div>
                                 </div>
                                 <Input
@@ -695,16 +732,19 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                 {locationType === 'internal' && (
                                     <div className="space-y-1.5">
                                         <Label className={labelCls}>Sala / Recinto</Label>
-                                        <Select value={roomId} onValueChange={setRoomId}>
-                                            <SelectTrigger className={cn("bg-white", fieldCls)}>
-                                                <SelectValue placeholder="Selecione o local..." />
+                                        <Select value={roomId} onValueChange={setRoomId} disabled={!canUseRooms}>
+                                            <SelectTrigger
+                                                className={cn("bg-white", fieldCls)}
+                                                title={!canUseRooms ? 'Disponível a partir do plano STUDIO' : undefined}
+                                            >
+                                                <SelectValue placeholder={canUseRooms ? "Selecione o local..." : "Disponível no STUDIO+"} />
                                             </SelectTrigger>
                                             <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                                                 <SelectItem value="none" className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium italic opacity-60 text-slate-400">Sem local definido</SelectItem>
                                                 {rooms.map(room => (
-                                                    <SelectItem 
-                                                        key={room.id} 
-                                                        value={room.id} 
+                                                    <SelectItem
+                                                        key={room.id}
+                                                        value={room.id}
                                                         className="py-3 focus:bg-bee-amber/10 rounded-xl mx-1 my-0.5 font-medium"
                                                     >
                                                         {room.name}
@@ -712,6 +752,9 @@ export function WorkoutModal({ open, onOpenChange, defaultStudentId, workoutToEd
                                                 ))}
                                             </SelectContent>
                                         </Select>
+                                        {!canUseRooms && (
+                                            <p className="text-xs text-slate-400">Recurso disponível no plano STUDIO ou superior.</p>
+                                        )}
                                     </div>
                                 )}
                             </div>

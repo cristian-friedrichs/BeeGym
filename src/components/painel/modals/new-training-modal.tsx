@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ExerciseSearch } from '@/components/treinos/exercise-search';
 import { useUnit } from '@/context/UnitContext';
+import { useFeatureGate } from '@/hooks/useFeatureGate';
 
 interface NewTrainingModalProps {
     open: boolean;
@@ -84,6 +85,7 @@ export function NewTrainingModal({
     const { toast } = useToast();
     const supabase = createClient();
     const { organizationId, isAdmin } = useAuth();
+    const canUseRooms = useFeatureGate('salas');
     const { currentUnitId } = useUnit();
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(false);
@@ -105,7 +107,7 @@ export function NewTrainingModal({
     const [selectedTime, setSelectedTime] = useState(initialTime || '');
     const [selectedDuration, setSelectedDuration] = useState('60');
 
-    const [activityType, setActivityType] = useState('Hipertrofia');
+    const [activityType, setActivityType] = useState('');
     const [isMakeup, setIsMakeup] = useState(false);
     const [forceSchedule, setForceSchedule] = useState(false);
 
@@ -118,6 +120,13 @@ export function NewTrainingModal({
     const [datePickerOpen, setDatePickerOpen] = useState(false);
 
     const [exercises, setExercises] = useState<{ name: string; exercise_id: string | null; sets: number; reps: string; weight: string; }[]>([]);
+
+    useEffect(() => {
+        if (open && !canUseRooms && locationType === 'internal') {
+            setLocationType('external');
+            setSelectedRoom('');
+        }
+    }, [open, canUseRooms]);
 
     useEffect(() => {
         if (open) {
@@ -223,7 +232,7 @@ export function NewTrainingModal({
             setTrainingName(''); setSelectedStudent(''); setSelectedStudents([]);
             setSelectedInstructor(''); setSelectedRoom(''); setSelectedDate(undefined);
             setSelectedTime(''); setSelectedDuration('60');
-            setActivityType('Hipertrofia'); setIsMakeup(false); setForceSchedule(false);
+            setActivityType(''); setIsMakeup(false); setForceSchedule(false);
             setIsRecurring(false); setSelectedWeekDays([]); setEndDate(undefined);
             setLocationType('internal'); setAddress(''); setExercises([]);
             setSelectedModalityId('');
@@ -233,7 +242,7 @@ export function NewTrainingModal({
             if (!initialStudentId) setSelectedStudent('');
             setTrainingName(''); setSelectedStudents([]);
             setSelectedInstructor(''); setSelectedRoom(''); setSelectedDuration('60');
-            setActivityType('Hipertrofia'); setIsMakeup(false); setForceSchedule(false);
+            setActivityType(''); setIsMakeup(false); setForceSchedule(false);
             setIsRecurring(false); setSelectedWeekDays([]); setEndDate(undefined);
             setLocationType('internal'); setAddress(''); setExercises([]);
             setSelectedModalityId('');
@@ -246,11 +255,14 @@ export function NewTrainingModal({
         }
         if (modality === 'individual') {
             if (!selectedStudent) { toast({ title: 'Selecione um aluno', variant: 'destructive' }); return; }
+            if (!selectedInstructor) { toast({ title: 'Selecione um instrutor', variant: 'destructive' }); return; }
+            if (!activityType) { toast({ title: 'Selecione uma modalidade', description: 'Use "Outros" caso não esteja listada.', variant: 'destructive' }); return; }
         } else {
             if (!selectedInstructor) { toast({ title: 'Selecione um instrutor', variant: 'destructive' }); return; }
             if (locationType === 'internal' && !selectedRoom) { toast({ title: 'Selecione uma sala', variant: 'destructive' }); return; }
             if (locationType === 'external' && !address) { toast({ title: 'Digite o endereço', variant: 'destructive' }); return; }
             if (selectedStudents.length === 0) { toast({ title: 'Selecione pelo menos 1 aluno', variant: 'destructive' }); return; }
+            if (!selectedModalityId) { toast({ title: 'Selecione uma modalidade', description: 'Use "Outros" caso não esteja listada.', variant: 'destructive' }); return; }
         }
 
         setLoading(true);
@@ -492,10 +504,10 @@ export function NewTrainingModal({
                                         </Select>
                                     </div>
                                     <div className="space-y-1.5">
-                                        <Label className={labelCls}>Modalidade</Label>
+                                        <Label className={labelCls}>Modalidade *</Label>
                                         <Select value={activityType} onValueChange={setActivityType}>
                                             <SelectTrigger className={fieldCls}>
-                                                <SelectValue />
+                                                <SelectValue placeholder="Selecione…" />
                                             </SelectTrigger>
                                             <SelectContent className="max-h-56">
                                                 {modalities.length > 0 ? (
@@ -616,21 +628,50 @@ export function NewTrainingModal({
                                     <div className="space-y-1.5">
                                         <div className="flex items-center justify-between mb-1.5">
                                             <Label className={labelCls}>Local</Label>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className={cn('text-xs cursor-pointer', locationType === 'internal' ? 'text-bee-amber font-medium' : 'text-slate-400')} onClick={() => setLocationType('internal')}>Interno</span>
-                                                <Switch checked={locationType === 'external'} onCheckedChange={c => setLocationType(c ? 'external' : 'internal')} className="h-4 w-7 data-[state=checked]:bg-bee-amber" />
-                                                <span className={cn('text-xs cursor-pointer', locationType === 'external' ? 'text-bee-amber font-medium' : 'text-slate-400')} onClick={() => setLocationType('external')}>Externo</span>
+                                            <div
+                                                className="flex items-center gap-1.5"
+                                                title={!canUseRooms ? 'Salas disponíveis a partir do plano STUDIO' : undefined}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        'text-xs',
+                                                        canUseRooms ? 'cursor-pointer' : 'cursor-not-allowed opacity-50',
+                                                        locationType === 'internal' ? 'text-bee-amber font-medium' : 'text-slate-400'
+                                                    )}
+                                                    onClick={() => canUseRooms && setLocationType('internal')}
+                                                >Interno</span>
+                                                <Switch
+                                                    checked={locationType === 'external'}
+                                                    onCheckedChange={c => canUseRooms && setLocationType(c ? 'external' : 'internal')}
+                                                    disabled={!canUseRooms}
+                                                    className="h-4 w-7 data-[state=checked]:bg-bee-amber"
+                                                />
+                                                <span
+                                                    className={cn(
+                                                        'text-xs cursor-pointer',
+                                                        locationType === 'external' ? 'text-bee-amber font-medium' : 'text-slate-400'
+                                                    )}
+                                                    onClick={() => setLocationType('external')}
+                                                >Externo</span>
                                             </div>
                                         </div>
                                         {locationType === 'internal' ? (
-                                            <Select value={selectedRoom} onValueChange={setSelectedRoom}>
-                                                <SelectTrigger className={fieldCls}>
-                                                    <SelectValue placeholder="Selecione sala…" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {rooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
+                                            <>
+                                                <Select value={selectedRoom} onValueChange={setSelectedRoom} disabled={!canUseRooms}>
+                                                    <SelectTrigger
+                                                        className={fieldCls}
+                                                        title={!canUseRooms ? 'Disponível a partir do plano STUDIO' : undefined}
+                                                    >
+                                                        <SelectValue placeholder={canUseRooms ? 'Selecione sala…' : 'Disponível no STUDIO+'} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {rooms.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                {!canUseRooms && (
+                                                    <p className="text-xs text-slate-400">Recurso disponível no plano STUDIO ou superior.</p>
+                                                )}
+                                            </>
                                         ) : (
                                             <div className="relative">
                                                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />

@@ -39,12 +39,13 @@ const formSchema = z.object({
 
 interface AddMemberModalProps {
     organizationId: string;
+    canCreateMore?: boolean;
 }
 
 const fieldCls = "h-9 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-400 focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20 focus:ring-offset-0 transition-all";
 const labelCls = "text-sm font-medium text-slate-700";
 
-export function AddMemberModal({ organizationId }: AddMemberModalProps) {
+export function AddMemberModal({ organizationId, canCreateMore = true }: AddMemberModalProps) {
     const { toast } = useToast();
     const router = useRouter();
     const [open, setOpen] = useState(false);
@@ -100,9 +101,11 @@ export function AddMemberModal({ organizationId }: AddMemberModalProps) {
 
     return (
         <>
-            <Button 
-                onClick={() => setOpen(true)} 
-                className="gap-2 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black uppercase tracking-widest text-[10px] rounded-full px-6 shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            <Button
+                onClick={() => canCreateMore && setOpen(true)}
+                disabled={!canCreateMore}
+                title={!canCreateMore ? 'Adicionar mais membros requer o plano STUDIO ou superior' : undefined}
+                className="gap-2 bg-bee-amber hover:bg-amber-500 text-bee-midnight font-black uppercase tracking-widest text-[10px] rounded-full px-6 shadow-lg shadow-bee-amber/10 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
                 <UserPlus className="h-4 w-4" />
                 Adicionar Membro

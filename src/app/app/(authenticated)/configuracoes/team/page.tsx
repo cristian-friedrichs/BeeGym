@@ -29,8 +29,9 @@ export default async function TeamPage() {
     const { plan, isActive } = await getServerPlan(profile.organization_id);
 
     const canManage = isOrgAdmin((profile as any).role);
+    const hasMultiUser = isActive && plan.allowedFeatures.includes('multiplos_usuarios');
 
-    if (!canManage && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
+    if (!canManage && !hasMultiUser) {
         redirect('/app/configuracoes');
     }
 
@@ -56,11 +57,14 @@ export default async function TeamPage() {
         active: m.status === 'ACTIVE',
     }));
 
+    const canCreateMore = hasMultiUser || filteredMembers.length === 0;
+
     return (
         <TeamList
             initialUsers={mappedMembers}
             currentOrgId={profile.organization_id}
             currentUserId={user.id}
+            canCreateMore={canCreateMore}
         />
     );
 }

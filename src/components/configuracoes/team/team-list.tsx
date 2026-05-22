@@ -35,13 +35,14 @@ interface TeamListProps {
     initialUsers: any[];
     currentOrgId: string;
     currentUserId?: string;
+    canCreateMore?: boolean;
 }
 
 function isOwner(member: any): boolean {
     return member.role === 'OWNER' || member.role === 'PROPRIETARY';
 }
 
-export function TeamList({ initialUsers, currentOrgId, currentUserId }: TeamListProps) {
+export function TeamList({ initialUsers, currentOrgId, currentUserId, canCreateMore = true }: TeamListProps) {
     const router = useRouter();
     const { toast } = useToast();
     const [users, setUsers] = useState<any[]>(initialUsers);
@@ -107,7 +108,7 @@ export function TeamList({ initialUsers, currentOrgId, currentUserId }: TeamList
             <SectionHeader
                 title="Equipe & Permissões"
                 subtitle="Gerencie os membros da sua equipe e seus níveis de acesso"
-                action={currentOrgId && <AddMemberModal organizationId={currentOrgId} />}
+                action={currentOrgId && <AddMemberModal organizationId={currentOrgId} canCreateMore={canCreateMore} />}
             />
 
             <Card className="rounded-[2rem] shadow-sm border-slate-100 overflow-hidden bg-white">

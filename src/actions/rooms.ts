@@ -6,6 +6,7 @@ import { logActivity } from '@/services/logger';
 
 import { requirePermission } from '@/lib/rbac';
 import { assertRowBelongsToOrg, getCallerContext } from '@/lib/auth/tenant-guard';
+import { hasServerFeature } from '@/lib/server-plan';
 
 export async function createRoomAction(formData: {
     name: string;
@@ -26,6 +27,12 @@ export async function createRoomAction(formData: {
         .single();
 
     if (!profile?.organization_id) return { success: false, error: 'Organização não encontrada' };
+
+    // Plan-tier gate: rooms are STUDIO+ only.
+    const canUseSalas = await hasServerFeature(profile.organization_id, 'salas');
+    if (!canUseSalas) {
+        return { success: false, error: 'Salas estão disponíveis apenas nos planos STUDIO ou superior.' };
+    }
 
     // Resolve unit_id: ensure it points to a real unit row (not the org "master unit").
     // If the provided unit_id doesn't exist in this org's units, fall back to the main/first unit.

@@ -22,8 +22,9 @@ export default async function InstructorsPage() {
 
     const { plan, isActive } = await getServerPlan(profile.organization_id);
     const canManage = isOrgAdmin((profile as any).role);
+    const hasMultiUser = isActive && plan.allowedFeatures.includes('multiplos_usuarios');
 
-    if (!canManage && (!isActive || !plan.allowedFeatures.includes('multiplos_usuarios'))) {
+    if (!canManage && !hasMultiUser) {
         redirect('/app/configuracoes');
     }
 
@@ -75,11 +76,14 @@ export default async function InstructorsPage() {
             .order('name'),
     ]);
 
+    const canCreateMore = hasMultiUser || (instructors ?? []).length === 0;
+
     return (
         <InstructorList
             instructors={enriched as any[]}
             units={(units ?? []) as any[]}
             roles={(roles ?? []) as any[]}
+            canCreateMore={canCreateMore}
         />
     );
 }

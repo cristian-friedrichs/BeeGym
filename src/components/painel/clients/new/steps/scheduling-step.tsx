@@ -166,6 +166,16 @@ export function SchedulingStep() {
 
       if (!userData?.organization_id) throw new Error('Organization not found');
 
+      if (!formData.plan?.planId) {
+        toast({
+          title: 'Selecione um plano',
+          description: 'É obrigatório vincular o aluno a um plano antes de criar.',
+          variant: 'destructive',
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       // Prepare fixed schedule if applicable
       const fixedSchedule = schedulingMode === 'fixed'
         ? selectedDays.map(day => ({
