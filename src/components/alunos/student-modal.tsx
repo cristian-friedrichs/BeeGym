@@ -176,17 +176,16 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             if (!authUser) return;
             const fileExt = file.name.split('.').pop();
             const fileName = `${authUser.id}/${Math.random()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('student-assets')
-                .upload(filePath, file);
+                .from('students')
+                .upload(fileName, file, { upsert: true });
 
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage
-                .from('student-assets')
-                .getPublicUrl(filePath);
+                .from('students')
+                .getPublicUrl(fileName);
 
             setFormData(prev => ({ ...prev, avatar_url: publicUrl }));
             setPreviewUrl(publicUrl);
