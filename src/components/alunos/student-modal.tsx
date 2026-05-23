@@ -79,7 +79,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
         gender: 'not_informed',
         birth_date: '',
         plan_id: '',
-        observations: '',
+        objective: '',
         avatar_url: null as string | null,
         address_zip: '',
         address_street: '',
@@ -98,7 +98,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
             gender: studentToEdit?.gender || 'not_informed',
             birth_date: studentToEdit?.birth_date?.split('T')[0] || '',
             plan_id: studentToEdit?.plan_id || '',
-            observations: studentToEdit?.observations || '',
+            objective: studentToEdit?.objective || '',
             avatar_url: studentToEdit?.avatar_url || null,
             address_zip: studentToEdit?.address_zip || '',
             address_street: studentToEdit?.address_street || '',
@@ -126,7 +126,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                     gender: studentToEdit.gender || 'not_informed',
                     birth_date: studentToEdit.birth_date?.split('T')[0] || '',
                     plan_id: studentToEdit.plan_id || '',
-                    observations: studentToEdit.observations || '',
+                    objective: studentToEdit.objective || '',
                     avatar_url: studentToEdit.avatar_url || null,
                     address_zip: studentToEdit.address_zip || '',
                     address_street: studentToEdit.address_street || '',
@@ -144,7 +144,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                     gender: 'not_informed',
                     birth_date: '',
                     plan_id: '',
-                    observations: '',
+                    objective: '',
                     avatar_url: null,
                     address_zip: '',
                     address_street: '',
@@ -235,7 +235,7 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                 gender: formData.gender,
                 birth_date: formData.birth_date || null,
                 plan_id: formData.plan_id || null,
-                objective: formData.observations || null,
+                objective: formData.objective || null,
                 avatar_url: formData.avatar_url,
                 address_zip: formData.address_zip || null,
                 address_street: formData.address_street || null,
@@ -475,13 +475,25 @@ export function StudentModal({ open, onOpenChange, studentToEdit, onSuccess }: S
                         <h3 className={sectionTitle}>Outros</h3>
                         <div className="space-y-4">
                             <div>
-                                <Label className={fieldLabel}>Observações</Label>
-                                <Input
-                                    placeholder="Notas internas sobre o aluno..."
-                                    value={formData.observations}
-                                    onChange={(e) => setFormData({ ...formData, observations: e.target.value })}
-                                    className={fieldInput}
-                                />
+                                <Label className={fieldLabel}>Objetivo</Label>
+                                <Select
+                                    value={formData.objective}
+                                    onValueChange={(v) => setFormData({ ...formData, objective: v })}
+                                >
+                                    <SelectTrigger className={fieldInput}>
+                                        <SelectValue placeholder="Selecione o objetivo..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Hipertrofia">Hipertrofia</SelectItem>
+                                        <SelectItem value="Emagrecimento">Emagrecimento</SelectItem>
+                                        <SelectItem value="Condicionamento Físico">Condicionamento Físico</SelectItem>
+                                        <SelectItem value="Força">Força</SelectItem>
+                                        <SelectItem value="Saúde e Bem-estar">Saúde e Bem-estar</SelectItem>
+                                        <SelectItem value="Reabilitação">Reabilitação</SelectItem>
+                                        <SelectItem value="Flexibilidade">Flexibilidade</SelectItem>
+                                        <SelectItem value="Outro">Outro</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl">
