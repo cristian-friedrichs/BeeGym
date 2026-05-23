@@ -55,18 +55,19 @@ const WORKOUT_STATUS: Record<string, { label: string; cls: string; icon: React.R
 };
 
 const INVOICE_STATUS: Record<string, { label: string; cls: string }> = {
-    PAID:     { label: 'Pago',      cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    PAGO:     { label: 'Pago',      cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    OVERDUE:  { label: 'Atrasado',  cls: 'bg-red-50 text-red-500 border-red-100' },
-    Atrasado: { label: 'Atrasado',  cls: 'bg-red-50 text-red-500 border-red-100' },
-    PENDENTE: { label: 'Pendente',  cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-    Pendente: { label: 'Pendente',  cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-    CANCELADO:{ label: 'Cancelado', cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+    PAID:     { label: 'Pago',       cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    PAGO:     { label: 'Pago',       cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    OVERDUE:  { label: 'Atrasado',   cls: 'bg-red-50 text-red-500 border-red-100' },
+    Atrasado: { label: 'Atrasado',   cls: 'bg-red-50 text-red-500 border-red-100' },
+    ATRASADO: { label: 'Atrasado',   cls: 'bg-red-50 text-red-500 border-red-100' },
+    PENDENTE: { label: 'Programado', cls: 'bg-amber-50 text-amber-600 border-amber-100' },
+    Pendente: { label: 'Programado', cls: 'bg-amber-50 text-amber-600 border-amber-100' },
+    CANCELADO:{ label: 'Cancelado',  cls: 'bg-slate-100 text-slate-500 border-slate-200' },
 };
 
 // Map canonical status values to display labels for FilterBar
 const INVOICE_STATUS_LABELS: Record<string, string> = {
-    PAGO: 'Pago', Atrasado: 'Atrasado', PENDENTE: 'Pendente', CANCELADO: 'Cancelado',
+    PAGO: 'Pago', ATRASADO: 'Atrasado', Atrasado: 'Atrasado', PENDENTE: 'Programado', CANCELADO: 'Cancelado',
 };
 
 const MONTHS = [

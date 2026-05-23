@@ -73,9 +73,9 @@ export function ImportantAlerts() {
 
                 // 3. Financial Overdue
                 const { count: overdueCount, error: financialError } = await supabase
-                    .from('invoices' as any)
+                    .from('vw_payments' as any)
                     .select('id', { count: 'exact', head: true })
-                    .in('status', ['OVERDUE', 'Atrasado', 'Overdue', 'ATRASADO']);
+                    .eq('dynamic_status', 'ATRASADO');
 
                 if (!financialError && overdueCount && overdueCount > 0) {
                     newAlerts.push({

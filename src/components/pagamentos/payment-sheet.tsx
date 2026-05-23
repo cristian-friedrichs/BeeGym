@@ -23,10 +23,10 @@ interface PaymentSheetProps {
 }
 
 const STATUS_INFO: Record<string, { label: string; cls: string }> = {
-    PAGO:      { label: 'Pago',      cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
-    PENDENTE:  { label: 'Pendente',  cls: 'bg-amber-50 text-amber-600 border-amber-100' },
-    ATRASADO:  { label: 'Atrasado',  cls: 'bg-red-50 text-red-600 border-red-100' },
-    CANCELADO: { label: 'Cancelado', cls: 'bg-slate-100 text-slate-500 border-slate-200' },
+    PAGO:      { label: 'Pago',       cls: 'bg-emerald-50 text-emerald-600 border-emerald-100' },
+    PENDENTE:  { label: 'Programado', cls: 'bg-amber-50 text-amber-600 border-amber-100' },
+    ATRASADO:  { label: 'Atrasado',   cls: 'bg-red-50 text-red-600 border-red-100' },
+    CANCELADO: { label: 'Cancelado',  cls: 'bg-slate-100 text-slate-500 border-slate-200' },
 };
 
 const fieldCls = 'h-9 rounded-xl border-slate-200 bg-white text-sm focus:border-bee-amber focus:ring-2 focus:ring-bee-amber/20';

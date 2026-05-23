@@ -93,8 +93,8 @@ export default function StudentInvoicesPage() {
                     {filteredInvoices.length > 0 ? (
                         <div className="divide-y divide-slate-50">
                             {filteredInvoices.map((inv) => {
-                                const isPaid = inv.status === 'PAID' || inv.status === 'Pago';
-                                const isOverdue = inv.status === 'OVERDUE' || inv.status === 'Atrasado';
+                                const isPaid = inv.status === 'PAID' || inv.status === 'PAGO' || inv.status === 'Pago';
+                                const isOverdue = inv.status === 'OVERDUE' || inv.status === 'ATRASADO' || inv.status === 'Atrasado';
 
                                 return (
                                     <div key={inv.id} className="p-4 hover:bg-slate-50/50 transition-colors flex items-center justify-between group">
@@ -117,7 +117,7 @@ export default function StudentInvoicesPage() {
                                             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter ${isPaid ? 'bg-emerald-50 text-emerald-600' :
                                                 isOverdue ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-bee-amber'
                                                 }`}>
-                                                {inv.status}
+                                                {isPaid ? 'Pago' : isOverdue ? 'Atrasado' : inv.status === 'CANCELADO' ? 'Cancelado' : 'Programado'}
                                             </span>
                                             <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-bee-amber transition-colors" />
                                         </div>

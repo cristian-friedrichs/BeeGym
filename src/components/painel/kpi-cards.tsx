@@ -71,15 +71,15 @@ export function KpiCards() {
 
                 if (invoices) {
                     revenue = invoices
-                        .filter((inv: any) => ['PAID', 'PAGO', 'Pago', 'Paid'].includes(inv.status.toUpperCase() || inv.status))
+                        .filter((inv: any) => ['PAGO'].includes(inv.status?.toUpperCase?.() ?? inv.status))
                         .reduce((acc, curr) => acc + Number(curr.amount || 0), 0);
                 }
 
                 // Fetch ALL Overdue/Pending invoices for Pending Payments (Historical)
                 const { data: overdueInvoicesData } = await supabase
-                    .from('invoices' as any)
+                    .from('vw_payments' as any)
                     .select('amount')
-                    .in('status', ['OVERDUE', 'Atrasado', 'Overdue', 'PENDENTE', 'Pendente', 'Pending']);
+                    .in('dynamic_status', ['ATRASADO', 'PENDENTE']);
 
                 const overdueInvoices = overdueInvoicesData as any[] | null;
 
@@ -138,7 +138,7 @@ export function KpiCards() {
             />
 
             <KpiCard
-                title="Pendentes"
+                title="A Receber"
                 value={formatCurrencyK(metrics.pendingPayments)}
                 tooltip={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.pendingPayments)}
                 icon={<AlertCircle className="h-6 w-6" />}

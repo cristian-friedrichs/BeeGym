@@ -46,7 +46,7 @@ const REPORT_TYPES = [
         name: 'Financeiro',
         description: 'Faturas, pagamentos e vencimentos',
         icon: DollarSign,
-        statuses: ['TODOS', 'PAGO', 'PENDENTE', 'CANCELADO'],
+        statuses: ['TODOS', 'PAGO', 'PENDENTE', 'ATRASADO', 'CANCELADO'],
         accentClass: 'text-emerald-600',
         bgClass: 'bg-emerald-50',
         borderClass: 'border-emerald-200',
@@ -88,32 +88,33 @@ const REPORT_TYPES = [
 ];
 
 const STATUS_MAP: Record<string, string> = {
-    'ACTIVE': 'ATIVO', 'INACTIVE': 'INATIVO', 'OVERDUE': 'PAGAMENTO PENDENTE',
+    'ACTIVE': 'ATIVO', 'INACTIVE': 'INATIVO', 'OVERDUE': 'ATRASADO',
     'COMPLETED': 'CONCLUÍDO', 'Concluido': 'CONCLUÍDO',
     'SCHEDULED': 'AGENDADO', 'Agendado': 'AGENDADO',
     'CANCELLED': 'CANCELADO', 'CANCELADO': 'CANCELADO', 'Cancelado': 'CANCELADO',
-    'PAID': 'PAGO', 'PAGO': 'PAGO', 'PENDENTE': 'PENDENTE',
+    'PAID': 'PAGO', 'PAGO': 'PAGO', 'PENDENTE': 'PROGRAMADO', 'ATRASADO': 'ATRASADO',
     'Confirmado': 'CONFIRMADO', 'Faltou': 'FALTOU',
 };
 
 const DB_STATUS_MAP: Record<string, string> = {
-    'ATIVO': 'ACTIVE', 'INATIVO': 'INACTIVE', 'PAGAMENTO PENDENTE': 'OVERDUE',
+    'ATIVO': 'ACTIVE', 'INATIVO': 'INACTIVE', 'ATRASADO': 'ATRASADO',
     'CONCLUÍDO': 'Concluido', 'AGENDADO': 'Agendado',
     'CANCELADO': 'Cancelado', 'CONFIRMADO': 'Confirmado', 'FALTOU': 'Faltou',
-    'PAGO': 'PAGO', 'PENDENTE': 'PENDENTE',
+    'PAGO': 'PAGO', 'PROGRAMADO': 'PENDENTE', 'PENDENTE': 'PENDENTE',
 };
 
 const STATUS_BADGE: Record<string, string> = {
-    'PAGO': 'bg-emerald-100 text-emerald-700',
-    'ATIVO': 'bg-emerald-100 text-emerald-700',
-    'CONCLUÍDO': 'bg-emerald-100 text-emerald-700',
+    'PAGO':       'bg-emerald-100 text-emerald-700',
+    'ATIVO':      'bg-emerald-100 text-emerald-700',
+    'CONCLUÍDO':  'bg-emerald-100 text-emerald-700',
     'CONFIRMADO': 'bg-emerald-100 text-emerald-700',
-    'PENDENTE': 'bg-orange-100 text-orange-700',
-    'AGENDADO': 'bg-blue-100 text-blue-700',
-    'PAGAMENTO PENDENTE': 'bg-orange-100 text-orange-700',
-    'CANCELADO': 'bg-slate-100 text-slate-600',
-    'FALTOU': 'bg-red-100 text-red-700',
-    'INATIVO': 'bg-slate-100 text-slate-600',
+    'PROGRAMADO': 'bg-orange-100 text-orange-700',
+    'PENDENTE':   'bg-orange-100 text-orange-700',
+    'AGENDADO':   'bg-blue-100 text-blue-700',
+    'ATRASADO':   'bg-red-100 text-red-700',
+    'CANCELADO':  'bg-slate-100 text-slate-600',
+    'FALTOU':     'bg-red-100 text-red-700',
+    'INATIVO':    'bg-slate-100 text-slate-600',
 };
 
 function computeKpis(tab: string, rows: any[]) {
@@ -121,8 +122,8 @@ function computeKpis(tab: string, rows: any[]) {
 
     if (tab === 'finance') {
         const pago = rows.filter(r => r['Status'] === 'PAGO');
-        const pendente = rows.filter(r => r['Status'] === 'PENDENTE');
-        const atrasado = rows.filter(r => r['Status'] === 'PAGAMENTO PENDENTE');
+        const pendente = rows.filter(r => r['Status'] === 'PROGRAMADO');
+        const atrasado = rows.filter(r => r['Status'] === 'ATRASADO');
         const totalPago = pago.reduce((acc, r) => acc + parseFloat(r['Valor (R$)'] || '0'), 0);
         return [
             { title: 'Total de registros', value: String(rows.length), icon: <BarChart3 className="w-5 h-5" /> },
@@ -134,7 +135,7 @@ function computeKpis(tab: string, rows: any[]) {
     if (tab === 'students') {
         const ativos = rows.filter(r => r['Status'] === 'ATIVO').length;
         const inativos = rows.filter(r => r['Status'] === 'INATIVO').length;
-        const atrasados = rows.filter(r => r['Status'] === 'PAGAMENTO PENDENTE').length;
+        const atrasados = rows.filter(r => r['Status'] === 'ATRASADO').length;
         return [
             { title: 'Total de alunos', value: String(rows.length), icon: <Users className="w-5 h-5" /> },
             { title: 'Ativos', value: String(ativos), icon: <CheckCircle2 className="w-5 h-5" /> },
@@ -208,7 +209,7 @@ export default function RelatoriosPage() {
                 if (activeTab === 'students' || activeTab === 'finance') {
                     if (status === 'ATIVO') dbStatus = 'ACTIVE';
                     else if (status === 'INATIVO') dbStatus = 'INACTIVE';
-                    else if (status === 'ATRASADO' || status === 'PAGAMENTO PENDENTE') dbStatus = 'OVERDUE';
+                    else if (status === 'ATRASADO') dbStatus = 'ATRASADO';
                     else dbStatus = status;
                 } else {
                     dbStatus = DB_STATUS_MAP[status] || status;

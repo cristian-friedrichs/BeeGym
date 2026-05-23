@@ -96,8 +96,8 @@ export default function PagamentosPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'PAGO': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-green-100 text-green-700 rounded-md">Realizado</span>;
-      case 'PENDENTE': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-orange-100 text-orange-700 rounded-md">Pendente</span>;
+      case 'PAGO': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-green-100 text-green-700 rounded-md">Pago</span>;
+      case 'PENDENTE': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-orange-100 text-orange-700 rounded-md">Programado</span>;
       case 'ATRASADO': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-red-100 text-red-700 rounded-md animate-pulse">Atrasado</span>;
       case 'CANCELADO': return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-slate-800 text-slate-100 rounded-md">Cancelado</span>;
       default: return <span className="px-2.5 py-1 text-[11px] font-bold uppercase bg-slate-100 text-slate-600 rounded-md">{status}</span>;
@@ -141,11 +141,11 @@ export default function PagamentosPage() {
         />
 
         <KpiCard
-          title="A Receber"
+          title="Programado"
           value={formatCurrencyK(kpis.pendenteTotal)}
           icon={<CreditCard className="h-6 w-6" />}
           color="yellow"
-          tooltip={`${kpis.countPendente} faturas · ${formatCurrency(kpis.pendenteTotal)}`}
+          tooltip={`${kpis.countPendente} faturas programadas · ${formatCurrency(kpis.pendenteTotal)}`}
         />
 
         <KpiCard
