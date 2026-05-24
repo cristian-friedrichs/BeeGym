@@ -86,10 +86,10 @@ export function RoleForm({ onSubmit, initialData, isLoading: externalIsLoading, 
     }
 
     function toggleAllModule(moduleKey: keyof Permissions, value: boolean) {
-        const module = PERMISSION_MODULES.find((m) => m.key === moduleKey);
-        if (!module) return;
+        const permissionModule = PERMISSION_MODULES.find((m) => m.key === moduleKey);
+        if (!permissionModule) return;
         const updated: Record<string, boolean> = {};
-        module.actions.forEach((a) => {
+        permissionModule.actions.forEach((a) => {
             updated[a.key] = value;
         });
         setPermissions((prev) => ({
@@ -99,9 +99,9 @@ export function RoleForm({ onSubmit, initialData, isLoading: externalIsLoading, 
     }
 
     function isModuleFullyEnabled(moduleKey: keyof Permissions): boolean {
-        const module = PERMISSION_MODULES.find((m) => m.key === moduleKey);
-        if (!module) return false;
-        return module.actions.every((a) => (permissions[moduleKey] as any)?.[a.key] === true);
+        const permissionModule = PERMISSION_MODULES.find((m) => m.key === moduleKey);
+        if (!permissionModule) return false;
+        return permissionModule.actions.every((a) => (permissions[moduleKey] as any)?.[a.key] === true);
     }
 
     async function handleFormSubmit(values: FormValues) {

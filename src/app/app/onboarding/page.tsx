@@ -381,7 +381,7 @@ export default function OnboardingPage() {
                 {/* Footer Quote */}
                 <footer className="mt-20 text-center border-t border-white/5 pt-10">
                     <p className="text-slate-600 text-sm italic font-medium">
-                        "Onde o foco encontra a disciplina, a tecnologia encontra a eficiência."
+                        &quot;Onde o foco encontra a disciplina, a tecnologia encontra a eficiência.&quot;
                     </p>
                 </footer>
             </div>

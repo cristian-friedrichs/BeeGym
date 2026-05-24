@@ -89,10 +89,6 @@ export default function LogsPage() {
         },
     });
 
-    useEffect(() => {
-        loadInitialData();
-    }, []);
-
     async function loadInitialData() {
         setIsLoading(true);
 
@@ -110,6 +106,10 @@ export default function LogsPage() {
 
         setIsLoading(false);
     }
+
+    useEffect(() => {
+        loadInitialData();
+    }, []);
 
     async function onFilter(values: FilterFormValues) {
         setIsFiltering(true);

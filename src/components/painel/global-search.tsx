@@ -109,7 +109,7 @@ export function GlobalSearch() {
             {open && query.trim() && (
                 <div className="absolute top-full mt-2 left-0 right-0 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden max-h-[400px] overflow-y-auto">
                     {results.length === 0 && !loading && (
-                        <div className="p-6 text-center text-sm text-slate-400">Nenhum resultado para "<span className="font-semibold text-slate-600">{query}</span>"</div>
+                        <div className="p-6 text-center text-sm text-slate-400">Nenhum resultado para &quot;<span className="font-semibold text-slate-600">{query}</span>&quot;</div>
                     )}
                     {(['student', 'class', 'workout'] as const).map(type => {
                         const items = grouped[type];
