@@ -21,7 +21,7 @@ const formatCurrency = (value: number) =>
 
 const RADIAN = Math.PI / 180;
 
-const renderLabel = (dataKey: 'value' | 'receita') => ({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }: any) => {
+const renderLabel = (dataKey: 'value' | 'receita') => function TipoClienteChartLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, payload }: any) {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);

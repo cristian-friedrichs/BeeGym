@@ -243,7 +243,7 @@ export function RoleList({ initialRoles, organizationId }: RoleListProps) {
                         <p className="text-sm text-slate-500 mt-0.5">Esta ação é permanente e irreversível.</p>
                     </DialogHeader>
                     <div className="px-6 py-5 space-y-2">
-                        <p className="text-sm text-slate-600 leading-relaxed">Tem certeza que deseja excluir o perfil <span className="font-semibold text-slate-900">"{deletingRole?.name}"</span>?</p>
+                        <p className="text-sm text-slate-600 leading-relaxed">Tem certeza que deseja excluir o perfil <span className="font-semibold text-slate-900">&quot;{deletingRole?.name}&quot;</span>?</p>
                         <p className="text-sm text-slate-400">Se houver membros vinculados, a exclusão será bloqueada.</p>
                     </div>
                     <div className="px-6 pb-5 pt-4 border-t border-slate-100 flex items-center justify-between">

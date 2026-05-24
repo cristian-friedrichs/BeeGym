@@ -148,7 +148,7 @@ export default function SupportPage() {
                             <div className="space-y-1">
                                 <p className="text-lg font-bold text-deep-midnight">Nenhum chamado encontrado</p>
                                 <p className="text-sm text-slate-500 max-w-xs">
-                                    Você ainda não abriu nenhum chamado. Clique em "Novo Chamado" para começar.
+                                    Você ainda não abriu nenhum chamado. Clique em &quot;Novo Chamado&quot; para começar.
                                 </p>
                             </div>
                         </CardContent>
