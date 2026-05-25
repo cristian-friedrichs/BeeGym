@@ -1,5 +1,8 @@
 import { spawn } from 'node:child_process';
+import { mkdir, writeFile } from 'node:fs/promises';
 import process from 'node:process';
+import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
 
 const host = '127.0.0.1';
 const port = Number.parseInt(process.env.BEEGYM_SMOKE_PORT ?? '9002', 10);
@@ -10,12 +13,26 @@ const pollIntervalMs = 1000;
 const routes = ['/', '/login'];
 const isWindows = process.platform === 'win32';
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const reportPath = new URL('./reports/latest-smoke-report.json', import.meta.url);
+const reportFilePath = fileURLToPath(reportPath);
+const dep0190Warning = {
+  code: 'DEP0190',
+  message:
+    'Node.js may print DEP0190 on Windows because this smoke test starts the fixed npm command with shell: true. This is documented as a temporary non-blocking warning for this local smoke test.',
+};
 
 let serverProcess;
+const observedWarnings = [];
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+process.on('warning', (warning) => {
+  if (warning.code === 'DEP0190') {
+    observedWarnings.push(dep0190Warning);
+  }
+});
 
 function startServer() {
   serverProcess = spawn(npmCommand, ['run', 'start', '--', '-p', String(port), '-H', host], {
@@ -110,24 +127,44 @@ function assertNoCriticalHtml(route, html) {
 }
 
 async function checkRoute(route) {
-  const url = `${baseUrl}${route}`;
-  const response = await fetchWithTimeout(url);
+  const url = new URL(route, baseUrl).toString();
+  const startedAt = performance.now();
+  let statusCode = null;
+  let failureMessage = null;
 
-  if (response.status >= 500) {
-    throw new Error(`Route ${route} returned HTTP ${response.status}.`);
+  try {
+    const response = await fetchWithTimeout(url);
+    statusCode = response.status;
+
+    if (response.status >= 500) {
+      throw new Error(`Route ${route} returned HTTP ${response.status}.`);
+    }
+
+    if (response.status >= 400) {
+      throw new Error(`Route ${route} returned HTTP ${response.status}.`);
+    }
+
+    const html = await response.text();
+    if (!html.trim()) {
+      throw new Error(`Route ${route} returned an empty response.`);
+    }
+
+    assertNoCriticalHtml(route, html);
+    console.log(`OK ${route} -> HTTP ${response.status}`);
+  } catch (error) {
+    failureMessage = error.message;
   }
 
-  if (response.status >= 400) {
-    throw new Error(`Route ${route} returned HTTP ${response.status}.`);
-  }
-
-  const html = await response.text();
-  if (!html.trim()) {
-    throw new Error(`Route ${route} returned an empty response.`);
-  }
-
-  assertNoCriticalHtml(route, html);
-  console.log(`OK ${route} -> HTTP ${response.status}`);
+  return {
+    result: {
+      path: route,
+      url,
+      statusCode,
+      durationMs: Math.round(performance.now() - startedAt),
+      passed: failureMessage === null,
+    },
+    error: failureMessage,
+  };
 }
 
 async function stopServer() {
@@ -159,16 +196,56 @@ async function stopServer() {
   }
 }
 
+async function writeHealthReport(report) {
+  await mkdir(new URL('./reports/', import.meta.url), { recursive: true });
+  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+}
+
 async function main() {
+  const startedAt = performance.now();
+  const report = {
+    timestamp: new Date().toISOString(),
+    environment: {
+      baseUrl,
+      type: 'local',
+    },
+    status: 'failed',
+    routes: [],
+    durationMs: 0,
+    error: null,
+    warnings: isWindows ? [dep0190Warning] : [],
+  };
+
   console.log(`Starting BeeGym synthetic smoke server at ${baseUrl}`);
-  startServer();
-  await waitForServer();
+  try {
+    startServer();
+    await waitForServer();
 
-  for (const route of routes) {
-    await checkRoute(route);
+    for (const route of routes) {
+      const { result, error } = await checkRoute(route);
+      report.routes.push(result);
+
+      if (error) {
+        throw new Error(error);
+      }
+    }
+
+    report.status = 'passed';
+    console.log('BeeGym synthetic smoke passed.');
+  } catch (error) {
+    report.error = error.message;
+    throw error;
+  } finally {
+    for (const warning of observedWarnings) {
+      if (!report.warnings.some((item) => item.code === warning.code)) {
+        report.warnings.push(warning);
+      }
+    }
+
+    report.durationMs = Math.round(performance.now() - startedAt);
+    await writeHealthReport(report);
+    console.log(`BeeGym synthetic smoke report written to ${reportFilePath}`);
   }
-
-  console.log('BeeGym synthetic smoke passed.');
 }
 
 let exitCode = 0;

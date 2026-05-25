@@ -57,3 +57,4 @@ test-admin*.js
 
 # TestSprite temporary files and generated outputs
 /testsprite_tests/tmp/
+/testsprite_tests/basic-synthetic-monitoring/reports/
