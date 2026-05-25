@@ -54,3 +54,6 @@ tsc_output.txt
 cert-correto.b64
 test-admin*.js
 .claude/
+
+# TestSprite temporary files and generated outputs
+/testsprite_tests/tmp/
