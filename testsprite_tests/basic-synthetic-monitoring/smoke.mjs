@@ -15,6 +15,7 @@ const isWindows = process.platform === 'win32';
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const reportPath = new URL('./reports/latest-smoke-report.json', import.meta.url);
 const reportFilePath = fileURLToPath(reportPath);
+const relativeReportPath = 'testsprite_tests/basic-synthetic-monitoring/reports/latest-smoke-report.json';
 const dep0190Warning = {
   code: 'DEP0190',
   message:
@@ -126,6 +127,42 @@ function assertNoCriticalHtml(route, html) {
   }
 }
 
+function sanitizeErrorMessage(message) {
+  if (!message) {
+    return 'Unknown safe error.';
+  }
+
+  return String(message)
+    .replace(/(authorization|cookie|set-cookie|token|secret|password|api[-_]?key)=([^;\s]+)/gi, '$1=[redacted]')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [redacted]')
+    .replace(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, '[redacted-email]');
+}
+
+function printSmokeSummary(report) {
+  const failedRoute = report.routes.find((route) => !route.passed);
+  const status = report.status === 'passed' ? 'PASSED' : 'FAILED';
+
+  console.log('');
+  console.log('BeeGym Synthetic Smoke Summary');
+  console.log(`Status: ${status}`);
+  console.log(`Base URL: ${report.environment.baseUrl}`);
+  console.log('Routes:');
+
+  for (const route of report.routes) {
+    const routeStatus = route.passed ? route.statusCode : 'FAILED';
+    console.log(`- ${route.path} -> ${routeStatus} in ${route.durationMs}ms`);
+  }
+
+  if (status === 'FAILED') {
+    console.log('Failure:');
+    console.log(`- Route: ${failedRoute?.path ?? 'server startup'}`);
+    console.log(`- Error: ${sanitizeErrorMessage(report.error)}`);
+  }
+
+  console.log(`Total duration: ${report.durationMs}ms`);
+  console.log(`Report: ${relativeReportPath}`);
+}
+
 async function checkRoute(route) {
   const url = new URL(route, baseUrl).toString();
   const startedAt = performance.now();
@@ -152,7 +189,7 @@ async function checkRoute(route) {
     assertNoCriticalHtml(route, html);
     console.log(`OK ${route} -> HTTP ${response.status}`);
   } catch (error) {
-    failureMessage = error.message;
+    failureMessage = sanitizeErrorMessage(error.message);
   }
 
   return {
@@ -233,7 +270,7 @@ async function main() {
     report.status = 'passed';
     console.log('BeeGym synthetic smoke passed.');
   } catch (error) {
-    report.error = error.message;
+    report.error = sanitizeErrorMessage(error.message);
     throw error;
   } finally {
     for (const warning of observedWarnings) {
@@ -244,6 +281,7 @@ async function main() {
 
     report.durationMs = Math.round(performance.now() - startedAt);
     await writeHealthReport(report);
+    printSmokeSummary(report);
     console.log(`BeeGym synthetic smoke report written to ${reportFilePath}`);
   }
 }
@@ -254,7 +292,7 @@ try {
   await main();
 } catch (error) {
   exitCode = 1;
-  console.error(`BeeGym synthetic smoke failed: ${error.message}`);
+  console.error(`BeeGym synthetic smoke failed: ${sanitizeErrorMessage(error.message)}`);
 } finally {
   await stopServer();
   process.exit(exitCode);
