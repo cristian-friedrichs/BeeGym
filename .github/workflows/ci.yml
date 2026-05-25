@@ -37,3 +37,6 @@ jobs:
 
     - name: Build
       run: npm run build
+
+    - name: Basic Synthetic Monitoring
+      run: node testsprite_tests/basic-synthetic-monitoring/smoke.mjs
