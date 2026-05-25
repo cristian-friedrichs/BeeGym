@@ -1,0 +1,49 @@
+name: BeeGym Synthetic Health Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 9 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Basic Synthetic Monitoring
+        run: node testsprite_tests/basic-synthetic-monitoring/smoke.mjs
+
+      - name: Upload Synthetic Health Report
+        if: ${{ always() && hashFiles('testsprite_tests/basic-synthetic-monitoring/reports/latest-smoke-report.json') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: beegym-synthetic-health-report
+          path: testsprite_tests/basic-synthetic-monitoring/reports/latest-smoke-report.json
