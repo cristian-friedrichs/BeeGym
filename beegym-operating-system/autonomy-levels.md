@@ -6,6 +6,14 @@ Os niveis de autonomia definem ate onde Codex e agentes podem ir em uma tarefa a
 
 O nivel deve ser informado no prompt da tarefa. Quando nao houver nivel claro, o agente deve assumir o menor nivel necessario para diagnosticar e pedir confirmacao antes de executar mudancas.
 
+## Estado atual permitido
+
+O nivel atual permitido para tarefas seguras e bem delimitadas e Nivel 2 - Execucao com commit e push.
+
+Nivel 3 ainda nao esta ativo. Em um estado futuro, Nivel 3 permitira abertura automatica de PR, mas ainda sem merge automatico.
+
+Merge automatico continua proibido em todos os niveis atualmente definidos.
+
 ## Nivel 0 - Diagnostico apenas
 
 Uso recomendado: investigacao inicial, revisao de risco, leitura de arquivos, explicacao de problema ou planejamento.
@@ -58,6 +66,8 @@ Saida esperada:
 
 ## Nivel 2 - Execucao com commit e push
 
+Status atual: permitido para tarefas seguras, pequenas e bem delimitadas quando o prompt autorizar.
+
 Uso recomendado: tarefas de baixo risco e bem delimitadas, como documentacao operacional, melhorias em testes, scripts internos e ajustes pequenos aprovados.
 
 Permitido:
@@ -89,18 +99,21 @@ Saida esperada:
 
 ## Nivel 3 - PR automatizado
 
+Status atual: planejado, mas ainda nao ativo.
+
 Uso recomendado: fluxo futuro para tarefas recorrentes e bem compreendidas, com checks automaticos e correcao simples de falhas.
 
 Permitido:
 
 - Executar tudo do Nivel 2.
-- Abrir PR automaticamente quando autorizado.
+- Abrir PR automaticamente quando este nivel for ativado e autorizado.
 - Acompanhar checks.
 - Corrigir falhas simples dentro do escopo original.
 - Atualizar PR com evidencias de validacao.
 
 Nao permitido:
 
+- Fazer merge automaticamente.
 - Fazer merge sem aprovacao.
 - Expandir escopo para corrigir falhas estruturais.
 - Ignorar checks falhando.

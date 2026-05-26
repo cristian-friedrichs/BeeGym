@@ -17,25 +17,28 @@ Explique o estado atual, arquivos relevantes, decisoes anteriores e qualquer res
 
 Nivel 2 - Execucao com commit e push.
 
-Codex pode:
+Autonomia permitida:
 
-- Confirmar que esta em `main` atualizada.
-- Criar branch dedicada.
+- Pode confirmar que esta em `main` atualizada.
+- Pode criar branch dedicada.
 - Ler arquivos de contexto nao sensiveis.
-- Alterar apenas arquivos permitidos.
-- Rodar validacoes definidas.
-- Fazer commit se a checagem final passar.
-- Fazer push da branch.
-- Gerar relatorio final.
-- Gerar titulo e descricao de PR.
+- Pode alterar apenas arquivos dentro do escopo.
+- Pode validar.
+- Pode fazer commit se a validacao passar.
+- Pode fazer push da branch.
+- Pode gerar relatorio final.
+- Pode gerar titulo e descricao do PR.
 
-Codex nao pode:
+Limites:
 
-- Abrir PR automaticamente, salvo se este prompt autorizar.
-- Fazer merge.
-- Fazer deploy.
-- Tocar em Supabase, migrations, Vercel, secrets, `.env`, billing, dados reais ou producao.
-- Alterar dependencias, `package.json` ou lockfiles.
+- Nao abrir PR automaticamente ainda.
+- Nao fazer merge.
+- Nao fazer deploy.
+- Nao alterar Supabase/migrations.
+- Nao alterar dados reais.
+- Nao alterar billing/pagamentos.
+- Nao mexer fora do escopo.
+- Nao tocar em Vercel, secrets, `.env`, producao, dependencias, `package.json` ou lockfiles.
 
 ## Branch
 
@@ -53,20 +56,35 @@ Criar a branch:
 - `src`
 - `supabase`
 - `supabase/migrations`
+- `migrations`
+- Vercel e configuracoes de deploy
 - `.github/workflows`
 - `.env`
 - `.env.local`
 - `package.json`
 - `package-lock.json`
+- `testsprite_tests`
+- `departments`
+- `skills`
 - Qualquer arquivo fora do escopo aprovado
 
 ## Validacoes obrigatorias
 
-- Confirmar branch atual.
-- Confirmar arquivos alterados.
-- Rodar `comando-de-validacao`, quando aplicavel.
-- Confirmar que nenhum arquivo proibido foi alterado.
-- Mostrar `git status`.
+1. Confirmar que somente os arquivos permitidos foram alterados.
+2. Confirmar que nao houve alteracao em:
+   - `src`
+   - `supabase`
+   - `migrations`
+   - Vercel
+   - `.env`
+   - `package.json`
+   - `package-lock.json`
+   - `.github/workflows`
+   - `testsprite_tests`
+   - `departments`
+   - `skills`
+3. Para tarefas apenas de documentacao, nao rodar build local.
+4. Mostrar `git status`.
 
 ## Limites
 

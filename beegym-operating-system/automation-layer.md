@@ -23,6 +23,20 @@ CEO define objetivo e nivel de autonomia
 -> CEO aprova PR, merge, producao e riscos altos
 ```
 
+## Current Automation State
+
+O BeeGym opera atualmente com autonomia Nivel 2 para tarefas seguras, pequenas e bem delimitadas.
+
+Neste estado, Codex pode criar branch dedicada, alterar arquivos dentro do escopo aprovado, validar, fazer commit, fazer push da branch, gerar relatorio final e preparar titulo e descricao de PR.
+
+O PR ainda e aberto manualmente pelo CEO. O merge ainda e aprovado e executado manualmente pelo CEO.
+
+A branch `main` esta protegida por ruleset. O fluxo exige PR antes de merge, bloqueia force push, bloqueia deletion e exige o check `build (18.x)` como obrigatorio antes de merge.
+
+O Daily Synthetic Health Check roda automaticamente. Falhas do health check podem abrir issue automatica para rastrear investigacao.
+
+O proximo nivel planejado e abertura automatica de PR pelo Codex, ainda sem merge automatico.
+
 ## Responsabilidades da automacao
 
 GitHub Actions roda checks e smoke test basico quando houver push ou pull request para `main`. O CI e a primeira barreira automatica para lint, build e monitoramento sintetico local.
