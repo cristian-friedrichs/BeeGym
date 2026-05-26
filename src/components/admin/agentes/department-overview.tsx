@@ -11,7 +11,7 @@ import {
 import { DepartmentStatusBadge } from './agent-status-badge';
 
 function getLeadName(department: AgentDepartment) {
-    return getAgent(department.leadAgentId)?.name ?? 'Lider mockado';
+    return getAgent(department.leadAgentId)?.name ?? 'Líder simulado';
 }
 
 export function DepartmentOverview({ departments }: { departments: AgentDepartment[] }) {
@@ -31,14 +31,14 @@ export function DepartmentOverview({ departments }: { departments: AgentDepartme
                                 <DepartmentStatusBadge status={department.status} />
                             </div>
                             <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-3">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Lider / agente principal</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Líder / agente principal</p>
                                 <p className="mt-1 text-sm font-black text-slate-700">{lead}</p>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-5 p-5 pt-0">
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between text-xs">
-                                    <span className="font-black uppercase tracking-widest text-slate-400">Saude operacional</span>
+                                    <span className="font-black uppercase tracking-widest text-slate-400">Saúde operacional</span>
                                     <span className="font-black text-bee-midnight">{department.healthScore}%</span>
                                 </div>
                                 <Progress value={department.healthScore} className="h-2 bg-slate-100 [&>div]:bg-bee-amber" />

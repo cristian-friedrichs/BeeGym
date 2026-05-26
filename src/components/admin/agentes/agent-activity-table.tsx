@@ -18,7 +18,7 @@ import {
 import { RiskBadge, RunStatusBadge } from './agent-status-badge';
 
 function getAgentName(agentId: string) {
-    return agents.find((agent) => agent.id === agentId)?.name ?? 'Agente mockado';
+    return agents.find((agent) => agent.id === agentId)?.name ?? 'Agente simulado';
 }
 
 function getDepartmentName(departmentId: string) {
@@ -37,7 +37,7 @@ export function AgentActivityTable({ runs }: { runs: AgentRun[] }) {
                         <TableHead className="h-12 text-[10px] font-black uppercase tracking-widest text-slate-400">Branch / PR</TableHead>
                         <TableHead className="h-12 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</TableHead>
                         <TableHead className="h-12 text-[10px] font-black uppercase tracking-widest text-slate-400">Risco</TableHead>
-                        <TableHead className="h-12 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Horario</TableHead>
+                        <TableHead className="h-12 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Horário</TableHead>
                         <TableHead className="h-12 w-12" />
                     </TableRow>
                 </TableHeader>
@@ -73,7 +73,7 @@ export function AgentActivityTable({ runs }: { runs: AgentRun[] }) {
                     {runs.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={8} className="h-32 text-center text-sm font-medium text-slate-400">
-                                Nenhuma atividade mockada encontrada.
+                                Nenhuma atividade simulada encontrada.
                             </TableCell>
                         </TableRow>
                     )}

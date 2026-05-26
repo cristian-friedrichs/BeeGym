@@ -10,7 +10,7 @@ import { departments } from '@/lib/admin/agent-command-center-data';
 export default function AgentDepartmentsPage() {
     return (
         <div className="space-y-8 pb-12">
-            <SectionHeader title="Departamentos" subtitle="Visao mockada por departamento, lider, agentes, tarefas e saude operacional" />
+            <SectionHeader title="Departamentos" subtitle="Visão simulada por departamento, líder, agentes, tarefas e saúde operacional" />
             <MockDataNotice />
             <AgentCommandCenterNav />
 
@@ -25,8 +25,8 @@ export default function AgentDepartmentsPage() {
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                         <SelectItem value="all" className="rounded-xl font-bold">Todos os status</SelectItem>
-                        <SelectItem value="healthy" className="rounded-xl font-bold text-green-700">Saudavel</SelectItem>
-                        <SelectItem value="attention" className="rounded-xl font-bold text-amber-700">Atencao</SelectItem>
+                        <SelectItem value="healthy" className="rounded-xl font-bold text-green-700">Saudável</SelectItem>
+                        <SelectItem value="attention" className="rounded-xl font-bold text-amber-700">Atenção</SelectItem>
                         <SelectItem value="blocked" className="rounded-xl font-bold text-red-700">Bloqueado</SelectItem>
                     </SelectContent>
                 </Select>
