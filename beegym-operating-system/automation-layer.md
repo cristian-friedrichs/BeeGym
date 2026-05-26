@@ -63,3 +63,7 @@ O CEO aprova PR, merge, producao e qualquer risco alto antes de integracao ou ex
 ## Resultado esperado
 
 A automacao operacional deve fazer o trabalho repetitivo andar sem o CEO precisar copiar prompts, acompanhar checks manualmente ou pedir relatorios avulsos. O CEO deve receber uma sintese final suficiente para decidir PR, merge, risco e proximo passo.
+
+## Main Protection Validation
+
+This repository uses a protected main branch ruleset requiring pull requests and the `build (18.x)` status check before merging.
