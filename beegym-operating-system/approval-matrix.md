@@ -11,9 +11,8 @@ Quando houver duvida, o agente deve parar e pedir aprovacao. Silencio nunca e ap
 Estas acoes podem ser executadas por Codex quando o prompt autorizar autonomia Nivel 2 e o escopo estiver claro:
 
 - Criar branch dedicada.
-- Alterar documentacao operacional.
-- Alterar testes dentro do escopo.
-- Melhorar scripts internos de baixo risco.
+- Alterar arquivos dentro do escopo aprovado.
+- Alterar documentacao operacional, testes ou scripts internos de baixo risco quando estiverem no escopo.
 - Rodar validacoes locais proporcionais.
 - Confirmar arquivos alterados.
 - Fazer commit.
@@ -32,6 +31,7 @@ Condições:
 
 Estas acoes exigem aprovacao explicita antes da execucao:
 
+- Abrir PR, por enquanto.
 - Merge em `main`.
 - Deploy em producao.
 - Rollback de producao.
