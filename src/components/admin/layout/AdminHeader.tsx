@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
     '/admin/dashboard': { title: 'Dashboard', subtitle: 'Visão geral da plataforma' },
+    '/admin/agentes': { title: 'Agent Command Center', subtitle: 'Acompanhamento visual de agentes BeeGym' },
     '/admin/contratantes': { title: 'Clientes', subtitle: 'Gerencie clientes e assinaturas' },
     '/admin/planos': { title: 'Planos', subtitle: 'Configure planos de assinatura' },
     '/admin/cupons': { title: 'Ofertas', subtitle: 'Gerencie descontos e promoções' },
