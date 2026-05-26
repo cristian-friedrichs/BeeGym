@@ -51,7 +51,7 @@ jobs:
 
       - name: Create or Update Failure Issue
         if: ${{ failure() }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = '[Watchtower] Synthetic Health Check failed';
