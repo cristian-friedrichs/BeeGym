@@ -29,12 +29,12 @@ export default function AdminAgentsDashboardPage() {
         <div className="space-y-8 pb-12">
             <SectionHeader
                 title="Agent Command Center"
-                subtitle="Painel visual mockado para acompanhar agentes, departamentos, riscos e aprovacoes"
+                subtitle="Painel visual simulado para acompanhar agentes, departamentos, riscos e aprovações"
                 action={
                     <Button asChild className="gap-2 bg-bee-amber font-bold text-bee-midnight shadow-sm hover:bg-amber-500">
                         <Link href="/admin/agentes/aprovacoes">
                             <CheckSquare className="h-4 w-4" />
-                            Ver Aprovacoes
+                            Ver aprovações
                         </Link>
                     </Button>
                 }
@@ -43,12 +43,12 @@ export default function AdminAgentsDashboardPage() {
             <MockDataNotice />
             <AgentCommandCenterNav />
 
-            <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 <KpiCard title="Agentes ativos" value={String(activeAgents)} color="amber" icon={<Bot className="h-6 w-6" />} />
-                <KpiCard title="Execucoes recentes" value={String(agentRuns.length)} color="default" icon={<TimerReset className="h-6 w-6" />} />
-                <KpiCard title="Aprovacoes pendentes" value={String(pendingApprovals)} color="black" icon={<CheckSquare className="h-6 w-6" />} />
-                <KpiCard title="Incidentes / alertas" value={String(alertCount)} color="default" icon={<AlertTriangle className="h-6 w-6" />} />
-                <KpiCard title="PRs/checks em risco" value={String(riskyChecks)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
+                <KpiCard title="Execuções" value={String(agentRuns.length)} color="default" icon={<TimerReset className="h-6 w-6" />} />
+                <KpiCard title="Aprovações" value={String(pendingApprovals)} color="black" icon={<CheckSquare className="h-6 w-6" />} />
+                <KpiCard title="Alertas" value={String(alertCount)} color="default" icon={<AlertTriangle className="h-6 w-6" />} />
+                <KpiCard title="Checks em risco" value={String(riskyChecks)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
             </section>
 
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
@@ -72,25 +72,25 @@ export default function AdminAgentsDashboardPage() {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                        <SelectItem value="mock" className="rounded-xl font-bold">Somente mock</SelectItem>
-                        <SelectItem value="attention" className="rounded-xl font-bold">Atencao</SelectItem>
+                        <SelectItem value="mock" className="rounded-xl font-bold">Somente simulado</SelectItem>
+                        <SelectItem value="attention" className="rounded-xl font-bold">Atenção</SelectItem>
                         <SelectItem value="blocked" className="rounded-xl font-bold">Bloqueados</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
             <section className="space-y-4">
-                <SectionHeader title="Status por Departamento" subtitle="Saude operacional simulada por area do BeeGym OS" />
+                <SectionHeader title="Status por Departamento" subtitle="Saúde operacional simulada por área do BeeGym OS" />
                 <DepartmentOverview departments={departments.slice(0, 6)} />
             </section>
 
             <section className="space-y-4">
-                <SectionHeader title="Ultimas Atividades" subtitle="Eventos recentes de agentes e subagentes com evidencia mockada" />
+                <SectionHeader title="Últimas Atividades" subtitle="Eventos recentes de agentes e subagentes com evidência simulada" />
                 <AgentActivityTable runs={agentRuns.slice(0, 5)} />
             </section>
 
             <section className="space-y-4">
-                <SectionHeader title="Alertas Simulados" subtitle="Sinais de risco que exigiriam decisao humana em fases futuras" />
+                <SectionHeader title="Alertas Simulados" subtitle="Sinais de risco que exigiriam decisão humana em fases futuras" />
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {agentEvents.filter((event) => event.severity !== 'low').map((event) => {
                         const department = departments.find((item) => item.id === event.departmentId);

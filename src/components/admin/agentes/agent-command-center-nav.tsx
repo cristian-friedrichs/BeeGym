@@ -9,8 +9,8 @@ const navItems = [
     { href: '/admin/agentes', label: 'Dashboard', icon: BarChart3 },
     { href: '/admin/agentes/departamentos', label: 'Departamentos', icon: Building2 },
     { href: '/admin/agentes/atividades', label: 'Atividades', icon: TimerReset },
-    { href: '/admin/agentes/aprovacoes', label: 'Aprovacoes', icon: CheckSquare },
-    { href: '/admin/agentes/reunioes', label: 'Reunioes', icon: MessageSquareText },
+    { href: '/admin/agentes/aprovacoes', label: 'Aprovações', icon: CheckSquare },
+    { href: '/admin/agentes/reunioes', label: 'Reuniões', icon: MessageSquareText },
 ];
 
 export function AgentCommandCenterNav() {

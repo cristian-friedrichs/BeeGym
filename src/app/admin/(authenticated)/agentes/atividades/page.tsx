@@ -10,14 +10,14 @@ import { agentRuns } from '@/lib/admin/agent-command-center-data';
 export default function AgentActivitiesPage() {
     return (
         <div className="space-y-8 pb-12">
-            <SectionHeader title="Atividades dos Agentes" subtitle="Timeline e tabela visual de runs, eventos, autonomia, risco e evidencias mockadas" />
+            <SectionHeader title="Atividades dos Agentes" subtitle="Timeline e tabela visual de runs, eventos, autonomia, risco e evidências simuladas" />
             <MockDataNotice />
             <AgentCommandCenterNav />
 
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
                 <div className="relative min-w-[260px] flex-1">
                     <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <Input placeholder="Buscar por agente, tarefa, branch ou evidencia..." className="h-11 rounded-2xl border-slate-100 bg-white pl-10 text-sm font-medium shadow-sm" />
+                    <Input placeholder="Buscar por agente, tarefa, branch ou evidência..." className="h-11 rounded-2xl border-slate-100 bg-white pl-10 text-sm font-medium shadow-sm" />
                 </div>
                 <Select defaultValue="all">
                     <SelectTrigger className="h-11 w-44 rounded-2xl border-slate-100 bg-white font-bold text-slate-600 shadow-sm">
@@ -27,7 +27,7 @@ export default function AgentActivitiesPage() {
                         <SelectItem value="all" className="rounded-xl font-bold">Todos os status</SelectItem>
                         <SelectItem value="running" className="rounded-xl font-bold">Em andamento</SelectItem>
                         <SelectItem value="waiting" className="rounded-xl font-bold">Aguardando CEO</SelectItem>
-                        <SelectItem value="completed" className="rounded-xl font-bold">Concluido</SelectItem>
+                        <SelectItem value="completed" className="rounded-xl font-bold">Concluído</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select defaultValue="all">
@@ -37,7 +37,7 @@ export default function AgentActivitiesPage() {
                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                         <SelectItem value="all" className="rounded-xl font-bold">Todos riscos</SelectItem>
                         <SelectItem value="low" className="rounded-xl font-bold text-green-700">Baixo</SelectItem>
-                        <SelectItem value="medium" className="rounded-xl font-bold text-amber-700">Medio</SelectItem>
+                        <SelectItem value="medium" className="rounded-xl font-bold text-amber-700">Médio</SelectItem>
                         <SelectItem value="high" className="rounded-xl font-bold text-red-700">Alto</SelectItem>
                     </SelectContent>
                 </Select>

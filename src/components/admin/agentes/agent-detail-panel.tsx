@@ -31,7 +31,7 @@ export function AgentDetailPanel({ agent }: { agent: AgentProfile }) {
                         Voltar ao Command Center
                     </Link>
                 </Button>
-                <AgentPill label="Perfil mockado" tone="amber" />
+                <AgentPill label="Perfil simulado" tone="amber" />
             </div>
 
             <Card className="overflow-hidden rounded-[2rem] border-slate-100 bg-white shadow-sm">
@@ -56,22 +56,22 @@ export function AgentDetailPanel({ agent }: { agent: AgentProfile }) {
                     </div>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-4 p-6 md:grid-cols-3">
-                    <KpiCard title="Runs mockados" value={String(runs.length)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
+                    <KpiCard title="Runs simulados" value={String(runs.length)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
                     <KpiCard title="Eventos" value={String(events.length)} color="default" icon={<FileText className="h-6 w-6" />} />
-                    <KpiCard title="Aprovacoes" value={String(approvals.length)} color="black" icon={<ShieldAlert className="h-6 w-6" />} />
+                    <KpiCard title="Aprovações" value={String(approvals.length)} color="black" icon={<ShieldAlert className="h-6 w-6" />} />
                 </CardContent>
             </Card>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <PermissionList title="Acoes permitidas" items={agent.allowedActions} tone="green" />
-                <PermissionList title="Acoes proibidas" items={agent.forbiddenActions} tone="red" />
+                <PermissionList title="Ações permitidas" items={agent.allowedActions} tone="green" />
+                <PermissionList title="Ações proibidas" items={agent.forbiddenActions} tone="red" />
                 <PermissionList title="Exige CEO" items={agent.approvalRequiredActions} tone="amber" />
             </div>
 
             <Card className="rounded-[2rem] border-slate-100 bg-white shadow-sm">
                 <CardHeader className="p-6">
-                    <CardTitle className="text-base font-black text-bee-midnight">Links mockados</CardTitle>
-                    <p className="text-xs font-bold text-slate-400">Referencias visuais para docs, PRs e issues. Nenhum link chama GitHub real nesta fase.</p>
+                    <CardTitle className="text-base font-black text-bee-midnight">Links simulados</CardTitle>
+                    <p className="text-xs font-bold text-slate-400">Referências visuais para docs, PRs e issues. Nenhum link chama GitHub real nesta fase.</p>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 gap-3 p-6 pt-0 md:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/40 p-4">
@@ -95,8 +95,8 @@ export function AgentDetailPanel({ agent }: { agent: AgentProfile }) {
                 <div className="flex items-center gap-3">
                     <div className="h-6 w-1 rounded-full bg-bee-amber" />
                     <div>
-                        <h2 className="text-base font-bold text-bee-midnight">Ultimas atividades</h2>
-                        <p className="text-xs text-slate-400">Historico visual mockado deste agente.</p>
+                        <h2 className="text-base font-bold text-bee-midnight">Últimas atividades</h2>
+                        <p className="text-xs text-slate-400">Histórico visual simulado deste agente.</p>
                     </div>
                 </div>
                 <AgentActivityTable runs={runs} />
@@ -106,8 +106,8 @@ export function AgentDetailPanel({ agent }: { agent: AgentProfile }) {
                 <div className="flex items-center gap-3">
                     <div className="h-6 w-1 rounded-full bg-bee-amber" />
                     <div>
-                        <h2 className="text-base font-bold text-bee-midnight">Aprovacoes relacionadas</h2>
-                        <p className="text-xs text-slate-400">Botoes permanecem visuais e nao executam acao real.</p>
+                        <h2 className="text-base font-bold text-bee-midnight">Aprovações relacionadas</h2>
+                        <p className="text-xs text-slate-400">Botões permanecem visuais e não executam ação real.</p>
                     </div>
                 </div>
                 <ApprovalQueueTable approvals={approvals} />
