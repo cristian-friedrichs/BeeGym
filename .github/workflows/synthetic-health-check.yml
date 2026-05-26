@@ -25,10 +25,10 @@ jobs:
         node-version: [18.x]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -44,14 +44,14 @@ jobs:
 
       - name: Upload Synthetic Health Report
         if: ${{ always() && hashFiles('testsprite_tests/basic-synthetic-monitoring/reports/latest-smoke-report.json') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: beegym-synthetic-health-report
           path: testsprite_tests/basic-synthetic-monitoring/reports/latest-smoke-report.json
 
       - name: Create or Update Failure Issue
         if: ${{ failure() }}
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const title = '[Watchtower] Synthetic Health Check failed';
