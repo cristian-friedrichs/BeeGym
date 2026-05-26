@@ -13,6 +13,7 @@ import {
     LifeBuoy,
     Webhook,
     Banknote,
+    Bot,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -24,6 +25,7 @@ const navGroups = [
         label: 'Menu Principal',
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+            { icon: Bot, label: 'Agentes', href: '/admin/agentes' },
             { icon: Users, label: 'Clientes', href: '/admin/contratantes' },
             { icon: Package, label: 'Planos', href: '/admin/planos' },
             { icon: Ticket, label: 'Ofertas', href: '/admin/ofertas' },
