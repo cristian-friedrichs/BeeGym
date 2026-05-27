@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Todo trabalho agent-first deve terminar com um relatorio final claro. O relatorio reduz acompanhamento manual do CEO e torna branch, commit, validacoes, riscos e proximos passos rastreaveis.
+Todo trabalho agent-first deve terminar com um relatorio final claro. O relatorio reduz acompanhamento manual do CEO e torna branch, commit, validacoes, PR, checks, merge, riscos e proximos passos rastreaveis.
 
 ## Quando gerar
 
@@ -12,55 +12,71 @@ Gerar relatorio final sempre que uma tarefa:
 - Rodar validacoes.
 - Criar branch.
 - Fazer commit ou push.
-- Preparar PR.
+- Abrir ou acompanhar PR.
+- Fazer merge.
+- Sincronizar `main`.
 - Diagnosticar falha relevante.
+- Parar por risco, conflito ou check falhando.
 
 ## Campos obrigatorios
 
-### Branch
+### Branch criada
 
 Informar a branch usada e se ela foi enviada ao remoto.
 
-### Objetivo
+### Commit hash
 
-Resumir o resultado esperado da tarefa em uma ou duas frases.
+Informar o hash do commit criado, quando houver commit.
+
+### PR URL
+
+Informar o link do PR aberto ou acompanhado, quando houver PR.
+
+### Checks status
+
+Informar o status dos checks relevantes, incluindo `build (18.x)` quando aplicavel.
+
+### Vercel status
+
+Informar o status da Vercel quando aplicavel. Se nao for aplicavel, declarar isso.
+
+### Merge realizado
+
+Informar `sim` ou `nao`. Se sim, informar metodo usado e se foi via GitHub CLI.
+
+### Merge commit
+
+Informar o merge commit quando o merge tiver sido realizado.
+
+### Branch remota deletada
+
+Informar `sim` ou `nao`.
+
+### Main sincronizada
+
+Informar `sim` ou `nao`, incluindo se `main` local esta alinhada com `origin/main`.
 
 ### Arquivos alterados
 
 Listar cada arquivo alterado e o motivo da alteracao.
 
-### Validacoes rodadas
+### Validacoes executadas
 
 Informar comandos ou verificacoes executadas e o resultado.
 
 Quando uma validacao nao for aplicavel, explicar brevemente o motivo.
 
-### Resultado
-
-Informar se a tarefa passou, falhou ou ficou parcialmente concluida.
-
-### Riscos
+### Riscos encontrados
 
 Registrar riscos evitados, riscos residuais e areas sensiveis nao tocadas.
 
-### Pendencias
+### Acao do CEO necessaria
 
-Listar decisoes ou acoes que ainda dependem do CEO ou de outro agente.
+Informar `sim` ou `nao`. Se sim, explicar a decisao necessaria.
 
-### Link do push ou PR
+### Motivo da parada
 
-Informar link do branch remoto, PR ou instrução para abrir PR quando disponivel.
-
-### Recomendacao proxima
-
-Indicar o proximo passo mais provavel:
-
-- Abrir PR.
-- Revisar PR.
-- Aguardar checks.
-- Corrigir falha especifica.
-- Aprovar merge.
-- Pausar por risco.
+Se a tarefa parou antes de concluir, informar o motivo da parada.
 
 ## Formato recomendado
 
@@ -68,8 +84,22 @@ Indicar o proximo passo mais provavel:
 ## Resumo
 
 Branch:
-Objetivo:
+Commit:
+PR:
 Status:
+
+## Checks
+
+- `build (18.x)`:
+- Vercel:
+- Outros:
+
+## Merge
+
+Merge realizado:
+Merge commit:
+Branch remota deletada:
+Main sincronizada:
 
 ## Arquivos alterados
 
@@ -81,23 +111,14 @@ Status:
 
 ## Riscos e limites
 
-- Riscos evitados:
+- Riscos encontrados:
 - Riscos residuais:
-- Areas nao tocadas:
+- Areas sensiveis nao tocadas:
 
-## Pendencias
+## CEO
 
-- Decisoes do CEO:
-- Bloqueios:
-
-## Links
-
-- Push:
-- PR:
-
-## Recomendacao
-
-Proximo passo recomendado:
+Acao do CEO necessaria:
+Motivo da parada, se houver:
 ```
 
 ## Regras de seguranca
@@ -107,3 +128,4 @@ Proximo passo recomendado:
 - Nao declarar estabilidade sem evidencias.
 - Diferenciar validacao executada de validacao nao executada.
 - Separar fatos de recomendacoes.
+- Em Nivel 3 parcial, declarar explicitamente se o merge foi permitido pelas condicoes de baixo risco e checks verdes.

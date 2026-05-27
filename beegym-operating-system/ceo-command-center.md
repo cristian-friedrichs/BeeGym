@@ -19,6 +19,10 @@ Responsabilidades principais:
 
 O CEO nao precisa executar cada tarefa. O CEO precisa manter direcao, criterio e responsabilidade final.
 
+Com autonomia Nivel 3 parcial ativa para tarefas de baixo risco, o CEO tambem nao precisa abrir PR manualmente nem fazer merge manualmente quando o escopo estiver restrito, os checks passarem, nao houver conflito e nenhuma mudanca sensivel estiver envolvida.
+
+O CEO deve ser acionado em falhas, riscos, mudancas sensiveis, decisoes estruturais, conflito de merge, check falhando, escopo expandido ou duvida de risco.
+
 ## Papel dos agentes
 
 Agentes executam tarefas dentro do escopo aprovado pelo CEO e pelas regras do repositorio.
@@ -31,7 +35,11 @@ Agentes podem:
 - Criar documentacao operacional.
 - Executar tarefas de baixo risco em branch dedicada.
 - Validar mudancas com checks apropriados.
-- Preparar commits, pushes e PRs quando autorizado.
+- Preparar commits e pushes quando autorizado.
+- Abrir PR via GitHub CLI em Nivel 3 parcial.
+- Acompanhar checks via GitHub CLI.
+- Fazer merge via GitHub CLI em Nivel 3 parcial quando checks passarem e nao houver risco sensivel.
+- Sincronizar a `main` local apos merge.
 - Documentar riscos, evidencias e proximos passos.
 
 Agentes nao podem usar autonomia como autorizacao para acao sensivel.
@@ -51,6 +59,9 @@ Exemplos de risco que exigem aprovacao:
 - Mudancas com impacto direto em clientes.
 - Publicacao de conteudo, campanhas ou comunicacoes externas.
 - Criacao de automacoes reais.
+- Pricing, oferta publica ou posicionamento estrategico.
+- Workflows criticos, rulesets ou protecao da `main`.
+- Qualquer check falhando, conflito de merge ou duvida de risco.
 
 O CEO aprova o risco. O agente executa somente dentro dos limites aprovados.
 
@@ -67,14 +78,21 @@ Quando houver alteracao em arquivos do repositorio, Codex deve operar com rastre
 7. Rodar validacoes aplicaveis.
 8. Preparar commit somente com autorizacao.
 9. Fazer push somente com autorizacao.
-10. Abrir PR somente com autorizacao.
-11. Reportar arquivos alterados, motivo e status.
+10. Abrir PR via GitHub CLI quando Nivel 3 parcial ou autorizacao explicita permitir.
+11. Acompanhar checks.
+12. Fazer merge via GitHub CLI somente quando Nivel 3 parcial se aplicar, checks passarem, nao houver conflito e nenhuma area sensivel estiver envolvida.
+13. Sincronizar `main` local apos merge.
+14. Reportar arquivos alterados, motivo, checks, merge, branch remota, status da `main` e riscos.
 
 PRs devem ser pequenos, revisaveis e com escopo claro.
+
+Para tarefas de baixo risco em Nivel 3 parcial, o CEO recebe o relatorio final em vez de operar PR e merge manualmente. Para tarefas sensiveis, o agente deve parar e pedir aprovacao antes de seguir.
 
 ## Regras de producao
 
 Nada sensivel deve ir para producao sem aprovacao explicita.
+
+O CEO continua responsavel por aprovar producao sensivel, Supabase, billing, dados reais, pricing, publicacao externa e mudancas estrategicas.
 
 Antes de qualquer acao com impacto operacional real, o agente deve informar:
 

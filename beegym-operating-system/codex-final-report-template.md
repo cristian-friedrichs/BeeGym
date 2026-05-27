@@ -42,7 +42,7 @@ Areas sensiveis nao tocadas:
 - `src`
 - `supabase`
 - `supabase/migrations`
-- Vercel
+- Vercel sensivel
 - `.env`
 - `package.json`
 - `package-lock.json`
@@ -63,7 +63,7 @@ Areas sensiveis nao tocadas:
 
 ## Pronto para PR?
 
-Resposta: Sim/Não.
+Resposta: Sim/Nao.
 
 Motivo:
 
@@ -74,9 +74,85 @@ Motivo:
 - PR:
 ```
 
+## Modelo final para tarefas Nivel 3 parcial
+
+Use este modelo quando a tarefa tiver autonomia Nivel 3 parcial e puder seguir ate PR, checks, merge e sincronizacao de `main`.
+
+```markdown
+## Summary
+
+Status:
+Result:
+
+## Scope
+
+Allowed scope:
+Sensitive areas not touched:
+
+## Branch
+
+Branch:
+Remote branch deleted:
+
+## Commit
+
+Commit:
+
+## PR URL
+
+PR:
+
+## Checks
+
+- `build (18.x)`:
+- Other checks:
+
+## Vercel
+
+Status:
+Applicable: Yes/No
+
+## Merge status
+
+Merge performed: Yes/No
+Reason if not merged:
+
+## Merge commit
+
+Merge commit:
+
+## Main sync
+
+Main synchronized: Yes/No
+Git status:
+
+## Files changed
+
+- `file`: reason.
+
+## Validation
+
+- `validation`: result.
+
+## Safety limits confirmed
+
+- No app code changed unless explicitly in low-risk scope.
+- No Supabase, migrations, auth, billing, real data, secrets, `.env`, package files, workflows, departments, skills, production deploy, pricing or external publication changed.
+- No merge was performed with failing checks, conflict or risk uncertainty.
+
+## CEO action required
+
+Required: Yes/No
+Reason:
+
+## Notes
+
+- Additional factual notes.
+```
+
 ## Criterios do relatorio
 
 - Ser objetivo e baseado em evidencias.
 - Nao incluir secrets, tokens, cookies, headers sensiveis ou dados reais.
 - Separar o que foi feito do que ainda exige aprovacao.
-- Informar claramente se esta pronto para PR.
+- Informar claramente se esta pronto para PR ou se Nivel 3 parcial concluiu o fluxo completo.

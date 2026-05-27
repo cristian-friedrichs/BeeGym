@@ -8,11 +8,13 @@ O nivel deve ser informado no prompt da tarefa. Quando nao houver nivel claro, o
 
 ## Estado atual permitido
 
-O nivel atual permitido para tarefas seguras e bem delimitadas e Nivel 2 - Execucao com commit e push.
+O nivel atual permitido para tarefas seguras, bem delimitadas e de baixo risco e Nivel 3 parcial - PR e merge via GitHub CLI apos checks verdes.
 
-Nivel 3 ainda nao esta ativo. Em um estado futuro, Nivel 3 permitira abertura automatica de PR, mas ainda sem merge automatico.
+Nivel 3 parcial permite criar branch, alterar arquivos dentro do escopo aprovado, validar, commitar, fazer push, abrir PR via GitHub CLI, acompanhar checks, fazer merge via GitHub CLI quando as condicoes de seguranca forem satisfeitas, deletar branch remota quando apropriado, sincronizar a `main` local e entregar relatorio final.
 
-Merge automatico continua proibido em todos os niveis atualmente definidos.
+Nivel 3 parcial nao se aplica a mudancas sensiveis. Supabase, migrations, auth, billing, dados reais, secrets, `.env`, dependencias, package files, workflows criticos, deploy sensivel, pricing, publicacao externa, rulesets, conflitos, checks falhando ou duvida de risco continuam exigindo parada obrigatoria e aprovacao explicita do CEO.
+
+Nivel 4 continua futuro e nao ativo.
 
 ## Nivel 0 - Diagnostico apenas
 
@@ -97,36 +99,45 @@ Saida esperada:
 - Riscos e pendencias.
 - Titulo e descricao recomendados para PR.
 
-## Nivel 3 - PR automatizado
+## Nivel 3 - PR e merge automatizados parcialmente
 
-Status atual: planejado, mas ainda nao ativo.
+Status atual: parcialmente ativo para tarefas de baixo risco.
 
-Uso recomendado: fluxo futuro para tarefas recorrentes e bem compreendidas, com checks automaticos e correcao simples de falhas.
+Uso recomendado: tarefas recorrentes, bem compreendidas e com escopo restrito, em que os checks automaticos conseguem validar o risco principal.
 
 Permitido:
 
 - Executar tudo do Nivel 2.
-- Abrir PR automaticamente quando este nivel for ativado e autorizado.
+- Abrir PR automaticamente via GitHub CLI.
 - Acompanhar checks.
+- Fazer merge via GitHub CLI quando a tarefa for de baixo risco, o escopo estiver restrito, `build (18.x)` passar, Vercel passar quando aplicavel, nao houver conflito e nenhuma mudanca sensivel estiver envolvida.
+- Deletar branch remota quando apropriado.
+- Sincronizar a `main` local apos merge.
 - Corrigir falhas simples dentro do escopo original.
 - Atualizar PR com evidencias de validacao.
 
 Nao permitido:
 
-- Fazer merge automaticamente.
-- Fazer merge sem aprovacao.
+- Fazer merge quando qualquer check falhar.
+- Fazer merge quando houver conflito ou duvida de risco.
 - Expandir escopo para corrigir falhas estruturais.
-- Ignorar checks falhando.
-- Tocar em areas sensiveis sem aprovacao.
+- Fazer deploy sensivel.
+- Tocar em Supabase, migrations, auth, billing, dados reais, secrets, `.env`, dependencias, `package.json`, lockfiles, workflows criticos, rulesets, pricing ou publicacao externa sem aprovacao explicita.
 
 Saida esperada:
 
 - Link do PR.
 - Status dos checks.
 - Correcoes feitas.
-- Pedido de aprovacao para merge quando estiver pronto.
+- Status do merge quando executado.
+- Merge commit.
+- Status da branch remota.
+- Confirmacao de sincronizacao da `main` local.
+- Relatorio final com riscos, arquivos alterados e se alguma acao do CEO ainda e necessaria.
 
 ## Nivel 4 - Operacao recorrente
+
+Status atual: futuro, nao ativo.
 
 Uso recomendado: rotina futura de health check, acompanhamento de falhas e relatorios periodicos.
 
