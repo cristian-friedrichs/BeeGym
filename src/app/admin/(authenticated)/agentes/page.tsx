@@ -10,6 +10,7 @@ import { AgentCommandCenterNav } from '@/components/admin/agentes/agent-command-
 import { DepartmentOverview } from '@/components/admin/agentes/department-overview';
 import { DepartmentStatusBadge, RiskBadge } from '@/components/admin/agentes/agent-status-badge';
 import { MockDataNotice } from '@/components/admin/agentes/mock-data-notice';
+import { GitHubOperationalPanel } from '@/components/admin/agentes/github-operational-panel';
 import {
     agentEvents,
     agentRuns,
@@ -50,6 +51,8 @@ export default function AdminAgentsDashboardPage() {
                 <KpiCard title="Alertas" value={String(alertCount)} color="default" icon={<AlertTriangle className="h-6 w-6" />} />
                 <KpiCard title="Checks em risco" value={String(riskyChecks)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
             </section>
+
+            <GitHubOperationalPanel />
 
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
                 <div className="relative min-w-[260px] flex-1">

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AgentCommandCenterNav } from '@/components/admin/agentes/agent-command-center-nav';
 import { ApprovalQueueTable } from '@/components/admin/agentes/approval-queue-table';
 import { MockDataNotice } from '@/components/admin/agentes/mock-data-notice';
+import { GitHubOperationalPanel } from '@/components/admin/agentes/github-operational-panel';
 import { approvalRequests } from '@/lib/admin/agent-command-center-data';
 
 export default function AgentApprovalsPage() {
@@ -47,6 +48,8 @@ export default function AgentApprovalsPage() {
             </div>
 
             <ApprovalQueueTable approvals={approvalRequests} />
+
+            <GitHubOperationalPanel variant="approvals" />
         </div>
     );
 }
