@@ -81,3 +81,7 @@ A automacao operacional deve fazer o trabalho repetitivo andar sem o CEO precisa
 ## Main Protection Validation
 
 This repository uses a protected main branch ruleset requiring pull requests and the `build (18.x)` status check before merging.
+
+## GitHub CLI Automation Check
+
+The local environment has GitHub CLI authenticated for repository operations. This section validates PR automation capability.
