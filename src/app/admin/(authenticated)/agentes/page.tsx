@@ -11,6 +11,7 @@ import { DepartmentOverview } from '@/components/admin/agentes/department-overvi
 import { DepartmentStatusBadge, RiskBadge } from '@/components/admin/agentes/agent-status-badge';
 import { MockDataNotice } from '@/components/admin/agentes/mock-data-notice';
 import { GitHubOperationalPanel } from '@/components/admin/agentes/github-operational-panel';
+import { OperationalTimeline } from '@/components/admin/agentes/operational-timeline';
 import {
     agentEvents,
     agentRuns,
@@ -53,6 +54,8 @@ export default function AdminAgentsDashboardPage() {
             </section>
 
             <GitHubOperationalPanel />
+
+            <OperationalTimeline agentEvents={agentEvents} limit={10} />
 
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
                 <div className="relative min-w-[260px] flex-1">

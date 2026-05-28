@@ -6,7 +6,8 @@ import { AgentActivityTable } from '@/components/admin/agentes/agent-activity-ta
 import { AgentCommandCenterNav } from '@/components/admin/agentes/agent-command-center-nav';
 import { MockDataNotice } from '@/components/admin/agentes/mock-data-notice';
 import { GitHubOperationalPanel } from '@/components/admin/agentes/github-operational-panel';
-import { agentRuns } from '@/lib/admin/agent-command-center-data';
+import { OperationalTimeline } from '@/components/admin/agentes/operational-timeline';
+import { agentEvents, agentRuns } from '@/lib/admin/agent-command-center-data';
 
 export default function AgentActivitiesPage() {
     return (
@@ -43,6 +44,8 @@ export default function AgentActivitiesPage() {
                     </SelectContent>
                 </Select>
             </div>
+
+            <OperationalTimeline agentEvents={agentEvents} limit={14} compact />
 
             <AgentActivityTable runs={agentRuns} />
 

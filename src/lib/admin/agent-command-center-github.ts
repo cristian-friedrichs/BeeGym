@@ -1,3 +1,11 @@
+import {
+    agents,
+    departments,
+    type AgentEvent,
+    type AgentRiskLevel,
+    type AgentRunStatus,
+} from './agent-command-center-data';
+
 export type GitHubIntegrationState = 'available' | 'degraded' | 'unavailable';
 
 export interface GitHubPullRequestSummary {
@@ -11,6 +19,7 @@ export interface GitHubPullRequestSummary {
     baseRef: string;
     createdAt: string;
     updatedAt: string;
+    mergedAt: string;
     url: string;
     labels: string[];
 }
@@ -70,6 +79,38 @@ export interface GitHubRepositoryActivitySummary {
     latestMergedPullRequest: GitHubPullRequestSummary | null;
 }
 
+export type AgentOperationalTimelineSource = 'agent_mock' | 'github';
+export type AgentOperationalTimelineType =
+    | 'agent_task'
+    | 'pull_request'
+    | 'workflow_run'
+    | 'issue'
+    | 'merge'
+    | 'alert'
+    | 'approval_request';
+
+export interface AgentOperationalTimelineEvent {
+    id: string;
+    source: AgentOperationalTimelineSource;
+    type: AgentOperationalTimelineType;
+    title: string;
+    description: string;
+    status: string;
+    risk: AgentRiskLevel;
+    department: string;
+    agentName: string;
+    timestamp: string;
+    url?: string;
+    metadata?: Record<string, string | number | boolean | null>;
+    isRealData: boolean;
+}
+
+export interface BuildOperationalTimelineParams {
+    agentEvents?: AgentEvent[];
+    githubData?: GitHubRepositoryActivitySummary | null;
+    limit?: number;
+}
+
 type GitHubResource = 'pulls' | 'issues' | 'workflowRuns' | 'commits';
 type GitHubResult<T> = { ok: true; data: T } | { ok: false; status: number; rateLimited: boolean };
 
@@ -109,6 +150,22 @@ export function createEmptyGitHubRepositoryActivity(message = 'Nao foi possivel 
         latestWorkflowRun: null,
         latestMergedPullRequest: null,
     };
+}
+
+export function buildOperationalTimeline({
+    agentEvents = [],
+    githubData,
+    limit = 14,
+}: BuildOperationalTimelineParams): AgentOperationalTimelineEvent[] {
+    const timelineEvents = [
+        ...agentEvents.map(toAgentTimelineEvent),
+        ...toGitHubTimelineEvents(githubData),
+    ];
+
+    return timelineEvents
+        .filter((event) => Boolean(event.timestamp))
+        .sort((left, right) => getTimestamp(right.timestamp) - getTimestamp(left.timestamp))
+        .slice(0, limit);
 }
 
 export async function fetchGitHubRepositoryActivity(): Promise<GitHubRepositoryActivitySummary> {
@@ -205,6 +262,7 @@ function toPullRequestSummary(item: unknown): GitHubPullRequestSummary | null {
         baseRef: getNestedString(record, 'base', 'ref', '-'),
         createdAt: getString(record.created_at),
         updatedAt: getString(record.updated_at),
+        mergedAt: getString(record.merged_at),
         url: getString(record.html_url, '#'),
         labels: getLabelNames(record.labels),
     };
@@ -299,4 +357,154 @@ function getLabelNames(labels: unknown) {
 
 function isDefined<T>(value: T | null | undefined): value is T {
     return value !== null && value !== undefined;
+}
+
+function toAgentTimelineEvent(event: AgentEvent): AgentOperationalTimelineEvent {
+    const agent = agents.find((item) => item.id === event.agentId);
+    const department = departments.find((item) => item.id === event.departmentId);
+
+    return {
+        id: `agent-${event.id}`,
+        source: 'agent_mock',
+        type: getAgentTimelineType(event),
+        title: event.title,
+        description: event.evidence,
+        status: getAgentStatusLabel(event.status),
+        risk: event.severity,
+        department: department?.shortName ?? department?.name ?? 'BeeGym OS',
+        agentName: agent?.name ?? 'Agente simulado',
+        timestamp: event.occurredAt,
+        metadata: {
+            eventType: event.eventType,
+            runId: event.runId ?? null,
+        },
+        isRealData: false,
+    };
+}
+
+function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | null): AgentOperationalTimelineEvent[] {
+    if (!githubData || githubData.status.state === 'unavailable') return [];
+
+    const pullRequestEvents = githubData.recentPullRequests.flatMap((pullRequest) => {
+        const events: AgentOperationalTimelineEvent[] = [
+            {
+                id: `github-pr-open-${pullRequest.number}`,
+                source: 'github',
+                type: 'pull_request',
+                title: `PR #${pullRequest.number} ${pullRequest.state === 'open' ? 'aberto' : 'atualizado'}`,
+                description: pullRequest.title,
+                status: pullRequest.draft ? 'draft' : pullRequest.state,
+                risk: 'low',
+                department: 'CTO',
+                agentName: pullRequest.author,
+                timestamp: pullRequest.createdAt || pullRequest.updatedAt,
+                url: pullRequest.url,
+                metadata: {
+                    branch: pullRequest.headRef,
+                    base: pullRequest.baseRef,
+                    labels: pullRequest.labels.join(', '),
+                },
+                isRealData: true,
+            },
+        ];
+
+        if (pullRequest.merged) {
+            events.push({
+                id: `github-pr-merge-${pullRequest.number}`,
+                source: 'github',
+                type: 'merge',
+                title: `PR #${pullRequest.number} mergeado`,
+                description: pullRequest.title,
+                status: 'merged',
+                risk: 'low',
+                department: 'CTO',
+                agentName: pullRequest.author,
+                timestamp: pullRequest.mergedAt || pullRequest.updatedAt,
+                url: pullRequest.url,
+                metadata: {
+                    branch: pullRequest.headRef,
+                    base: pullRequest.baseRef,
+                },
+                isRealData: true,
+            });
+        }
+
+        return events;
+    });
+
+    const workflowEvents = githubData.workflowRuns.map((run): AgentOperationalTimelineEvent => ({
+        id: `github-workflow-${run.id}`,
+        source: 'github',
+        type: 'workflow_run',
+        title: getWorkflowTimelineTitle(run),
+        description: `${run.name} em ${run.branch}`,
+        status: run.status === 'completed' ? run.conclusion ?? 'completed' : run.status,
+        risk: getWorkflowRisk(run),
+        department: 'CTO',
+        agentName: 'GitHub Actions',
+        timestamp: run.updatedAt || run.createdAt,
+        url: run.url,
+        metadata: {
+            event: run.event,
+            branch: run.branch,
+            commit: run.commitSha,
+        },
+        isRealData: true,
+    }));
+
+    const issueEvents = githubData.issues.map((issue): AgentOperationalTimelineEvent => ({
+        id: `github-issue-${issue.number}`,
+        source: 'github',
+        type: 'issue',
+        title: `Issue #${issue.number} aberta`,
+        description: issue.title,
+        status: issue.state,
+        risk: issue.labels.some((label) => label.toLowerCase().includes('bug')) ? 'medium' : 'low',
+        department: 'CTO',
+        agentName: issue.author,
+        timestamp: issue.createdAt || issue.updatedAt,
+        url: issue.url,
+        metadata: {
+            labels: issue.labels.join(', '),
+        },
+        isRealData: true,
+    }));
+
+    return [...pullRequestEvents, ...workflowEvents, ...issueEvents];
+}
+
+function getAgentTimelineType(event: AgentEvent): AgentOperationalTimelineType {
+    if (event.status === 'waiting_approval') return 'approval_request';
+    if (event.severity === 'high' || event.severity === 'medium') return 'alert';
+    return 'agent_task';
+}
+
+function getAgentStatusLabel(status: AgentRunStatus) {
+    const labels: Record<AgentRunStatus, string> = {
+        completed: 'Concluído',
+        running: 'Em andamento',
+        waiting_approval: 'Aguardando CEO',
+        failed: 'Falha',
+    };
+
+    return labels[status];
+}
+
+function getWorkflowTimelineTitle(run: GitHubWorkflowRunSummary) {
+    if (run.status !== 'completed') return 'Check em andamento';
+    if (run.conclusion === 'success') return 'Workflow concluído';
+    if (run.conclusion === 'failure') return 'Workflow falhou';
+    return 'Workflow concluído';
+}
+
+function getWorkflowRisk(run: GitHubWorkflowRunSummary): AgentRiskLevel {
+    if (run.status !== 'completed') return 'medium';
+    if (run.conclusion === 'failure') return 'high';
+    if (run.conclusion === 'cancelled' || run.conclusion === 'timed_out') return 'medium';
+    return 'low';
+}
+
+function getTimestamp(value: string) {
+    const time = new Date(value).getTime();
+    return Number.isFinite(time) ? time : 0;
 }
