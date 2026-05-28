@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AgentActivityTable } from '@/components/admin/agentes/agent-activity-table';
 import { AgentCommandCenterNav } from '@/components/admin/agentes/agent-command-center-nav';
 import { MockDataNotice } from '@/components/admin/agentes/mock-data-notice';
+import { GitHubOperationalPanel } from '@/components/admin/agentes/github-operational-panel';
 import { agentRuns } from '@/lib/admin/agent-command-center-data';
 
 export default function AgentActivitiesPage() {
@@ -44,6 +45,8 @@ export default function AgentActivitiesPage() {
             </div>
 
             <AgentActivityTable runs={agentRuns} />
+
+            <GitHubOperationalPanel variant="activities" />
         </div>
     );
 }
