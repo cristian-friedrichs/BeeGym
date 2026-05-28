@@ -117,7 +117,7 @@ export interface MockGithubLink {
     linkedRunId?: string;
 }
 
-export const commandCenterPhaseNotice = 'Ambiente simulado · Fase 1 do Agent Command Center · Nenhuma ação real será executada.';
+export const commandCenterPhaseNotice = 'Fase 1 do Agent Command Center · Eventos simulados dos agentes · Nenhuma ação real será executada.';
 
 export const departments: AgentDepartment[] = [
     {
@@ -531,7 +531,7 @@ export const agentRuns: AgentRun[] = [
         task: 'Agrupar tickets recorrentes sobre pagamentos',
         eventType: 'Suporte',
         autonomyLevel: 'Nível 1',
-        branchOrPr: 'mock/support-weekly-patterns',
+        branchOrPr: 'simulado/support-weekly-patterns',
         status: 'completed',
         risk: 'low',
         occurredAt: '2026-05-26T07:58:00-03:00',
@@ -544,7 +544,7 @@ export const agentRuns: AgentRun[] = [
         task: 'Revisar proposta de campanha para studios',
         eventType: 'Campanha',
         autonomyLevel: 'Nível 1',
-        branchOrPr: 'mock/marketing-studio-campaign',
+        branchOrPr: 'simulado/marketing-studio-campaign',
         status: 'waiting_approval',
         risk: 'medium',
         occurredAt: '2026-05-25T17:50:00-03:00',
@@ -557,7 +557,7 @@ export const agentRuns: AgentRun[] = [
         task: 'Priorizar experimento de ativação do trial',
         eventType: 'Growth',
         autonomyLevel: 'Nível 1',
-        branchOrPr: 'mock/growth-trial-activation',
+        branchOrPr: 'simulado/growth-trial-activation',
         status: 'completed',
         risk: 'medium',
         occurredAt: '2026-05-25T16:35:00-03:00',

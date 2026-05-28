@@ -73,7 +73,7 @@ export function AgentActivityTable({ runs }: { runs: AgentRun[] }) {
                     {runs.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={8} className="h-32 text-center text-sm font-medium text-slate-400">
-                                Nenhuma atividade simulada encontrada.
+                                Nenhum evento de agente encontrado para a visão atual.
                             </TableCell>
                         </TableRow>
                     )}

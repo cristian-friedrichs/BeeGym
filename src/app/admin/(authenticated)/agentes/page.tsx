@@ -31,7 +31,7 @@ export default function AdminAgentsDashboardPage() {
         <div className="space-y-8 pb-12">
             <SectionHeader
                 title="Agent Command Center"
-                subtitle="Painel visual simulado para acompanhar agentes, departamentos, riscos e aprovações"
+                subtitle="Painel executivo para acompanhar agentes simulados, riscos e leitura pública do GitHub"
                 action={
                     <Button asChild className="gap-2 bg-bee-amber font-bold text-bee-midnight shadow-sm hover:bg-amber-500">
                         <Link href="/admin/agentes/aprovacoes">
@@ -78,7 +78,7 @@ export default function AdminAgentsDashboardPage() {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                        <SelectItem value="mock" className="rounded-xl font-bold">Somente simulado</SelectItem>
+                        <SelectItem value="mock" className="rounded-xl font-bold">Eventos simulados</SelectItem>
                         <SelectItem value="attention" className="rounded-xl font-bold">Atenção</SelectItem>
                         <SelectItem value="blocked" className="rounded-xl font-bold">Bloqueados</SelectItem>
                     </SelectContent>
@@ -86,17 +86,17 @@ export default function AdminAgentsDashboardPage() {
             </div>
 
             <section className="space-y-4">
-                <SectionHeader title="Status por Departamento" subtitle="Saúde operacional simulada por área do BeeGym OS" />
+                <SectionHeader title="Status por Departamento" subtitle="Leitura simulada de saúde operacional por área do BeeGym OS" />
                 <DepartmentOverview departments={departments.slice(0, 6)} />
             </section>
 
             <section className="space-y-4">
-                <SectionHeader title="Últimas Atividades" subtitle="Eventos recentes de agentes e subagentes com evidência simulada" />
+                <SectionHeader title="Últimas Atividades" subtitle="Eventos recentes de agentes com evidências seguras e sem execução real" />
                 <AgentActivityTable runs={agentRuns.slice(0, 5)} />
             </section>
 
             <section className="space-y-4">
-                <SectionHeader title="Alertas Simulados" subtitle="Sinais de risco que exigiriam decisão humana em fases futuras" />
+                <SectionHeader title="Alertas simulados" subtitle="Sinais de risco que exigiriam decisão humana antes de virar ação real" />
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                     {agentEvents.filter((event) => event.severity !== 'low').map((event) => {
                         const department = departments.find((item) => item.id === event.departmentId);

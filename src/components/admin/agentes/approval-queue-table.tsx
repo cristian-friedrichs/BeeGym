@@ -80,7 +80,7 @@ export function ApprovalQueueTable({ approvals }: { approvals: ApprovalRequest[]
                     {approvals.length === 0 && (
                         <TableRow>
                             <TableCell colSpan={7} className="h-32 text-center text-sm font-medium text-slate-400">
-                                Nenhuma aprovação simulada encontrada.
+                                Nenhuma aprovação pendente nesta visão. Nenhuma ação real será executada nesta fase.
                             </TableCell>
                         </TableRow>
                     )}

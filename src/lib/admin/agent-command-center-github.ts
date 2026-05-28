@@ -139,12 +139,12 @@ const GITHUB_ENDPOINTS: Record<GitHubResource, string> = {
     commits: `${GITHUB_API_BASE}/commits?per_page=5`,
 };
 
-export function createEmptyGitHubRepositoryActivity(message = 'Nao foi possivel carregar dados do GitHub agora.'): GitHubRepositoryActivitySummary {
+export function createEmptyGitHubRepositoryActivity(message = 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.'): GitHubRepositoryActivitySummary {
     return {
         repository: GITHUB_REPOSITORY,
         status: {
             state: 'unavailable',
-            label: 'GitHub indisponivel',
+            label: 'GitHub indisponível',
             message,
             fetchedAt: new Date().toISOString(),
             source: 'github_public_api',
@@ -193,11 +193,11 @@ export async function fetchGitHubRepositoryActivity(): Promise<GitHubRepositoryA
 
     if (successfulRequests === 0) {
         return {
-            ...createEmptyGitHubRepositoryActivity(rateLimited ? 'Limite publico do GitHub atingido temporariamente.' : 'Nao foi possivel carregar dados do GitHub agora.'),
+            ...createEmptyGitHubRepositoryActivity(rateLimited ? 'Limite público do GitHub atingido temporariamente. A timeline simulada continua disponível.' : 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.'),
             status: {
                 state: 'unavailable',
-                label: rateLimited ? 'Limite temporario' : 'GitHub indisponivel',
-                message: rateLimited ? 'Limite publico do GitHub atingido temporariamente.' : 'Nao foi possivel carregar dados do GitHub agora.',
+                label: rateLimited ? 'Limite temporário' : 'GitHub indisponível',
+                message: rateLimited ? 'Limite público do GitHub atingido temporariamente. A timeline simulada continua disponível.' : 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.',
                 fetchedAt,
                 source: 'github_public_api',
                 readOnly: true,
@@ -216,10 +216,10 @@ export async function fetchGitHubRepositoryActivity(): Promise<GitHubRepositoryA
         repository: GITHUB_REPOSITORY,
         status: {
             state: successfulRequests === 4 ? 'available' : 'degraded',
-            label: successfulRequests === 4 ? 'Sincronizacao read-only' : 'Sincronizacao parcial',
+            label: successfulRequests === 4 ? 'Dados reais do GitHub · leitura pública' : 'Leitura parcial do GitHub',
             message: successfulRequests === 4
-                ? 'Dados reais de leitura publica carregados do GitHub.'
-                : 'Alguns dados publicos do GitHub nao puderam ser carregados agora.',
+                ? 'Dados reais do GitHub carregados em modo read-only.'
+                : 'Alguns dados públicos do GitHub não puderam ser carregados agora. A timeline simulada continua disponível.',
             fetchedAt,
             source: 'github_public_api',
             readOnly: true,

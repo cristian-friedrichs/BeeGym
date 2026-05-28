@@ -30,8 +30,8 @@ interface GitHubOperationalPanelProps {
 
 const emptyStatus = {
     state: 'unavailable' as GitHubIntegrationState,
-    label: 'GitHub indisponivel',
-    message: 'Nao foi possivel carregar dados do GitHub agora.',
+    label: 'GitHub indisponível',
+    message: 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.',
     fetchedAt: new Date().toISOString(),
     source: 'github_public_api' as const,
     readOnly: true as const,
@@ -85,7 +85,7 @@ export function GitHubOperationalPanel({ variant = 'dashboard' }: GitHubOperatio
     if (variant === 'approvals') {
         return (
             <section className="space-y-4">
-                <SectionHeader title="PRs observaveis" subtitle="Dados GitHub: leitura real publica. Sem acoes reais nesta fase." />
+                <SectionHeader title="PRs observáveis" subtitle="Dados reais do GitHub · leitura pública · nenhuma ação real nesta fase" />
                 <StatusNotice status={activity.status} isLoading={isLoading} hasError={hasError} />
                 <OpenPullRequestsList pullRequests={openPullRequests} isLoading={isLoading} />
             </section>
@@ -95,7 +95,7 @@ export function GitHubOperationalPanel({ variant = 'dashboard' }: GitHubOperatio
     if (variant === 'activities') {
         return (
             <section className="space-y-4">
-                <SectionHeader title="Atividades GitHub" subtitle="Dados GitHub: leitura real publica. Dados dos agentes: simulados." />
+                <SectionHeader title="Atividades GitHub" subtitle="Dados reais do GitHub · leitura pública. Eventos dos agentes permanecem simulados." />
                 <StatusNotice status={activity.status} isLoading={isLoading} hasError={hasError} />
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                     <WorkflowRunsList runs={activity.workflowRuns} isLoading={isLoading} />
@@ -107,13 +107,13 @@ export function GitHubOperationalPanel({ variant = 'dashboard' }: GitHubOperatio
 
     return (
         <section className="space-y-4">
-            <SectionHeader title="GitHub operacional" subtitle="Dados reais - leitura publica - sincronizacao read-only" />
+            <SectionHeader title="GitHub operacional" subtitle="Dados reais do GitHub · leitura pública read-only" />
             <StatusNotice status={activity.status} isLoading={isLoading} hasError={hasError} />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <KpiCard title="PRs abertos" value={isLoading ? '-' : String(activity.openPullRequests)} color="amber" icon={<GitPullRequest className="h-6 w-6" />} />
                 <KpiCard title="Issues abertas" value={isLoading ? '-' : String(activity.openIssues)} color="default" icon={<GitBranch className="h-6 w-6" />} />
-                <KpiCard title="Ultimo workflow" value={getWorkflowLabel(activity.latestWorkflowRun, isLoading)} color="black" icon={<Workflow className="h-6 w-6" />} />
-                <KpiCard title="Ultimo merge" value={getPullRequestLabel(activity.latestMergedPullRequest, isLoading)} color="default" icon={<GitPullRequestClosed className="h-6 w-6" />} />
+                <KpiCard title="Último workflow" value={getWorkflowLabel(activity.latestWorkflowRun, isLoading)} color="black" icon={<Workflow className="h-6 w-6" />} />
+                <KpiCard title="Último merge" value={getPullRequestLabel(activity.latestMergedPullRequest, isLoading)} color="default" icon={<GitPullRequestClosed className="h-6 w-6" />} />
             </div>
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                 <RecentPullRequestsList pullRequests={activity.recentPullRequests} isLoading={isLoading} />
@@ -133,7 +133,7 @@ function StatusNotice({
     isLoading: boolean;
     hasError: boolean;
 }) {
-    const visibleStatus = isLoading ? { ...status, state: 'degraded' as GitHubIntegrationState, label: 'Carregando GitHub', message: 'Buscando leitura publica do repositorio.' } : status;
+    const visibleStatus = isLoading ? { ...status, state: 'degraded' as GitHubIntegrationState, label: 'Carregando GitHub', message: 'Buscando leitura pública do repositório.' } : status;
     const tone = getStateTone(visibleStatus.state);
 
     return (
@@ -143,12 +143,12 @@ function StatusNotice({
                 <div className="min-w-0">
                     <p className={cn('text-xs font-black uppercase tracking-wider', tone.title)}>{visibleStatus.label}</p>
                     <p className="truncate text-xs font-bold text-slate-500">
-                        {hasError ? 'Nao foi possivel carregar dados do GitHub agora.' : visibleStatus.message}
+                        {hasError ? 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.' : visibleStatus.message}
                     </p>
                 </div>
             </div>
             <span className="rounded-full border border-white/70 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                Dados reais - leitura publica
+                Dados reais do GitHub · leitura pública
             </span>
         </div>
     );
@@ -167,8 +167,8 @@ function RecentPullRequestsList({
         <div className="overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-50 px-6 py-4">
                 <div>
-                    <p className="text-sm font-black text-bee-midnight">Ultimos PRs</p>
-                    <p className="text-[11px] font-bold text-slate-400">Origem: GitHub</p>
+                    <p className="text-sm font-black text-bee-midnight">Últimos PRs</p>
+                    <p className="text-[11px] font-bold text-slate-400">Origem real: GitHub público</p>
                 </div>
                 <ReadOnlyPill />
             </div>
@@ -202,7 +202,7 @@ function RecentPullRequestsList({
                             </TableCell>
                         </TableRow>
                     ))}
-                    {!isLoading && pullRequests.length === 0 && <EmptyRow colSpan={compact ? 3 : 4} label="Nenhum PR publico encontrado agora." />}
+                    {!isLoading && pullRequests.length === 0 && <EmptyRow colSpan={compact ? 3 : 4} label="Nenhum PR público encontrado agora. Nada será aprovado, mergeado ou alterado por este painel." />}
                 </TableBody>
             </Table>
         </div>
@@ -215,7 +215,7 @@ function WorkflowRunsList({ runs, isLoading }: { runs: GitHubWorkflowRunSummary[
             <div className="flex items-center justify-between border-b border-slate-50 px-6 py-4">
                 <div>
                     <p className="text-sm font-black text-bee-midnight">Workflows recentes</p>
-                    <p className="text-[11px] font-bold text-slate-400">Checks e runs publicos</p>
+                    <p className="text-[11px] font-bold text-slate-400">Checks públicos em leitura read-only</p>
                 </div>
                 <ReadOnlyPill />
             </div>
@@ -247,7 +247,7 @@ function WorkflowRunsList({ runs, isLoading }: { runs: GitHubWorkflowRunSummary[
                             </TableCell>
                         </TableRow>
                     ))}
-                    {!isLoading && runs.length === 0 && <EmptyRow colSpan={4} label="Nenhum workflow publico encontrado agora." />}
+                    {!isLoading && runs.length === 0 && <EmptyRow colSpan={4} label="Nenhum workflow público encontrado agora. A visão simulada dos agentes segue disponível." />}
                 </TableBody>
             </Table>
         </div>
@@ -260,7 +260,7 @@ function OpenIssuesList({ issues, isLoading }: { issues: GitHubIssueSummary[]; i
             <div className="flex items-center justify-between border-b border-slate-50 px-6 py-4">
                 <div>
                     <p className="text-sm font-black text-bee-midnight">Issues abertas</p>
-                    <p className="text-[11px] font-bold text-slate-400">PRs filtrados fora da lista de issues</p>
+                    <p className="text-[11px] font-bold text-slate-400">Somente issues públicas; PRs ficam fora desta lista</p>
                 </div>
                 <ReadOnlyPill />
             </div>
@@ -283,7 +283,7 @@ function OpenIssuesList({ issues, isLoading }: { issues: GitHubIssueSummary[]; i
                 ))}
                 {!isLoading && issues.length === 0 && (
                     <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-400">
-                        Nenhuma issue publica aberta encontrada agora.
+                        Nenhuma issue pública aberta encontrada agora.
                     </div>
                 )}
             </div>
@@ -306,10 +306,10 @@ function OpenPullRequestsList({ pullRequests, isLoading }: { pullRequests: GitHu
                             <p className="line-clamp-1 text-sm font-black text-bee-midnight">#{pullRequest.number} {pullRequest.title}</p>
                             <p className="mt-1 text-xs font-bold text-slate-400">{pullRequest.headRef} para {pullRequest.baseRef}</p>
                         </div>
-                        <GitHubStatePill label="Observavel" tone="amber" />
+                        <GitHubStatePill label="Observável" tone="amber" />
                     </div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50 pt-4">
-                        <span className="text-[11px] font-bold text-slate-400">Sem acao real de merge ou aprovacao.</span>
+                        <span className="text-[11px] font-bold text-slate-400">Sem ação real de merge ou aprovação.</span>
                         <div className="flex gap-2">
                             <Button type="button" variant="outline" size="sm" disabled className="h-9 rounded-xl border-slate-100 bg-slate-50 text-xs font-bold text-slate-400">
                                 Somente observar
@@ -325,7 +325,7 @@ function OpenPullRequestsList({ pullRequests, isLoading }: { pullRequests: GitHu
             ))}
             {!isLoading && pullRequests.length === 0 && (
                 <div className="rounded-[2rem] border border-slate-100 bg-white p-5 text-sm font-bold text-slate-400 shadow-sm">
-                    Nenhum PR aberto encontrado para observacao agora.
+                    Nenhum PR aberto encontrado para observação agora. Nada será aprovado ou mergeado por este painel.
                 </div>
             )}
         </div>
@@ -345,7 +345,7 @@ function ExternalGitHubButton({ url, label }: { url: string; label: string }) {
 function ReadOnlyPill() {
     return (
         <span className="rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-700">
-            Read-only
+            Leitura
         </span>
     );
 }
@@ -374,7 +374,7 @@ function WorkflowStatePill({ run }: { run: GitHubWorkflowRunSummary }) {
         return <GitHubStatePill label="Sucesso" tone="green" />;
     }
 
-    return <GitHubStatePill label={run.conclusion ?? 'Concluido'} tone={run.conclusion === 'failure' ? 'red' : 'slate'} />;
+    return <GitHubStatePill label={run.conclusion ?? 'Concluído'} tone={run.conclusion === 'failure' ? 'red' : 'slate'} />;
 }
 
 function LoadingRow({ colSpan, label }: { colSpan: number; label: string }) {
@@ -414,14 +414,14 @@ function createEmptyClientActivity(): GitHubRepositoryActivitySummary {
 
 function getWorkflowLabel(run: GitHubWorkflowRunSummary | null, isLoading: boolean) {
     if (isLoading) return '-';
-    if (!run) return 'Sem dados';
+    if (!run) return 'Sem workflow';
     if (run.status !== 'completed') return run.status;
-    return run.conclusion ?? 'concluido';
+    return run.conclusion ?? 'concluído';
 }
 
 function getPullRequestLabel(pullRequest: GitHubPullRequestSummary | null, isLoading: boolean) {
     if (isLoading) return '-';
-    if (!pullRequest) return 'Sem merge';
+    if (!pullRequest) return 'Sem merge público';
     return `#${pullRequest.number}`;
 }
 
