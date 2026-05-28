@@ -135,6 +135,21 @@ Com autorizacao de Nivel 3 parcial e gates satisfeitos, o agente pode:
 - Sincronizar `main` apos merge.
 - Reportar resultado completo.
 
+## Aprendizados do primeiro ciclo real
+
+O primeiro ciclo real confirmou que o modelo deve permanecer granular:
+
+- Uma issue por tarefa, com branch dedicada e PR proprio.
+- Nenhuma execucao direta na `main`, mesmo para documentacao.
+- Validacoes locais antes de push quando a issue exigir.
+- Merge apenas depois de `build (18.x)` e Vercel passarem no PR.
+- Sincronizacao da `main` apos cada merge antes da proxima tarefa.
+- Relatorio final com branch, commit, PR, merge commit, validacoes e confirmacao de seguranca.
+
+O ciclo tambem confirmou que permissao escalada para GitHub e rede nao muda o escopo aprovado. Ela serve somente para consultar issues, abrir PRs, acompanhar checks, fazer push ou merge quando a sandbox bloquear acesso externo.
+
+Quando varias tarefas estiverem elegiveis, prefira executar primeiro as de menor risco operacional, como documentacao, templates e copy de UI sem mudanca de comportamento. Tarefas que toquem runtime, dados, integracoes, Supabase, Vercel sensivel, auth, billing, dependencias ou workflows criticos continuam exigindo aprovacao explicita antes de qualquer mudanca.
+
 ## O que exige CEO
 
 Exige CEO antes da execucao:
