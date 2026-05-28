@@ -88,6 +88,7 @@ export type AgentOperationalTimelineType =
     | 'merge'
     | 'alert'
     | 'approval_request';
+export type AgentOperationalApprovalRequirement = 'yes' | 'no' | 'conditional';
 
 export interface AgentOperationalTimelineEvent {
     id: string;
@@ -103,6 +104,15 @@ export interface AgentOperationalTimelineEvent {
     url?: string;
     metadata?: Record<string, string | number | boolean | null>;
     isRealData: boolean;
+    approvalRequired?: AgentOperationalApprovalRequirement;
+    approvalReason?: string;
+    nextSteps?: string[];
+    evidence?: string;
+    externalUrlLabel?: string;
+    governanceLevel?: string;
+    relatedEntityNumber?: number;
+    relatedBranch?: string;
+    relatedCommitSha?: string;
 }
 
 export interface BuildOperationalTimelineParams {
@@ -374,6 +384,11 @@ function toAgentTimelineEvent(event: AgentEvent): AgentOperationalTimelineEvent 
         department: department?.shortName ?? department?.name ?? 'BeeGym OS',
         agentName: agent?.name ?? 'Agente simulado',
         timestamp: event.occurredAt,
+        evidence: event.evidence,
+        governanceLevel: agent?.autonomyLevel,
+        approvalRequired: getAgentApprovalRequirement(event),
+        approvalReason: getAgentApprovalReason(event),
+        nextSteps: getAgentNextSteps(event),
         metadata: {
             departmentId: event.departmentId,
             eventType: event.eventType,
@@ -400,6 +415,16 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
                 agentName: pullRequest.author,
                 timestamp: pullRequest.createdAt || pullRequest.updatedAt,
                 url: pullRequest.url,
+                externalUrlLabel: `Abrir PR #${pullRequest.number} no GitHub`,
+                evidence: `${pullRequest.headRef} para ${pullRequest.baseRef}`,
+                approvalRequired: 'conditional',
+                approvalReason: 'Acompanhamento humano recomendado se checks falharem, risco subir ou escopo ficar sensível.',
+                nextSteps: pullRequest.state === 'open'
+                    ? ['Acompanhar checks', 'Revisar escopo']
+                    : ['Registrar histórico do PR', 'Conferir resultado dos checks'],
+                governanceLevel: 'Leitura pública GitHub',
+                relatedEntityNumber: pullRequest.number,
+                relatedBranch: pullRequest.headRef,
                 metadata: {
                     departmentId: 'cto-monitoring',
                     number: pullRequest.number,
@@ -424,6 +449,14 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
                 agentName: pullRequest.author,
                 timestamp: pullRequest.mergedAt || pullRequest.updatedAt,
                 url: pullRequest.url,
+                externalUrlLabel: `Abrir PR #${pullRequest.number} no GitHub`,
+                evidence: `${pullRequest.headRef} mergeado em ${pullRequest.baseRef}`,
+                approvalRequired: 'no',
+                approvalReason: 'Evento histórico read-only. Nenhuma ação real é executada pelo Command Center.',
+                nextSteps: ['Registrar merge na timeline', 'Acompanhar sincronização da main'],
+                governanceLevel: 'Leitura pública GitHub',
+                relatedEntityNumber: pullRequest.number,
+                relatedBranch: pullRequest.headRef,
                 metadata: {
                     departmentId: 'cto-monitoring',
                     number: pullRequest.number,
@@ -449,8 +482,22 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
         agentName: 'GitHub Actions',
         timestamp: run.updatedAt || run.createdAt,
         url: run.url,
+        externalUrlLabel: `Abrir workflow ${run.name} no GitHub`,
+        evidence: `${run.event} - ${run.commitSha || 'sem sha'}`,
+        approvalRequired: run.conclusion === 'failure' ? 'conditional' : 'no',
+        approvalReason: run.conclusion === 'failure'
+            ? 'Falha de workflow exige classificação humana antes de qualquer ação operacional.'
+            : 'Workflow apenas observado em modo read-only.',
+        nextSteps: run.conclusion === 'failure'
+            ? ['Abrir logs no GitHub', 'Classificar falha']
+            : ['Acompanhar conclusão', 'Registrar resultado'],
+        governanceLevel: 'Leitura pública GitHub Actions',
+        relatedBranch: run.branch,
+        relatedCommitSha: run.commitSha,
         metadata: {
             departmentId: 'cto-monitoring',
+            workflowName: run.name,
+            runId: run.id,
             event: run.event,
             branch: run.branch,
             commit: run.commitSha,
@@ -470,6 +517,13 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
         agentName: issue.author,
         timestamp: issue.createdAt || issue.updatedAt,
         url: issue.url,
+        externalUrlLabel: `Abrir issue #${issue.number} no GitHub`,
+        evidence: issue.labels.length > 0 ? `Labels: ${issue.labels.join(', ')}` : 'Issue pública sem labels no resumo sanitizado.',
+        approvalRequired: 'conditional',
+        approvalReason: 'Issue pode exigir triagem humana caso envolva incidente, suporte ou risco de produto.',
+        nextSteps: ['Triar prioridade', 'Encaminhar departamento'],
+        governanceLevel: 'Leitura pública GitHub',
+        relatedEntityNumber: issue.number,
         metadata: {
             departmentId: 'cto-monitoring',
             number: issue.number,
@@ -485,6 +539,25 @@ function getAgentTimelineType(event: AgentEvent): AgentOperationalTimelineType {
     if (event.status === 'waiting_approval') return 'approval_request';
     if (event.severity === 'high' || event.severity === 'medium') return 'alert';
     return 'agent_task';
+}
+
+function getAgentApprovalRequirement(event: AgentEvent): AgentOperationalApprovalRequirement {
+    if (event.status === 'waiting_approval' || event.severity === 'high') return 'yes';
+    if (event.severity === 'medium') return 'conditional';
+    return 'no';
+}
+
+function getAgentApprovalReason(event: AgentEvent) {
+    if (event.status === 'waiting_approval') return 'Evento simulado marcado como aguardando decisão humana.';
+    if (event.severity === 'high') return 'Risco alto simulado exige aprovação CEO antes de virar ação real.';
+    if (event.severity === 'medium') return 'Aprovação pode ser necessária se o risco aumentar ou virar tarefa real.';
+    return 'Evento informativo simulado, sem ação real nesta fase.';
+}
+
+function getAgentNextSteps(event: AgentEvent) {
+    if (event.status === 'waiting_approval') return ['Validar se deve virar tarefa real', 'Vincular a uma aprovação futura'];
+    if (event.severity !== 'low') return ['Classificar risco', 'Vincular a uma aprovação futura'];
+    return ['Validar se deve virar tarefa real', 'Registrar aprendizado operacional'];
 }
 
 function getAgentStatusLabel(status: AgentRunStatus) {
