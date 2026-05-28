@@ -493,6 +493,10 @@ function TimelineEventDetailDrawer({
     const detailFields = event ? getEventDetailFields(event) : [];
     const governance = event ? getEventGovernance(event) : null;
     const nextSteps = event ? getEventNextSteps(event) : [];
+    const sharePreviewText = useMemo(
+        () => event ? buildTimelineEventShareSummary(event, selectedShareTemplate) : '',
+        [event, selectedShareTemplate],
+    );
 
     useEffect(() => {
         if (event?.id) {
@@ -516,7 +520,7 @@ function TimelineEventDetailDrawer({
         }
 
         try {
-            await navigator.clipboard.writeText(buildTimelineEventShareSummary(event, selectedShareTemplate));
+            await navigator.clipboard.writeText(sharePreviewText);
             setCopyState('copied');
         } catch {
             setCopyState('failed');
@@ -591,8 +595,9 @@ function TimelineEventDetailDrawer({
                                         Não foi possível copiar automaticamente.
                                     </p>
                                 )}
-                                <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
-                                    <div className="min-w-0 lg:mr-auto lg:w-56">
+
+                                <div className="grid gap-3 lg:grid-cols-[14rem_1fr]">
+                                    <div className="min-w-0">
                                         <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">Template</p>
                                         <Select
                                             value={selectedShareTemplate}
@@ -613,6 +618,24 @@ function TimelineEventDetailDrawer({
                                             </SelectContent>
                                         </Select>
                                     </div>
+
+                                    <div className="min-w-0">
+                                        <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Prévia do resumo</p>
+                                                <p className="mt-1 text-[11px] font-bold text-slate-400">Este texto será copiado para a área de transferência.</p>
+                                            </div>
+                                            <span className="rounded-full border border-slate-100 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                                                Texto local
+                                            </span>
+                                        </div>
+                                        <div className="max-h-48 overflow-y-auto rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm font-medium leading-relaxed text-slate-600 shadow-inner">
+                                            <p className="whitespace-pre-wrap">{sharePreviewText}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
                                     <Button
                                         type="button"
                                         variant="outline"
