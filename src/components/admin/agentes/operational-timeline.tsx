@@ -30,6 +30,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { departments, type AgentEvent, type AgentRiskLevel } from '@/lib/admin/agent-command-center-data';
 import {
@@ -51,6 +52,7 @@ interface OperationalTimelineProps {
 type TimelineSourceFilter = 'all' | AgentOperationalTimelineSource;
 type TimelineTypeFilter = 'all' | AgentOperationalTimelineType;
 type TimelineStatusFilter = 'all' | 'completed' | 'running' | 'pending' | 'failed' | 'blocked';
+type EventAnalysisMode = 'summary' | 'risk' | 'engineering' | 'approval' | 'github';
 
 interface TimelineFilters {
     source: TimelineSourceFilter;
@@ -73,6 +75,12 @@ interface TimelineGroup {
     id: string;
     label: string;
     events: AgentOperationalTimelineEvent[];
+}
+
+interface TimelineDetailField {
+    label: string;
+    value: string | number;
+    mono?: boolean;
 }
 
 const DEFAULT_FILTERS: TimelineFilters = {
@@ -101,6 +109,14 @@ const STATUS_FILTER_OPTIONS: Array<{ value: TimelineStatusFilter; label: string 
     { value: 'pending', label: 'Pendente' },
     { value: 'failed', label: 'Falhou' },
     { value: 'blocked', label: 'Bloqueado' },
+];
+
+const EVENT_ANALYSIS_MODES: Array<{ value: EventAnalysisMode; label: string }> = [
+    { value: 'summary', label: 'Resumo' },
+    { value: 'risk', label: 'Risco' },
+    { value: 'engineering', label: 'Engenharia' },
+    { value: 'approval', label: 'Aprovação' },
+    { value: 'github', label: 'GitHub' },
 ];
 
 export function OperationalTimeline({ agentEvents, limit = 10, compact = false }: OperationalTimelineProps) {
@@ -455,9 +471,14 @@ function TimelineEventDetailDrawer({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const [activeMode, setActiveMode] = useState<EventAnalysisMode>('summary');
     const detailFields = event ? getEventDetailFields(event) : [];
     const governance = event ? getEventGovernance(event) : null;
     const nextSteps = event ? getEventNextSteps(event) : [];
+
+    useEffect(() => {
+        if (event?.id) setActiveMode('summary');
+    }, [event?.id]);
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -488,59 +509,37 @@ function TimelineEventDetailDrawer({
                             </div>
                         </SheetHeader>
 
-                        <ScrollArea className="flex-1">
-                            <div className="space-y-5 p-6">
-                                <DetailSection title="Contexto" icon={<Info className="h-4 w-4" />}>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                        <DetailField label="Tipo" value={getTypeLabel(event.type)} />
-                                        <DetailField label="Departamento" value={event.department} />
-                                        <DetailField label="Agente" value={event.agentName} />
-                                        <DetailField label="Data e hora" value={formatFullDateTime(event.timestamp)} />
-                                        <DetailField label="Origem dos dados" value={event.isRealData ? 'Leitura real pública' : 'Simulação local'} />
-                                        <DetailField label="Natureza" value={event.isRealData ? 'Dado real sanitizado' : 'Dado simulado'} />
-                                    </div>
-                                </DetailSection>
-
-                                <DetailSection title="Evidência" icon={<CircleDot className="h-4 w-4" />}>
-                                    <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-medium leading-relaxed text-slate-600">
-                                        {event.evidence ?? event.description}
-                                    </p>
-                                    {detailFields.length > 0 && (
-                                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            {detailFields.map((field) => (
-                                                <DetailField key={field.label} label={field.label} value={field.value} mono={field.mono} />
-                                            ))}
-                                        </div>
-                                    )}
-                                </DetailSection>
-
-                                {governance && (
-                                    <DetailSection title="Governança" icon={<ShieldCheck className="h-4 w-4" />}>
-                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <DetailField label="Autonomia" value={governance.level} />
-                                            <DetailField label="Aprovação CEO" value={governance.approvalLabel} />
-                                        </div>
-                                        <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-bold leading-relaxed text-amber-800">
-                                            {governance.reason}
-                                        </p>
-                                    </DetailSection>
-                                )}
-
-                                <DetailSection title="Próximos passos sugeridos" icon={<CheckCircle2 className="h-4 w-4" />}>
-                                    <div className="space-y-2">
-                                        {nextSteps.map((step) => (
-                                            <div key={step} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm font-bold text-slate-600">
-                                                <span className="h-2 w-2 rounded-full bg-bee-amber" />
-                                                {step}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="mt-4 text-[11px] font-bold text-slate-400">
-                                        Sugestões apenas visuais. Nenhuma aprovação, merge, deploy ou automação é executada por este painel.
-                                    </p>
-                                </DetailSection>
+                        <Tabs value={activeMode} onValueChange={(value) => setActiveMode(value as EventAnalysisMode)} className="flex min-h-0 flex-1 flex-col">
+                            <div className="shrink-0 border-b border-slate-100 bg-slate-50/50 px-6 py-3">
+                                <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl border border-slate-100 bg-white p-1 shadow-sm sm:grid-cols-5">
+                                    {EVENT_ANALYSIS_MODES.map((mode) => (
+                                        <TabsTrigger
+                                            key={mode.value}
+                                            value={mode.value}
+                                            className="rounded-xl px-3 py-2 text-xs font-black text-slate-500 data-[state=active]:bg-bee-amber data-[state=active]:text-bee-midnight data-[state=active]:shadow-none"
+                                        >
+                                            {mode.label}
+                                        </TabsTrigger>
+                                    ))}
+                                </TabsList>
                             </div>
-                        </ScrollArea>
+
+                            <ScrollArea className="flex-1">
+                                <div className="p-6">
+                                    {EVENT_ANALYSIS_MODES.map((mode) => (
+                                        <TabsContent key={mode.value} value={mode.value} className="m-0 space-y-5">
+                                            <TimelineEventAnalysisContent
+                                                event={event}
+                                                mode={mode.value}
+                                                detailFields={detailFields}
+                                                governance={governance}
+                                                nextSteps={nextSteps}
+                                            />
+                                        </TabsContent>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </Tabs>
 
                         <SheetFooter className="shrink-0 border-t border-slate-100 bg-slate-50/50 p-6">
                             <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
@@ -566,6 +565,187 @@ function TimelineEventDetailDrawer({
                 )}
             </SheetContent>
         </Sheet>
+    );
+}
+
+function TimelineEventAnalysisContent({
+    event,
+    mode,
+    detailFields,
+    governance,
+    nextSteps,
+}: {
+    event: AgentOperationalTimelineEvent;
+    mode: EventAnalysisMode;
+    detailFields: TimelineDetailField[];
+    governance: ReturnType<typeof getEventGovernance> | null;
+    nextSteps: string[];
+}) {
+    if (mode === 'risk') {
+        const riskSummary = getEventRiskSummary(event);
+
+        return (
+            <>
+                <DetailSection title="Leitura de risco" icon={<AlertTriangle className="h-4 w-4" />}>
+                    <div className="space-y-4">
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                            <p className="text-sm font-black text-bee-midnight">{riskSummary.title}</p>
+                            <p className="mt-2 text-sm font-medium leading-relaxed text-slate-600">{riskSummary.operationalImpact}</p>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <DetailField label="Risco" value={getRiskLabel(event.risk)} />
+                            <DetailField label="Status" value={event.status} />
+                            <DetailField label="Aprovação CEO" value={governance?.approvalLabel ?? 'Não'} />
+                            <DetailField label="Classificação" value={riskSummary.attentionLabel} />
+                        </div>
+                    </div>
+                </DetailSection>
+
+                <DetailSection title="Governança de risco" icon={<ShieldCheck className="h-4 w-4" />}>
+                    <p className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-bold leading-relaxed text-amber-800">
+                        {governance?.reason ?? riskSummary.recommendation}
+                    </p>
+                    <p className="mt-4 rounded-2xl border border-slate-100 bg-white p-4 text-sm font-medium leading-relaxed text-slate-600">
+                        {riskSummary.recommendation}
+                    </p>
+                </DetailSection>
+            </>
+        );
+    }
+
+    if (mode === 'engineering') {
+        return (
+            <>
+                <DetailSection title="Engenharia" icon={<Workflow className="h-4 w-4" />}>
+                    {detailFields.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {detailFields.map((field) => (
+                                <DetailField key={field.label} label={field.label} value={field.value} mono={field.mono} />
+                            ))}
+                        </div>
+                    ) : (
+                        <DetailEmptyState message="Este evento não possui evidência técnica associada." />
+                    )}
+                </DetailSection>
+
+                {detailFields.length > 0 && (
+                    <DetailSection title="Evidência técnica" icon={<CircleDot className="h-4 w-4" />}>
+                        <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-medium leading-relaxed text-slate-600">
+                            {getEventEngineeringSummary(event)}
+                        </p>
+                    </DetailSection>
+                )}
+            </>
+        );
+    }
+
+    if (mode === 'approval') {
+        return (
+            <>
+                <DetailSection title="Aprovação" icon={<ShieldCheck className="h-4 w-4" />}>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <DetailField label="Aprovação CEO" value={governance?.approvalLabel ?? 'Não'} />
+                        <DetailField label="Autonomia" value={governance?.level ?? 'Leitura operacional'} />
+                    </div>
+                    <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-bold leading-relaxed text-amber-800">
+                        {getEventApprovalSummary(event, governance)}
+                    </p>
+                    <p className="mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-black leading-relaxed text-slate-600">
+                        Nenhuma aprovação real é executada por este painel nesta fase.
+                    </p>
+                </DetailSection>
+
+                <DetailSection title="Próximos passos de decisão" icon={<CheckCircle2 className="h-4 w-4" />}>
+                    <NextStepsList steps={nextSteps} />
+                    <p className="mt-4 text-[11px] font-bold text-slate-400">
+                        Itens apenas visuais. Não há aprovação, rejeição, merge, deploy ou automação real.
+                    </p>
+                </DetailSection>
+            </>
+        );
+    }
+
+    if (mode === 'github') {
+        const githubSummary = getEventGithubSummary(event);
+
+        return (
+            <>
+                <DetailSection title="GitHub" icon={<GitPullRequest className="h-4 w-4" />}>
+                    {githubSummary.isGitHub ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {githubSummary.fields.map((field) => (
+                                    <DetailField key={field.label} label={field.label} value={field.value} mono={field.mono} />
+                                ))}
+                            </div>
+                            <p className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm font-bold leading-relaxed text-blue-800">
+                                Origem read-only: leitura real pública e sanitizada do GitHub. Nenhum payload bruto é exposto.
+                            </p>
+                            {event.url && event.url !== '#' && (
+                                <Button asChild variant="outline" className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber">
+                                    <a href={event.url} target="_blank" rel="noreferrer">
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        {event.externalUrlLabel ?? 'Abrir no GitHub'}
+                                    </a>
+                                </Button>
+                            )}
+                        </div>
+                    ) : (
+                        <DetailEmptyState message="Este evento é simulado e não possui origem GitHub real." />
+                    )}
+                </DetailSection>
+            </>
+        );
+    }
+
+    return (
+        <>
+            <DetailSection title="Resumo" icon={<Info className="h-4 w-4" />}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <DetailField label="Tipo" value={getTypeLabel(event.type)} />
+                    <DetailField label="Departamento" value={event.department} />
+                    <DetailField label="Agente" value={event.agentName} />
+                    <DetailField label="Data e hora" value={formatFullDateTime(event.timestamp)} />
+                    <DetailField label="Origem dos dados" value={event.isRealData ? 'Leitura real pública' : 'Simulação local'} />
+                    <DetailField label="Natureza" value={event.isRealData ? 'Dado real sanitizado' : 'Dado simulado'} />
+                </div>
+            </DetailSection>
+
+            <DetailSection title="Contexto" icon={<CircleDot className="h-4 w-4" />}>
+                <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-medium leading-relaxed text-slate-600">
+                    {event.evidence ?? event.description}
+                </p>
+            </DetailSection>
+
+            <DetailSection title="Próximos passos principais" icon={<CheckCircle2 className="h-4 w-4" />}>
+                <NextStepsList steps={nextSteps} />
+                <p className="mt-4 text-[11px] font-bold text-slate-400">
+                    Sugestões apenas visuais. Nenhuma aprovação, merge, deploy ou automação é executada por este painel.
+                </p>
+            </DetailSection>
+        </>
+    );
+}
+
+function NextStepsList({ steps }: { steps: string[] }) {
+    return (
+        <div className="space-y-2">
+            {steps.map((step) => (
+                <div key={step} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm font-bold text-slate-600">
+                    <span className="h-2 w-2 rounded-full bg-bee-amber" />
+                    {step}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function DetailEmptyState({ message }: { message: string }) {
+    return (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
+            <p className="text-sm font-black text-bee-midnight">{message}</p>
+            <p className="mt-1 text-xs font-bold text-slate-400">A leitura permanece disponível em modo observável e read-only.</p>
+        </div>
     );
 }
 
@@ -668,8 +848,8 @@ function getTypeLabel(type: AgentOperationalTimelineType) {
     return labels[type];
 }
 
-function getEventDetailFields(event: AgentOperationalTimelineEvent) {
-    const fields: Array<{ label: string; value: string | number; mono?: boolean }> = [];
+function getEventDetailFields(event: AgentOperationalTimelineEvent): TimelineDetailField[] {
+    const fields: TimelineDetailField[] = [];
     const workflowName = getMetadataValue(event, 'workflowName');
     const runId = getMetadataValue(event, 'runId');
     const base = getMetadataValue(event, 'base');
@@ -690,14 +870,113 @@ function getEventDetailFields(event: AgentOperationalTimelineEvent) {
     return fields;
 }
 
+function getEventRiskSummary(event: AgentOperationalTimelineEvent) {
+    const statusCategory = getStatusCategory(event);
+    const isWorkflowFailure = event.type === 'workflow_run' && statusCategory === 'failed';
+    const hasAttention = event.risk !== 'low' || statusCategory === 'failed' || statusCategory === 'blocked';
+
+    if (isWorkflowFailure) {
+        return {
+            title: 'Atenção necessária · workflow falhou',
+            attentionLabel: 'Falha operacional',
+            operationalImpact: 'O evento indica falha em um check ou workflow observado. A análise deve focar em logs e impacto antes de qualquer ação real.',
+            recommendation: 'Abrir logs no GitHub, classificar a falha e manter qualquer decisão como próximo passo visual nesta fase.',
+        };
+    }
+
+    if (statusCategory === 'blocked' || event.risk === 'high') {
+        return {
+            title: 'Atenção necessária · risco alto',
+            attentionLabel: 'Bloqueio ou risco alto',
+            operationalImpact: 'O evento pede leitura humana antes de evoluir para uma decisão operacional.',
+            recommendation: 'Validar contexto, risco e governança antes de transformar este evento em ação real.',
+        };
+    }
+
+    if (hasAttention) {
+        return {
+            title: 'Aprovação exigida apenas se virar ação real',
+            attentionLabel: 'Atenção moderada',
+            operationalImpact: 'O evento pode exigir acompanhamento, mas o painel permanece apenas observável.',
+            recommendation: 'Acompanhar evolução do status e pedir aprovação humana somente se a leitura virar execução real.',
+        };
+    }
+
+    return {
+        title: 'Baixo risco · leitura operacional',
+        attentionLabel: 'Sem bloqueio',
+        operationalImpact: 'O evento tem risco baixo e pode ser acompanhado como parte da rotina operacional.',
+        recommendation: 'Sem aprovação CEO nesta fase. Manter acompanhamento read-only.',
+    };
+}
+
+function getEventEngineeringSummary(event: AgentOperationalTimelineEvent) {
+    if (event.type === 'pull_request') return 'Evidência técnica de PR com número, branch, base e commit quando disponíveis.';
+    if (event.type === 'workflow_run') return 'Evidência técnica de workflow/check com nome, run id, branch, evento e commit quando disponíveis.';
+    if (event.type === 'issue') return 'Evidência técnica de issue com número, labels e origem GitHub quando disponíveis.';
+    return 'Evidência técnica derivada dos metadados seguros do evento.';
+}
+
+function getEventApprovalSummary(
+    event: AgentOperationalTimelineEvent,
+    governance: ReturnType<typeof getEventGovernance> | null,
+) {
+    const approvalRequired = governance?.approvalRequired ?? getFallbackApprovalRequirement(event);
+
+    if (approvalRequired === 'yes') {
+        return governance?.reason ?? 'Aprovação CEO indicada para qualquer transformação deste evento em ação real.';
+    }
+
+    if (approvalRequired === 'conditional') {
+        return governance?.reason ?? 'Aprovação exigida apenas se virar ação real ou se houver falha/risco.';
+    }
+
+    return governance?.reason ?? 'Sem aprovação CEO nesta fase. O painel apresenta apenas leitura operacional.';
+}
+
+function getEventGithubSummary(event: AgentOperationalTimelineEvent) {
+    const fields: TimelineDetailField[] = [
+        { label: 'Origem', value: event.source === 'github' ? 'GitHub real' : 'Agente simulado' },
+        { label: 'Modo', value: event.isRealData ? 'Read-only público' : 'Simulação local' },
+        { label: 'Status', value: event.status },
+        { label: 'Tipo', value: getTypeLabel(event.type) },
+    ];
+
+    if (event.relatedEntityNumber) fields.push({ label: event.type === 'issue' ? 'Issue' : 'PR', value: `#${event.relatedEntityNumber}` });
+
+    const workflowName = getMetadataValue(event, 'workflowName');
+    const runId = getMetadataValue(event, 'runId');
+    const labels = getMetadataValue(event, 'labels');
+    const conclusion = getMetadataValue(event, 'conclusion');
+
+    if (workflowName) fields.push({ label: 'Workflow', value: workflowName });
+    if (runId) fields.push({ label: 'Run ID', value: runId, mono: true });
+    if (event.relatedBranch) fields.push({ label: 'Branch', value: event.relatedBranch, mono: true });
+    if (event.relatedCommitSha) fields.push({ label: 'Commit', value: event.relatedCommitSha, mono: true });
+    if (labels) fields.push({ label: 'Labels', value: labels });
+    if (conclusion) fields.push({ label: 'Conclusion', value: conclusion });
+
+    return {
+        isGitHub: event.source === 'github',
+        fields,
+    };
+}
+
 function getEventGovernance(event: AgentOperationalTimelineEvent) {
     const approvalRequired = event.approvalRequired ?? getFallbackApprovalRequirement(event);
 
     return {
         level: event.governanceLevel ?? (event.isRealData ? 'Leitura pública' : 'Simulação local'),
         approvalLabel: getApprovalRequiredLabel(approvalRequired),
+        approvalRequired,
         reason: event.approvalReason ?? getFallbackApprovalReason(approvalRequired, event),
     };
+}
+
+function getRiskLabel(risk: string) {
+    if (risk === 'high') return 'Alto';
+    if (risk === 'medium') return 'Médio';
+    return 'Baixo';
 }
 
 function getEventNextSteps(event: AgentOperationalTimelineEvent) {
