@@ -1,5 +1,5 @@
 name: Agent Bug
-description: Report a defect for BeeGym agents to triage.
+description: Report a scoped defect for BeeGym agents to triage safely.
 title: "[Agent Bug] "
 labels:
   - type:bug
@@ -8,14 +8,15 @@ body:
     id: area
     attributes:
       label: Area afetada
-      placeholder: "Ex.: Admin Agent Command Center"
+      placeholder: "Ex.: Admin Agent Command Center, BeeGym OS docs, scripts de agente"
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Passos para reproduzir
-      placeholder: "1. Acessar...\n2. Clicar...\n3. Observar..."
+      description: Use passos objetivos e sanitizados. Nao inclua dados reais de clientes ou secrets.
+      placeholder: "1. Acessar a tela ou rotina...\n2. Executar a acao...\n3. Observar o comportamento..."
     validations:
       required: true
   - type: textarea
@@ -45,14 +46,14 @@ body:
     id: evidence
     attributes:
       label: Evidencias
-      description: Inclua logs sanitizados, prints ou links publicos. Nao cole secrets ou dados reais.
+      description: Inclua logs sanitizados, prints ou links publicos. Nao cole tokens, secrets, dados reais, valores de .env ou informacoes sensiveis.
     validations:
       required: false
   - type: input
     id: environment
     attributes:
       label: Ambiente
-      placeholder: "Ex.: local, preview PR, producao"
+      placeholder: "Ex.: local, preview PR, producao sem dados reais"
     validations:
       required: true
   - type: dropdown
