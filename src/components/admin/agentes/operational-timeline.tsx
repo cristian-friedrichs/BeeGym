@@ -201,14 +201,14 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <SectionHeader
                     title="Timeline operacional"
-                    subtitle="Eventos simulados dos agentes combinados com dados reais read-only do GitHub."
+                    subtitle="Eventos simulados dos agentes combinados com dados reais do GitHub em leitura pública."
                 />
                 <div className="flex flex-wrap gap-2">
                     <TimelinePill label="Sem ações reais nesta fase" tone="slate" />
                     {isLoading ? (
-                        <TimelinePill label="Atualizando GitHub real" tone="amber" icon={<Loader2 className="h-3 w-3 animate-spin" />} />
+                        <TimelinePill label="Atualizando GitHub" tone="amber" icon={<Loader2 className="h-3 w-3 animate-spin" />} />
                     ) : (
-                        <TimelinePill label="Read-only" tone="green" icon={<ShieldCheck className="h-3 w-3" />} />
+                        <TimelinePill label="Leitura pública" tone="green" icon={<ShieldCheck className="h-3 w-3" />} />
                     )}
                 </div>
             </div>
@@ -224,13 +224,13 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
 
             {showGitHubUnavailable && (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-xs font-bold text-amber-800 shadow-sm">
-                    Dados GitHub indisponíveis no momento. Exibindo eventos simulados.
+                    Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.
                 </div>
             )}
 
             {showGitHubEmpty && (
                 <div className="rounded-2xl border border-slate-100 bg-white px-4 py-3 text-xs font-bold text-slate-500 shadow-sm">
-                    Nenhum PR, issue ou workflow público encontrado agora.
+                    Nenhum PR, issue ou workflow público encontrado agora. Eventos simulados continuam disponíveis.
                 </div>
             )}
 
@@ -244,11 +244,11 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
                 ) : (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
                         <p className="text-sm font-black text-bee-midnight">
-                            {timelineEvents.length === 0 ? 'Nenhum evento operacional encontrado.' : 'Nenhum evento encontrado para os filtros selecionados.'}
+                            {timelineEvents.length === 0 ? 'Nenhum evento operacional disponível agora.' : 'Nenhum evento encontrado para os filtros selecionados.'}
                         </p>
                         <p className="mt-1 text-xs font-bold text-slate-400">
                             {timelineEvents.length === 0
-                                ? 'A timeline será preenchida quando houver eventos simulados ou dados GitHub disponíveis.'
+                                ? 'A timeline será preenchida quando houver eventos simulados ou dados públicos do GitHub disponíveis.'
                                 : 'Ajuste a busca ou limpe os filtros para voltar à visão completa.'}
                         </p>
                         {timelineEvents.length > 0 && hasActiveFilters && (
@@ -274,7 +274,7 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
 function TimelineSummaryCards({ summary }: { summary: TimelineSummary }) {
     const cards = [
         { label: 'Eventos exibidos', value: `${summary.visible}/${summary.total}`, helper: 'filtrado / geral' },
-        { label: 'GitHub real', value: String(summary.github), helper: 'eventos filtrados' },
+        { label: 'GitHub real', value: String(summary.github), helper: 'leitura pública' },
         { label: 'Agente simulado', value: String(summary.simulated), helper: 'eventos filtrados' },
         { label: 'Atenção ou falha', value: String(summary.attention), helper: 'risco médio/alto' },
         { label: 'PRs/workflows', value: String(summary.recentEngineering), helper: 'GitHub recente' },
@@ -328,7 +328,7 @@ function TimelineFiltersBar({
                     <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
                         <SelectItem value="all" className="rounded-xl font-bold">Todas origens</SelectItem>
                         <SelectItem value="github" className="rounded-xl font-bold">GitHub real</SelectItem>
-                        <SelectItem value="agent_mock" className="rounded-xl font-bold">Agente simulado</SelectItem>
+                        <SelectItem value="agent_mock" className="rounded-xl font-bold">Eventos simulados</SelectItem>
                     </SelectContent>
                 </Select>
 
@@ -592,7 +592,7 @@ function TimelineEventDetailDrawer({
                             <div className="flex w-full flex-col gap-3">
                                 {copyState === 'failed' && (
                                     <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-                                        Não foi possível copiar automaticamente.
+                                        Não foi possível copiar automaticamente. Selecione a prévia e copie manualmente.
                                     </p>
                                 )}
 
@@ -735,7 +735,7 @@ function TimelineEventAnalysisContent({
                             ))}
                         </div>
                     ) : (
-                        <DetailEmptyState message="Este evento não possui evidência técnica associada." />
+                        <DetailEmptyState message="Este evento ainda não possui evidência técnica associada." />
                     )}
                 </DetailSection>
 
@@ -790,7 +790,7 @@ function TimelineEventAnalysisContent({
                                 ))}
                             </div>
                             <p className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-sm font-bold leading-relaxed text-blue-800">
-                                Origem read-only: leitura real pública e sanitizada do GitHub. Nenhum payload bruto é exposto.
+                                Origem GitHub real em leitura pública read-only. Nenhum payload bruto é exposto.
                             </p>
                             {event.url && event.url !== '#' && (
                                 <Button asChild variant="outline" className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber">
@@ -855,7 +855,7 @@ function DetailEmptyState({ message }: { message: string }) {
     return (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
             <p className="text-sm font-black text-bee-midnight">{message}</p>
-            <p className="mt-1 text-xs font-bold text-slate-400">A leitura permanece disponível em modo observável e read-only.</p>
+            <p className="mt-1 text-xs font-bold text-slate-400">A leitura permanece disponível, sem aprovação, merge, deploy ou automação real.</p>
         </div>
     );
 }

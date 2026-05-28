@@ -12,7 +12,7 @@ import { agentEvents, agentRuns } from '@/lib/admin/agent-command-center-data';
 export default function AgentActivitiesPage() {
     return (
         <div className="space-y-8 pb-12">
-            <SectionHeader title="Atividades dos Agentes" subtitle="Timeline e tabela visual de runs, eventos, autonomia, risco e evidências simuladas" />
+            <SectionHeader title="Atividades dos Agentes" subtitle="Timeline executiva com eventos simulados e GitHub real em leitura pública" />
             <MockDataNotice />
             <AgentCommandCenterNav />
 

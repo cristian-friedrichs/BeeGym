@@ -11,12 +11,12 @@ import { approvalRequests } from '@/lib/admin/agent-command-center-data';
 export default function AgentApprovalsPage() {
     return (
         <div className="space-y-8 pb-12">
-            <SectionHeader title="Aprovações Pendentes" subtitle="Fila visual de ações que exigem decisão do CEO antes de qualquer execução real" />
+            <SectionHeader title="Aprovações Pendentes" subtitle="Fila visual para decisões que exigiriam CEO antes de qualquer execução real" />
             <MockDataNotice />
             <AgentCommandCenterNav />
 
             <div className="rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3 text-xs font-bold text-red-700 shadow-sm">
-                Ações apenas simuladas. Os botões não chamam API, não alteram banco e não disparam GitHub.
+                Nenhuma ação real será executada nesta fase. Os botões são visuais: não chamam API, não alteram banco e não disparam GitHub.
             </div>
 
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">

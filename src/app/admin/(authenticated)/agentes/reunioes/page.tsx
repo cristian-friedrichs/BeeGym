@@ -9,7 +9,7 @@ export default function AgentLeaderMeetingsPage() {
 
     return (
         <div className="space-y-8 pb-12">
-            <SectionHeader title="Reunião de Líderes" subtitle="Sala visual para decisões, bloqueios e próximos passos por departamento" />
+            <SectionHeader title="Reunião de Líderes" subtitle="Sala visual para decisões simuladas, bloqueios e próximos passos por departamento" />
             <MockDataNotice />
             <AgentCommandCenterNav />
             <LeaderMeetingBoard meeting={currentMeeting} />
