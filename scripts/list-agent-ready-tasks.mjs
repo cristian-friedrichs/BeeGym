@@ -7,6 +7,10 @@ const REQUIRED_LABELS = ['agent:ready', 'autonomy:level-3-candidate', 'risk:low'
 const DEPARTMENT_PREFIX = 'dept:';
 const TYPE_PREFIX = 'type:';
 
+function printRequiredLabels() {
+  console.log(`Labels exigidas: ${REQUIRED_LABELS.join(', ')}`);
+}
+
 function runGh(args) {
   try {
     return execFileSync('gh', args, {
@@ -65,13 +69,19 @@ const eligibleIssues = issues.filter((issue) => {
 
 if (eligibleIssues.length === 0) {
   console.log('Nenhuma tarefa elegivel para Nivel 3 parcial encontrada.');
-  console.log(`Labels exigidas: ${REQUIRED_LABELS.join(', ')}`);
+  console.log(`Repositorio: ${REPOSITORY}`);
+  printRequiredLabels();
+  console.log('');
+  console.log('Proximo passo operacional: criar ou revisar backlog com issues pequenas, baixo risco e escopo claro antes de iniciar nova rodada autonoma.');
+  console.log('Este script e somente leitura: nao cria, edita, fecha ou rotula issues.');
   process.exit(0);
 }
 
 console.log('Tarefas elegiveis para Nivel 3 parcial');
 console.log(`Repositorio: ${REPOSITORY}`);
-console.log(`Labels exigidas: ${REQUIRED_LABELS.join(', ')}`);
+printRequiredLabels();
+console.log(`Total elegivel: ${eligibleIssues.length}`);
+console.log('Proximo passo operacional: ler a issue escolhida, confirmar escopo/labels e mover para agent:in-progress antes de criar branch.');
 console.log('');
 
 for (const issue of eligibleIssues) {
