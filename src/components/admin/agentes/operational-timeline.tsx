@@ -7,6 +7,7 @@ import {
     CheckCircle2,
     CircleDot,
     Clock,
+    Copy,
     ExternalLink,
     FilterX,
     GitMerge,
@@ -53,6 +54,7 @@ type TimelineSourceFilter = 'all' | AgentOperationalTimelineSource;
 type TimelineTypeFilter = 'all' | AgentOperationalTimelineType;
 type TimelineStatusFilter = 'all' | 'completed' | 'running' | 'pending' | 'failed' | 'blocked';
 type EventAnalysisMode = 'summary' | 'risk' | 'engineering' | 'approval' | 'github';
+type ClipboardCopyState = 'idle' | 'copied' | 'failed';
 
 interface TimelineFilters {
     source: TimelineSourceFilter;
@@ -472,13 +474,38 @@ function TimelineEventDetailDrawer({
     onOpenChange: (open: boolean) => void;
 }) {
     const [activeMode, setActiveMode] = useState<EventAnalysisMode>('summary');
+    const [copyState, setCopyState] = useState<ClipboardCopyState>('idle');
     const detailFields = event ? getEventDetailFields(event) : [];
     const governance = event ? getEventGovernance(event) : null;
     const nextSteps = event ? getEventNextSteps(event) : [];
 
     useEffect(() => {
-        if (event?.id) setActiveMode('summary');
+        if (event?.id) {
+            setActiveMode('summary');
+            setCopyState('idle');
+        }
     }, [event?.id]);
+
+    useEffect(() => {
+        if (copyState === 'idle') return undefined;
+
+        const timeoutId = window.setTimeout(() => setCopyState('idle'), 2500);
+        return () => window.clearTimeout(timeoutId);
+    }, [copyState]);
+
+    async function handleCopySummary() {
+        if (!event || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+            setCopyState('failed');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(buildTimelineEventShareSummary(event));
+            setCopyState('copied');
+        } catch {
+            setCopyState('failed');
+        }
+    }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -542,23 +569,47 @@ function TimelineEventDetailDrawer({
                         </Tabs>
 
                         <SheetFooter className="shrink-0 border-t border-slate-100 bg-slate-50/50 p-6">
-                            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    onClick={() => onOpenChange(false)}
-                                    className="h-10 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
-                                >
-                                    Fechar
-                                </Button>
-                                {event.url && event.url !== '#' && (
-                                    <Button asChild variant="outline" className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber">
-                                        <a href={event.url} target="_blank" rel="noreferrer">
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            {event.externalUrlLabel ?? 'Abrir no GitHub'}
-                                        </a>
-                                    </Button>
+                            <div className="flex w-full flex-col gap-3">
+                                {copyState === 'failed' && (
+                                    <p className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                                        Não foi possível copiar automaticamente.
+                                    </p>
                                 )}
+                                <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={handleCopySummary}
+                                        className={cn(
+                                            'h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber',
+                                            copyState === 'copied' && 'border-green-100 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700',
+                                            copyState === 'failed' && 'border-amber-100 bg-amber-50 text-amber-800 hover:bg-amber-50 hover:text-amber-800',
+                                        )}
+                                    >
+                                        {copyState === 'copied' ? (
+                                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        ) : (
+                                            <Copy className="mr-2 h-4 w-4" />
+                                        )}
+                                        {copyState === 'copied' ? 'Resumo copiado' : 'Copiar resumo'}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => onOpenChange(false)}
+                                        className="h-10 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
+                                    >
+                                        Fechar
+                                    </Button>
+                                    {event.url && event.url !== '#' && (
+                                        <Button asChild variant="outline" className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber">
+                                            <a href={event.url} target="_blank" rel="noreferrer">
+                                                <ExternalLink className="mr-2 h-4 w-4" />
+                                                {event.externalUrlLabel ?? 'Abrir no GitHub'}
+                                            </a>
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </SheetFooter>
                     </div>
@@ -962,6 +1013,36 @@ function getEventGithubSummary(event: AgentOperationalTimelineEvent) {
     };
 }
 
+function buildTimelineEventShareSummary(event: AgentOperationalTimelineEvent) {
+    const governance = getEventGovernance(event);
+    const nextSteps = getEventNextSteps(event).slice(0, 4);
+    const lines = [
+        'BeeGym Agent Command Center · Resumo do Evento',
+        '',
+        `Título: ${sanitizeShareValue(event.title, 160)}`,
+        `Origem: ${event.source === 'github' ? 'GitHub real' : 'Agente simulado'}`,
+        `Tipo: ${getTypeLabel(event.type)}`,
+        `Status: ${sanitizeShareValue(event.status, 80)}`,
+        `Risco: ${getRiskLabel(event.risk)}`,
+        `Departamento: ${sanitizeShareValue(event.department, 120)}`,
+        `Agente: ${sanitizeShareValue(event.agentName, 120)}`,
+        `Data/hora: ${formatFullDateTime(event.timestamp)}`,
+        `Aprovação CEO: ${getShareApprovalLabel(governance.approvalRequired)}`,
+        `Motivo: ${sanitizeShareValue(governance.reason, 260)}`,
+        `Evidência: ${sanitizeShareValue(event.evidence ?? event.description, 260)}`,
+        event.url && event.url !== '#' ? `Link: ${sanitizeShareValue(event.url, 220)}` : null,
+        '',
+        'Próximos passos:',
+        ...nextSteps.map((step) => `- ${sanitizeShareValue(step, 140)}`),
+        '',
+        'Observações:',
+        '- Dados GitHub são leitura pública/read-only.',
+        '- Nenhuma ação real foi executada pelo painel.',
+    ];
+
+    return lines.filter((line): line is string => line !== null).join('\n');
+}
+
 function getEventGovernance(event: AgentOperationalTimelineEvent) {
     const approvalRequired = event.approvalRequired ?? getFallbackApprovalRequirement(event);
 
@@ -977,6 +1058,21 @@ function getRiskLabel(risk: string) {
     if (risk === 'high') return 'Alto';
     if (risk === 'medium') return 'Médio';
     return 'Baixo';
+}
+
+function getShareApprovalLabel(approvalRequired: AgentOperationalApprovalRequirement) {
+    if (approvalRequired === 'yes') return 'Sim';
+    if (approvalRequired === 'conditional') return 'Apenas se virar ação real';
+    return 'Não';
+}
+
+function sanitizeShareValue(value: string | number | null | undefined, maxLength: number) {
+    const normalized = String(value ?? '-')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const safeValue = normalized || '-';
+
+    return safeValue.length > maxLength ? `${safeValue.slice(0, Math.max(0, maxLength - 3))}...` : safeValue;
 }
 
 function getEventNextSteps(event: AgentOperationalTimelineEvent) {
