@@ -375,6 +375,7 @@ function toAgentTimelineEvent(event: AgentEvent): AgentOperationalTimelineEvent 
         agentName: agent?.name ?? 'Agente simulado',
         timestamp: event.occurredAt,
         metadata: {
+            departmentId: event.departmentId,
             eventType: event.eventType,
             runId: event.runId ?? null,
         },
@@ -400,6 +401,8 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
                 timestamp: pullRequest.createdAt || pullRequest.updatedAt,
                 url: pullRequest.url,
                 metadata: {
+                    departmentId: 'cto-monitoring',
+                    number: pullRequest.number,
                     branch: pullRequest.headRef,
                     base: pullRequest.baseRef,
                     labels: pullRequest.labels.join(', '),
@@ -422,6 +425,8 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
                 timestamp: pullRequest.mergedAt || pullRequest.updatedAt,
                 url: pullRequest.url,
                 metadata: {
+                    departmentId: 'cto-monitoring',
+                    number: pullRequest.number,
                     branch: pullRequest.headRef,
                     base: pullRequest.baseRef,
                 },
@@ -445,6 +450,7 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
         timestamp: run.updatedAt || run.createdAt,
         url: run.url,
         metadata: {
+            departmentId: 'cto-monitoring',
             event: run.event,
             branch: run.branch,
             commit: run.commitSha,
@@ -465,6 +471,8 @@ function toGitHubTimelineEvents(githubData?: GitHubRepositoryActivitySummary | n
         timestamp: issue.createdAt || issue.updatedAt,
         url: issue.url,
         metadata: {
+            departmentId: 'cto-monitoring',
+            number: issue.number,
             labels: issue.labels.join(', '),
         },
         isRealData: true,
