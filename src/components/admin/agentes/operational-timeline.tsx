@@ -8,19 +8,25 @@ import {
     CircleDot,
     Clock,
     ExternalLink,
+    FilterX,
     GitMerge,
     GitPullRequest,
     Loader2,
+    Search,
     ShieldCheck,
     Workflow,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import type { AgentEvent, AgentRiskLevel } from '@/lib/admin/agent-command-center-data';
+import { departments, type AgentEvent, type AgentRiskLevel } from '@/lib/admin/agent-command-center-data';
 import {
     buildOperationalTimeline,
     type AgentOperationalTimelineEvent,
+    type AgentOperationalTimelineSource,
+    type AgentOperationalTimelineType,
     type GitHubRepositoryActivitySummary,
 } from '@/lib/admin/agent-command-center-github';
 import { RiskBadge } from './agent-status-badge';
@@ -31,10 +37,66 @@ interface OperationalTimelineProps {
     compact?: boolean;
 }
 
+type TimelineSourceFilter = 'all' | AgentOperationalTimelineSource;
+type TimelineTypeFilter = 'all' | AgentOperationalTimelineType;
+type TimelineStatusFilter = 'all' | 'completed' | 'running' | 'pending' | 'failed' | 'blocked';
+
+interface TimelineFilters {
+    source: TimelineSourceFilter;
+    type: TimelineTypeFilter;
+    status: TimelineStatusFilter;
+    departmentId: string;
+    query: string;
+}
+
+interface TimelineSummary {
+    visible: number;
+    total: number;
+    github: number;
+    simulated: number;
+    attention: number;
+    recentEngineering: number;
+}
+
+interface TimelineGroup {
+    id: string;
+    label: string;
+    events: AgentOperationalTimelineEvent[];
+}
+
+const DEFAULT_FILTERS: TimelineFilters = {
+    source: 'all',
+    type: 'all',
+    status: 'all',
+    departmentId: 'all',
+    query: '',
+};
+
+const TYPE_FILTER_OPTIONS: Array<{ value: TimelineTypeFilter; label: string }> = [
+    { value: 'all', label: 'Todos os tipos' },
+    { value: 'pull_request', label: 'PR' },
+    { value: 'workflow_run', label: 'Workflow' },
+    { value: 'issue', label: 'Issue' },
+    { value: 'agent_task', label: 'Tarefa' },
+    { value: 'approval_request', label: 'Aprovação' },
+    { value: 'alert', label: 'Alerta' },
+    { value: 'merge', label: 'Merge' },
+];
+
+const STATUS_FILTER_OPTIONS: Array<{ value: TimelineStatusFilter; label: string }> = [
+    { value: 'all', label: 'Todos os status' },
+    { value: 'completed', label: 'Concluído' },
+    { value: 'running', label: 'Em andamento' },
+    { value: 'pending', label: 'Pendente' },
+    { value: 'failed', label: 'Falhou' },
+    { value: 'blocked', label: 'Bloqueado' },
+];
+
 export function OperationalTimeline({ agentEvents, limit = 10, compact = false }: OperationalTimelineProps) {
     const [githubData, setGithubData] = useState<GitHubRepositoryActivitySummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
+    const [filters, setFilters] = useState<TimelineFilters>(DEFAULT_FILTERS);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -70,12 +132,25 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
     }, []);
 
     const timelineEvents = useMemo(
-        () => buildOperationalTimeline({ agentEvents, githubData, limit }),
+        () => buildOperationalTimeline({ agentEvents, githubData, limit: Math.max(limit, 40) }),
         [agentEvents, githubData, limit],
+    );
+    const filteredEvents = useMemo(
+        () => filterTimelineEvents(timelineEvents, filters).slice(0, limit),
+        [filters, limit, timelineEvents],
+    );
+    const groupedEvents = useMemo(
+        () => groupTimelineEvents(filteredEvents),
+        [filteredEvents],
+    );
+    const summary = useMemo(
+        () => getTimelineSummary(timelineEvents, filteredEvents),
+        [filteredEvents, timelineEvents],
     );
     const githubEventCount = getGitHubEventCount(githubData);
     const showGitHubUnavailable = hasError || (!isLoading && githubData?.status.state === 'unavailable');
     const showGitHubEmpty = !isLoading && !showGitHubUnavailable && githubData !== null && githubEventCount === 0;
+    const hasActiveFilters = hasTimelineFilters(filters);
 
     return (
         <section className="space-y-4">
@@ -94,6 +169,15 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
                 </div>
             </div>
 
+            <TimelineSummaryCards summary={summary} />
+
+            <TimelineFiltersBar
+                filters={filters}
+                hasActiveFilters={hasActiveFilters}
+                onChange={setFilters}
+                onClear={() => setFilters(DEFAULT_FILTERS)}
+            />
+
             {showGitHubUnavailable && (
                 <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-xs font-bold text-amber-800 shadow-sm">
                     Dados GitHub indisponíveis no momento. Exibindo eventos simulados.
@@ -107,21 +191,161 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
             )}
 
             <div className={cn('rounded-[2rem] border border-slate-100 bg-white shadow-sm', compact ? 'p-4' : 'p-5')}>
-                {timelineEvents.length > 0 ? (
-                    <div className="relative space-y-4">
-                        <div className="absolute bottom-4 left-5 top-4 hidden w-px bg-slate-100 sm:block" />
-                        {timelineEvents.map((event) => (
-                            <TimelineEventCard key={event.id} event={event} compact={compact} />
+                {groupedEvents.length > 0 ? (
+                    <div className="space-y-6">
+                        {groupedEvents.map((group) => (
+                            <TimelineEventGroup key={group.id} group={group} compact={compact} />
                         ))}
                     </div>
                 ) : (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-8 text-center">
-                        <p className="text-sm font-black text-bee-midnight">Nenhum evento operacional encontrado.</p>
-                        <p className="mt-1 text-xs font-bold text-slate-400">A timeline será preenchida quando houver eventos simulados ou dados GitHub disponíveis.</p>
+                        <p className="text-sm font-black text-bee-midnight">
+                            {timelineEvents.length === 0 ? 'Nenhum evento operacional encontrado.' : 'Nenhum evento encontrado para os filtros selecionados.'}
+                        </p>
+                        <p className="mt-1 text-xs font-bold text-slate-400">
+                            {timelineEvents.length === 0
+                                ? 'A timeline será preenchida quando houver eventos simulados ou dados GitHub disponíveis.'
+                                : 'Ajuste a busca ou limpe os filtros para voltar à visão completa.'}
+                        </p>
+                        {timelineEvents.length > 0 && hasActiveFilters && (
+                            <Button type="button" variant="outline" size="sm" onClick={() => setFilters(DEFAULT_FILTERS)} className="mt-4 h-9 rounded-xl border-slate-100 bg-white text-xs font-bold text-slate-500 hover:bg-amber-50 hover:text-bee-amber">
+                                Limpar filtros
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>
         </section>
+    );
+}
+
+function TimelineSummaryCards({ summary }: { summary: TimelineSummary }) {
+    const cards = [
+        { label: 'Eventos exibidos', value: `${summary.visible}/${summary.total}`, helper: 'filtrado / geral' },
+        { label: 'GitHub real', value: String(summary.github), helper: 'eventos filtrados' },
+        { label: 'Agente simulado', value: String(summary.simulated), helper: 'eventos filtrados' },
+        { label: 'Atenção ou falha', value: String(summary.attention), helper: 'risco médio/alto' },
+        { label: 'PRs/workflows', value: String(summary.recentEngineering), helper: 'GitHub recente' },
+    ];
+
+    return (
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {cards.map((card) => (
+                <div key={card.label} className="rounded-[1.5rem] border border-slate-100 bg-white px-4 py-3 shadow-sm">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{card.label}</p>
+                    <p className="mt-1 text-2xl font-black text-bee-midnight">{card.value}</p>
+                    <p className="mt-1 text-[11px] font-bold text-slate-400">{card.helper}</p>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function TimelineFiltersBar({
+    filters,
+    hasActiveFilters,
+    onChange,
+    onClear,
+}: {
+    filters: TimelineFilters;
+    hasActiveFilters: boolean;
+    onChange: (filters: TimelineFilters) => void;
+    onClear: () => void;
+}) {
+    function updateFilter<Key extends keyof TimelineFilters>(key: Key, value: TimelineFilters[Key]) {
+        onChange({ ...filters, [key]: value });
+    }
+
+    return (
+        <div className="rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
+            <div className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(260px,1.4fr)_repeat(4,minmax(150px,1fr))_auto]">
+                <div className="relative">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <Input
+                        value={filters.query}
+                        onChange={(event) => updateFilter('query', event.target.value)}
+                        placeholder="Buscar título, descrição, agente, PR, issue ou branch..."
+                        className="h-11 rounded-2xl border-slate-100 bg-white pl-10 text-sm font-medium shadow-sm"
+                    />
+                </div>
+
+                <Select value={filters.source} onValueChange={(value) => updateFilter('source', value as TimelineSourceFilter)}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-white font-bold text-slate-600 shadow-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                        <SelectItem value="all" className="rounded-xl font-bold">Todas origens</SelectItem>
+                        <SelectItem value="github" className="rounded-xl font-bold">GitHub real</SelectItem>
+                        <SelectItem value="agent_mock" className="rounded-xl font-bold">Agente simulado</SelectItem>
+                    </SelectContent>
+                </Select>
+
+                <Select value={filters.type} onValueChange={(value) => updateFilter('type', value as TimelineTypeFilter)}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-white font-bold text-slate-600 shadow-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                        {TYPE_FILTER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="rounded-xl font-bold">{option.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={filters.status} onValueChange={(value) => updateFilter('status', value as TimelineStatusFilter)}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-white font-bold text-slate-600 shadow-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                        {STATUS_FILTER_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="rounded-xl font-bold">{option.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select value={filters.departmentId} onValueChange={(value) => updateFilter('departmentId', value)}>
+                    <SelectTrigger className="h-11 rounded-2xl border-slate-100 bg-white font-bold text-slate-600 shadow-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                        <SelectItem value="all" className="rounded-xl font-bold">Todos departamentos</SelectItem>
+                        {departments.map((department) => (
+                            <SelectItem key={department.id} value={department.id} className="rounded-xl font-bold">{department.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClear}
+                    disabled={!hasActiveFilters}
+                    className="h-11 rounded-2xl border-slate-100 bg-white px-4 text-xs font-bold text-slate-500 shadow-sm hover:bg-amber-50 hover:text-bee-amber disabled:opacity-50"
+                >
+                    <FilterX className="mr-2 h-4 w-4" />
+                    Limpar
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function TimelineEventGroup({ group, compact }: { group: TimelineGroup; compact: boolean }) {
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center gap-3">
+                <p className="text-xs font-black uppercase tracking-wider text-slate-400">{group.label}</p>
+                <div className="h-px flex-1 bg-slate-100" />
+                <span className="rounded-full border border-slate-100 bg-slate-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    {group.events.length} eventos
+                </span>
+            </div>
+            <div className="relative space-y-4">
+                <div className="absolute bottom-4 left-5 top-4 hidden w-px bg-slate-100 sm:block" />
+                {group.events.map((event) => (
+                    <TimelineEventCard key={event.id} event={event} compact={compact} />
+                ))}
+            </div>
+        </div>
     );
 }
 
@@ -159,13 +383,13 @@ function TimelineEventCard({ event, compact }: { event: AgentOperationalTimeline
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-50 pt-3 text-[11px] font-bold text-slate-400">
                     <span>{formatTimelineDate(event.timestamp)}</span>
-                    <span>•</span>
+                    <span>-</span>
                     <span>{event.department}</span>
-                    <span>•</span>
+                    <span>-</span>
                     <span>{event.agentName}</span>
                     {event.metadata?.branch && (
                         <>
-                            <span>•</span>
+                            <span>-</span>
                             <code className="rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-bold text-slate-500">{event.metadata.branch}</code>
                         </>
                     )}
@@ -229,6 +453,120 @@ function getStatusTone(status: string): 'green' | 'amber' | 'blue' | 'red' | 'sl
     return 'slate';
 }
 
+function filterTimelineEvents(events: AgentOperationalTimelineEvent[], filters: TimelineFilters) {
+    const normalizedQuery = normalizeText(filters.query);
+
+    return events.filter((event) => {
+        if (filters.source !== 'all' && event.source !== filters.source) return false;
+        if (filters.type !== 'all' && event.type !== filters.type) return false;
+        if (filters.status !== 'all' && getStatusCategory(event) !== filters.status) return false;
+        if (filters.departmentId !== 'all' && getEventDepartmentId(event) !== filters.departmentId) return false;
+        if (normalizedQuery && !getSearchText(event).includes(normalizedQuery)) return false;
+        return true;
+    });
+}
+
+function getTimelineSummary(allEvents: AgentOperationalTimelineEvent[], visibleEvents: AgentOperationalTimelineEvent[]): TimelineSummary {
+    return {
+        visible: visibleEvents.length,
+        total: allEvents.length,
+        github: visibleEvents.filter((event) => event.source === 'github').length,
+        simulated: visibleEvents.filter((event) => event.source === 'agent_mock').length,
+        attention: visibleEvents.filter((event) => event.risk !== 'low' || getStatusCategory(event) === 'failed' || getStatusCategory(event) === 'blocked').length,
+        recentEngineering: visibleEvents.filter((event) => event.type === 'pull_request' || event.type === 'workflow_run').length,
+    };
+}
+
+function groupTimelineEvents(events: AgentOperationalTimelineEvent[]): TimelineGroup[] {
+    const groups = new Map<string, TimelineGroup>();
+
+    events.forEach((event) => {
+        const group = getTemporalGroup(event.timestamp);
+        const currentGroup = groups.get(group.id);
+
+        if (currentGroup) {
+            currentGroup.events.push(event);
+            return;
+        }
+
+        groups.set(group.id, { ...group, events: [event] });
+    });
+
+    return Array.from(groups.values());
+}
+
+function getTemporalGroup(timestamp: string) {
+    const eventDate = new Date(timestamp);
+    if (!Number.isFinite(eventDate.getTime())) {
+        return { id: 'unknown', label: 'Sem data' };
+    }
+
+    const today = startOfDay(new Date());
+    const eventDay = startOfDay(eventDate);
+    const diffDays = Math.floor((today.getTime() - eventDay.getTime()) / 86_400_000);
+
+    if (diffDays === 0) return { id: 'today', label: 'Hoje' };
+    if (diffDays === 1) return { id: 'yesterday', label: 'Ontem' };
+    if (diffDays >= 2 && diffDays <= 6) return { id: 'last-7-days', label: 'Últimos 7 dias' };
+
+    return { id: eventDay.toISOString().slice(0, 10), label: formatGroupDate(eventDate) };
+}
+
+function getStatusCategory(event: AgentOperationalTimelineEvent): TimelineStatusFilter {
+    const normalizedStatus = event.status.toLowerCase();
+
+    if (event.risk === 'high' && event.type === 'alert') return 'blocked';
+    if (['failure', 'falha', 'failed', 'cancelled', 'timed_out'].includes(normalizedStatus)) return 'failed';
+    if (['success', 'concluído', 'merged', 'completed'].includes(normalizedStatus)) return 'completed';
+    if (['running', 'em andamento', 'in_progress', 'queued'].includes(normalizedStatus)) return 'running';
+    if (['open', 'draft', 'aguardando ceo'].includes(normalizedStatus)) return 'pending';
+
+    return 'pending';
+}
+
+function getEventDepartmentId(event: AgentOperationalTimelineEvent) {
+    const metadataDepartmentId = event.metadata?.departmentId;
+    if (typeof metadataDepartmentId === 'string' && metadataDepartmentId) return metadataDepartmentId;
+
+    return departments.find((department) => department.shortName === event.department || department.name === event.department)?.id ?? '';
+}
+
+function getSearchText(event: AgentOperationalTimelineEvent) {
+    const metadataValues = Object.values(event.metadata ?? {})
+        .filter((value) => value !== null && value !== undefined)
+        .join(' ');
+
+    return normalizeText([
+        event.title,
+        event.description,
+        event.agentName,
+        event.department,
+        event.status,
+        event.type,
+        metadataValues,
+    ].join(' '));
+}
+
+function hasTimelineFilters(filters: TimelineFilters) {
+    return filters.source !== DEFAULT_FILTERS.source
+        || filters.type !== DEFAULT_FILTERS.type
+        || filters.status !== DEFAULT_FILTERS.status
+        || filters.departmentId !== DEFAULT_FILTERS.departmentId
+        || filters.query.trim() !== DEFAULT_FILTERS.query;
+}
+
+function normalizeText(value: string) {
+    return value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function startOfDay(date: Date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 function getGitHubEventCount(githubData: GitHubRepositoryActivitySummary | null) {
     if (!githubData || githubData.status.state === 'unavailable') return 0;
     return githubData.recentPullRequests.length + githubData.issues.length + githubData.workflowRuns.length;
@@ -243,4 +581,12 @@ function formatTimelineDate(value: string) {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
+}
+
+function formatGroupDate(value: Date) {
+    return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    }).format(value);
 }
