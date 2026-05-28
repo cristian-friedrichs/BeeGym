@@ -55,6 +55,12 @@ type TimelineTypeFilter = 'all' | AgentOperationalTimelineType;
 type TimelineStatusFilter = 'all' | 'completed' | 'running' | 'pending' | 'failed' | 'blocked';
 type EventAnalysisMode = 'summary' | 'risk' | 'engineering' | 'approval' | 'github';
 type ClipboardCopyState = 'idle' | 'copied' | 'failed';
+type TimelineEventShareTemplate =
+    | 'executive_summary'
+    | 'daily_meeting'
+    | 'risk_review'
+    | 'ceo_approval'
+    | 'technical_followup';
 
 interface TimelineFilters {
     source: TimelineSourceFilter;
@@ -119,6 +125,14 @@ const EVENT_ANALYSIS_MODES: Array<{ value: EventAnalysisMode; label: string }> =
     { value: 'engineering', label: 'Engenharia' },
     { value: 'approval', label: 'Aprovação' },
     { value: 'github', label: 'GitHub' },
+];
+
+const EVENT_SHARE_TEMPLATE_OPTIONS: Array<{ value: TimelineEventShareTemplate; label: string }> = [
+    { value: 'executive_summary', label: 'Resumo executivo' },
+    { value: 'daily_meeting', label: 'Reunião diária' },
+    { value: 'risk_review', label: 'Análise de risco' },
+    { value: 'ceo_approval', label: 'Aprovação CEO' },
+    { value: 'technical_followup', label: 'Follow-up técnico' },
 ];
 
 export function OperationalTimeline({ agentEvents, limit = 10, compact = false }: OperationalTimelineProps) {
@@ -475,6 +489,7 @@ function TimelineEventDetailDrawer({
 }) {
     const [activeMode, setActiveMode] = useState<EventAnalysisMode>('summary');
     const [copyState, setCopyState] = useState<ClipboardCopyState>('idle');
+    const [selectedShareTemplate, setSelectedShareTemplate] = useState<TimelineEventShareTemplate>('executive_summary');
     const detailFields = event ? getEventDetailFields(event) : [];
     const governance = event ? getEventGovernance(event) : null;
     const nextSteps = event ? getEventNextSteps(event) : [];
@@ -483,6 +498,7 @@ function TimelineEventDetailDrawer({
         if (event?.id) {
             setActiveMode('summary');
             setCopyState('idle');
+            setSelectedShareTemplate('executive_summary');
         }
     }, [event?.id]);
 
@@ -500,7 +516,7 @@ function TimelineEventDetailDrawer({
         }
 
         try {
-            await navigator.clipboard.writeText(buildTimelineEventShareSummary(event));
+            await navigator.clipboard.writeText(buildTimelineEventShareSummary(event, selectedShareTemplate));
             setCopyState('copied');
         } catch {
             setCopyState('failed');
@@ -575,7 +591,28 @@ function TimelineEventDetailDrawer({
                                         Não foi possível copiar automaticamente.
                                     </p>
                                 )}
-                                <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
+                                <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+                                    <div className="min-w-0 lg:mr-auto lg:w-56">
+                                        <p className="mb-1 text-[10px] font-black uppercase tracking-wider text-slate-400">Template</p>
+                                        <Select
+                                            value={selectedShareTemplate}
+                                            onValueChange={(value) => {
+                                                setSelectedShareTemplate(value as TimelineEventShareTemplate);
+                                                setCopyState('idle');
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 shadow-sm">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
+                                                {EVENT_SHARE_TEMPLATE_OPTIONS.map((template) => (
+                                                    <SelectItem key={template.value} value={template.value} className="rounded-xl font-bold">
+                                                        {template.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -1013,34 +1050,108 @@ function getEventGithubSummary(event: AgentOperationalTimelineEvent) {
     };
 }
 
-function buildTimelineEventShareSummary(event: AgentOperationalTimelineEvent) {
+function buildTimelineEventShareSummary(
+    event: AgentOperationalTimelineEvent,
+    templateType: TimelineEventShareTemplate = 'executive_summary',
+) {
     const governance = getEventGovernance(event);
     const nextSteps = getEventNextSteps(event).slice(0, 4);
+    const riskSummary = getEventRiskSummary(event);
+    const firstNextStep = nextSteps[0] ?? 'Acompanhar evento';
+    const relatedEntity = getShareRelatedEntity(event);
+    const linkLine = event.url && event.url !== '#' ? sanitizeShareValue(event.url, 220) : 'Não informado';
+    const branch = event.relatedBranch || getMetadataValue(event, 'branch') || 'Não informado';
+    const commit = event.relatedCommitSha || getMetadataValue(event, 'commit') || 'Não informado';
+    const approvalLabel = getShareApprovalLabel(governance.approvalRequired);
+
+    if (templateType === 'daily_meeting') {
+        return [
+            'BeeGym · Pauta de reunião diária',
+            '',
+            `Ponto observado: ${sanitizeShareValue(event.title, 160)}`,
+            `Departamento: ${sanitizeShareValue(event.department, 120)}`,
+            `Situação atual: ${sanitizeShareValue(event.status, 80)}`,
+            `Bloqueios: ${getShareBlocker(event)}`,
+            `Próximo passo: ${sanitizeShareValue(firstNextStep, 140)}`,
+            `Responsável sugerido: ${sanitizeShareValue(event.agentName, 120)}`,
+            '',
+            'Observações:',
+            '- Dados GitHub são leitura pública/read-only.',
+            '- Nenhuma ação real foi executada pelo painel.',
+        ].join('\n');
+    }
+
+    if (templateType === 'risk_review') {
+        return [
+            'BeeGym · Análise de risco operacional',
+            '',
+            `Evento: ${sanitizeShareValue(event.title, 160)}`,
+            `Risco: ${getRiskLabel(event.risk)}`,
+            `Impacto: ${sanitizeShareValue(riskSummary.operationalImpact, 260)}`,
+            `Sinal de alerta: ${sanitizeShareValue(riskSummary.attentionLabel, 140)}`,
+            `Aprovação necessária: ${approvalLabel}`,
+            `Mitigação sugerida: ${sanitizeShareValue(riskSummary.recommendation, 260)}`,
+            '',
+            'Observações:',
+            '- Dados GitHub são leitura pública/read-only.',
+            '- Nenhuma ação real foi executada pelo painel.',
+        ].join('\n');
+    }
+
+    if (templateType === 'ceo_approval') {
+        return [
+            'BeeGym · Solicitação de decisão CEO',
+            '',
+            `Decisão necessária: ${approvalLabel}`,
+            `Contexto: ${sanitizeShareValue(event.description, 220)}`,
+            `Motivo: ${sanitizeShareValue(governance.reason, 260)}`,
+            `Risco: ${getRiskLabel(event.risk)}`,
+            `Ação recomendada: ${sanitizeShareValue(firstNextStep, 160)}`,
+            'Observação: Nenhuma ação real foi executada pelo painel.',
+            '',
+            'Observações:',
+            '- Dados GitHub são leitura pública/read-only.',
+            '- Nenhuma aprovação, merge, deploy ou automação real foi executada.',
+        ].join('\n');
+    }
+
+    if (templateType === 'technical_followup') {
+        return [
+            'BeeGym · Follow-up técnico',
+            '',
+            `Evento: ${sanitizeShareValue(event.title, 160)}`,
+            `Tipo: ${getTypeLabel(event.type)}`,
+            `Branch: ${sanitizeShareValue(branch, 120)}`,
+            `Commit: ${sanitizeShareValue(commit, 80)}`,
+            `PR/Issue/Workflow: ${relatedEntity}`,
+            `Status: ${sanitizeShareValue(event.status, 80)}`,
+            `Evidência: ${sanitizeShareValue(event.evidence ?? event.description, 260)}`,
+            `Link: ${linkLine}`,
+            `Próximo passo técnico: ${sanitizeShareValue(getShareTechnicalNextStep(event, firstNextStep), 160)}`,
+            '',
+            'Observações:',
+            '- Dados GitHub são leitura pública/read-only.',
+            '- Nenhuma ação real foi executada pelo painel.',
+        ].join('\n');
+    }
+
     const lines = [
-        'BeeGym Agent Command Center · Resumo do Evento',
+        'BeeGym Agent Command Center · Resumo executivo',
         '',
-        `Título: ${sanitizeShareValue(event.title, 160)}`,
-        `Origem: ${event.source === 'github' ? 'GitHub real' : 'Agente simulado'}`,
-        `Tipo: ${getTypeLabel(event.type)}`,
+        `Evento: ${sanitizeShareValue(event.title, 160)}`,
         `Status: ${sanitizeShareValue(event.status, 80)}`,
-        `Risco: ${getRiskLabel(event.risk)}`,
+        `Origem: ${event.source === 'github' ? 'GitHub real' : 'Agente simulado'}`,
         `Departamento: ${sanitizeShareValue(event.department, 120)}`,
-        `Agente: ${sanitizeShareValue(event.agentName, 120)}`,
-        `Data/hora: ${formatFullDateTime(event.timestamp)}`,
-        `Aprovação CEO: ${getShareApprovalLabel(governance.approvalRequired)}`,
-        `Motivo: ${sanitizeShareValue(governance.reason, 260)}`,
-        `Evidência: ${sanitizeShareValue(event.evidence ?? event.description, 260)}`,
-        event.url && event.url !== '#' ? `Link: ${sanitizeShareValue(event.url, 220)}` : null,
-        '',
-        'Próximos passos:',
-        ...nextSteps.map((step) => `- ${sanitizeShareValue(step, 140)}`),
+        `Risco: ${getRiskLabel(event.risk)}`,
+        `Aprovação CEO: ${approvalLabel}`,
+        `Próximo passo recomendado: ${sanitizeShareValue(firstNextStep, 160)}`,
         '',
         'Observações:',
         '- Dados GitHub são leitura pública/read-only.',
         '- Nenhuma ação real foi executada pelo painel.',
     ];
 
-    return lines.filter((line): line is string => line !== null).join('\n');
+    return lines.join('\n');
 }
 
 function getEventGovernance(event: AgentOperationalTimelineEvent) {
@@ -1066,11 +1177,43 @@ function getShareApprovalLabel(approvalRequired: AgentOperationalApprovalRequire
     return 'Não';
 }
 
+function getShareRelatedEntity(event: AgentOperationalTimelineEvent) {
+    const workflowName = getMetadataValue(event, 'workflowName');
+    const runId = getMetadataValue(event, 'runId');
+
+    if (event.relatedEntityNumber) {
+        return event.type === 'issue' ? `Issue #${event.relatedEntityNumber}` : `PR #${event.relatedEntityNumber}`;
+    }
+
+    if (workflowName || runId) {
+        return [workflowName || 'Workflow', runId ? `run ${runId}` : ''].filter(Boolean).join(' · ');
+    }
+
+    return 'Não informado';
+}
+
+function getShareBlocker(event: AgentOperationalTimelineEvent) {
+    const statusCategory = getStatusCategory(event);
+    if (statusCategory === 'blocked') return 'Bloqueio operacional informado';
+    if (statusCategory === 'failed') return 'Falha exige triagem';
+    if (event.risk === 'high') return 'Risco alto exige decisão humana';
+    if (event.risk === 'medium') return 'Acompanhar evolução do risco';
+    return 'Sem bloqueio informado';
+}
+
+function getShareTechnicalNextStep(event: AgentOperationalTimelineEvent, fallback: string) {
+    if (event.type === 'workflow_run' && getStatusCategory(event) === 'failed') return 'Abrir logs no GitHub';
+    if (event.type === 'pull_request') return 'Acompanhar checks';
+    if (event.type === 'issue') return 'Triar prioridade';
+    if (event.source === 'github') return 'Registrar resultado técnico';
+    return fallback;
+}
+
 function sanitizeShareValue(value: string | number | null | undefined, maxLength: number) {
     const normalized = String(value ?? '-')
         .replace(/\s+/g, ' ')
         .trim();
-    const safeValue = normalized || '-';
+    const safeValue = normalized === '-' || normalized === '' ? 'Não informado' : normalized;
 
     return safeValue.length > maxLength ? `${safeValue.slice(0, Math.max(0, maxLength - 3))}...` : safeValue;
 }
