@@ -106,6 +106,19 @@ O script e somente leitura:
 - Nao escreve no GitHub.
 - Nao usa token manual.
 
+## Permissoes GitHub no Codex
+
+No ambiente Codex, operacoes que acessam GitHub ou rede externa devem ser executadas com permissao escalada quando a sandbox bloquear rede.
+
+Exigem permissao escalada nesta rotina:
+
+- `gh auth status`
+- `gh issue create`, `gh issue list`, `gh issue view` e `gh issue edit`
+- `gh pr create`, `gh pr checks` e `gh pr merge`
+- `git fetch`, `git pull` e `git push`
+
+A permissao escalada nao autoriza expor tokens, ler secrets, alterar configuracao remota sensivel ou ampliar escopo. Ela apenas permite que comandos GitHub previamente aprovados acessem a rede. Se um comando mostrar token mascarado, o valor deve permanecer mascarado e nao deve ser copiado para docs, issues ou PRs.
+
 ## O que pode ser executado automaticamente
 
 Com autorizacao de Nivel 3 parcial e gates satisfeitos, o agente pode:
