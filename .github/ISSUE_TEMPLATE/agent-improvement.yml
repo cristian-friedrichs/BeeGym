@@ -1,5 +1,5 @@
 name: Agent Improvement
-description: Propose a scoped improvement for BeeGym agents.
+description: Propose a safe, scoped improvement for BeeGym agents.
 title: "[Agent Improvement] "
 labels:
   - type:task
@@ -8,28 +8,36 @@ body:
     id: objective
     attributes:
       label: Objetivo
-      description: Qual resultado a melhoria deve produzir?
+      description: Qual resultado verificavel a melhoria deve produzir?
+      placeholder: "Ex.: tornar o resumo de tarefas elegiveis mais claro sem alterar labels, permissoes ou escrita no GitHub."
     validations:
       required: true
   - type: textarea
     id: expected-impact
     attributes:
       label: Impacto esperado
-      description: Explique como isso melhora operacao, produto, suporte ou governanca.
+      description: Explique como isso melhora operacao, produto, suporte ou governanca sem ampliar risco operacional.
+      placeholder: "Ex.: reduz ambiguidade para o operador antes de aprovar uma rodada autonoma."
     validations:
       required: true
   - type: input
     id: area
     attributes:
       label: Area
-      placeholder: "Ex.: Admin, BeeGym OS, synthetic monitoring"
+      placeholder: "Ex.: Admin, BeeGym OS, templates de issue, synthetic monitoring"
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
       label: Escopo
-      description: Defina o que entra e o que fica fora.
+      description: Defina o que entra, o que fica fora e quais areas sensiveis nao podem ser tocadas.
+      placeholder: |
+        Entra:
+        - Ajustar texto de orientacao no template.
+
+        Fica fora:
+        - Supabase, migrations, auth, billing, secrets, dependencias, workflows e Vercel sensivel.
     validations:
       required: true
   - type: dropdown
@@ -47,6 +55,9 @@ body:
     id: acceptance-criteria
     attributes:
       label: Criterios de aceite
-      placeholder: "- A melhoria esta documentada\n- Validacoes locais passam"
+      placeholder: |
+        - A melhoria esta documentada ou aplicada no arquivo permitido.
+        - Nenhum arquivo proibido foi alterado.
+        - Validacoes locais passam ou falha existente foi reportada.
     validations:
       required: true
