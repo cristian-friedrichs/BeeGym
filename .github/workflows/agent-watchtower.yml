@@ -1,0 +1,31 @@
+name: BeeGym Agent Watchtower
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+  pull-requests: read
+
+jobs:
+  agent-watchtower:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 18.x
+
+      - name: Run agent Watchtower
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/agent-watchtower.mjs

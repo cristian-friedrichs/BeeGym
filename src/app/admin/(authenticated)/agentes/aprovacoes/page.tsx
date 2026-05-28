@@ -19,6 +19,10 @@ export default function AgentApprovalsPage() {
                 Nenhuma ação real será executada nesta fase. Os botões são visuais: não chamam API, não alteram banco e não disparam GitHub.
             </div>
 
+            <div className="rounded-2xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-xs font-bold text-amber-800 shadow-sm">
+                A fila real de aprovações futuras deve vir de issues com `autonomy:requires-ceo`, `agent:needs-review` ou risco `risk:medium`, `risk:high` e `risk:critical`. Nesta fase o admin continua somente leitura.
+            </div>
+
             <div className="flex flex-wrap items-center gap-3 rounded-[2rem] border border-white/60 bg-white/40 p-2 shadow-sm backdrop-blur-sm">
                 <div className="relative min-w-[260px] flex-1">
                     <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

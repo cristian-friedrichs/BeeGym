@@ -106,6 +106,40 @@ O script e somente leitura:
 - Nao escreve no GitHub.
 - Nao usa token manual.
 
+## Watchtower e dispatcher
+
+O Watchtower agendado cria backlog operacional a partir de sinais seguros do GitHub:
+
+- workflow falhou.
+- PR aberto ha muito tempo.
+- issue `agent:blocked` parada ha muito tempo.
+- ausencia de backlog elegivel para Nivel 3 parcial.
+
+Use em modo local sem escrita:
+
+```bash
+node scripts/agent-watchtower.mjs --dry-run
+```
+
+O workflow `.github/workflows/agent-watchtower.yml` roda a cada 6 horas e tambem pode ser disparado manualmente. Ele executa `node scripts/agent-watchtower.mjs` e pode criar apenas issues com contexto seguro e labels predefinidas.
+
+O dispatcher e somente leitura:
+
+```bash
+node scripts/agent-task-dispatcher.mjs
+```
+
+Ele lista tarefas elegiveis, tarefas que exigem CEO, bloqueadas, agrupamento por departamento e recomendacao de proxima execucao. Ele nao cria issues, nao cria PRs, nao altera GitHub e nao executa correcoes.
+
+Fluxo operacional:
+
+1. Watchtower cria backlog quando encontra sinais seguros.
+2. Dispatcher recomenda a proxima execucao.
+3. Agentes executam apenas issues elegiveis de Nivel 3 parcial.
+4. CEO aprova ou decide issues com `autonomy:requires-ceo`, `agent:needs-review` ou risco medio/alto/critico.
+
+Nivel 3 continua restrito a baixo risco, escopo claro, arquivos permitidos e validacoes verdes. Watchtower alimenta o backlog; ele nao amplia autonomia de execucao.
+
 ## Permissoes GitHub no Codex
 
 No ambiente Codex, operacoes que acessam GitHub ou rede externa devem ser executadas com permissao escalada quando a sandbox bloquear rede.
