@@ -1,0 +1,108 @@
+name: Agent Task
+description: Create a scoped task for BeeGym agents.
+title: "[Agent Task] "
+labels:
+  - type:task
+body:
+  - type: dropdown
+    id: department
+    attributes:
+      label: Departamento
+      options:
+        - dept:ceo
+        - dept:cto
+        - dept:support
+        - dept:marketing
+        - dept:growth
+        - dept:product
+        - dept:finance
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Tipo
+      options:
+        - type:bug
+        - type:task
+        - type:ui
+        - type:docs
+        - type:monitoring
+        - type:automation
+        - type:security-review
+        - type:technical-debt
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risco
+      options:
+        - risk:low
+        - risk:medium
+        - risk:high
+        - risk:critical
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo
+      description: Descreva o resultado esperado e o limite da tarefa.
+      placeholder: "Ex.: revisar copy de estados vazios do Agent Command Center sem alterar logica."
+    validations:
+      required: true
+  - type: textarea
+    id: allowed-files
+    attributes:
+      label: Arquivos permitidos
+      description: Liste caminhos ou padroes que podem ser alterados.
+      placeholder: "- beegym-operating-system/**"
+    validations:
+      required: true
+  - type: textarea
+    id: forbidden-files
+    attributes:
+      label: Arquivos proibidos
+      description: Liste areas que o agente nao pode tocar.
+      value: |
+        - Supabase, migrations, RLS, policies, schema, RPCs e CLI
+        - .env, .env.local e qualquer secret
+        - auth, billing, pagamentos e dados reais
+        - package.json, lockfiles e dependencias
+        - Vercel config, deploy sensivel e workflows criticos
+    validations:
+      required: true
+  - type: textarea
+    id: validations
+    attributes:
+      label: Validacoes obrigatorias
+      placeholder: "- npm.cmd run lint\n- npm.cmd run typecheck"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Criterios de aceite
+      description: Defina criterios objetivos para concluir a tarefa.
+      placeholder: "- O texto revisado aparece no painel sem alterar comportamento."
+    validations:
+      required: true
+  - type: dropdown
+    id: level-3
+    attributes:
+      label: Pode operar Nivel 3?
+      options:
+        - "nao"
+        - "sim"
+    validations:
+      required: true
+  - type: dropdown
+    id: ceo-approval
+    attributes:
+      label: Precisa aprovacao CEO?
+      options:
+        - "nao"
+        - "sim"
+    validations:
+      required: true
