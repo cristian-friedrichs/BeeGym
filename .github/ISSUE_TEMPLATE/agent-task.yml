@@ -48,8 +48,8 @@ body:
     id: scope
     attributes:
       label: Escopo
-      description: Descreva o resultado esperado e o limite da tarefa.
-      placeholder: "Ex.: revisar copy de estados vazios do Agent Command Center sem alterar logica."
+      description: Descreva o resultado esperado, o limite da tarefa e o que nao deve mudar.
+      placeholder: "Ex.: revisar copy de estados vazios do Agent Command Center sem alterar logica, API, dados, auth ou billing."
     validations:
       required: true
   - type: textarea
@@ -57,27 +57,35 @@ body:
     attributes:
       label: Arquivos permitidos
       description: Liste caminhos ou padroes que podem ser alterados.
-      placeholder: "- beegym-operating-system/**"
+      placeholder: |
+        - src/components/admin/agentes/github-operational-panel.tsx
+        - beegym-operating-system/autonomous-work-cycle.md
+        - scripts/list-agent-ready-tasks.mjs
     validations:
       required: true
   - type: textarea
     id: forbidden-files
     attributes:
       label: Arquivos proibidos
-      description: Liste areas que o agente nao pode tocar.
+      description: Liste areas que o agente nao pode tocar. Mantenha exemplos sensiveis explicitos quando a tarefa for Nivel 3.
       value: |
         - Supabase, migrations, RLS, policies, schema, RPCs e CLI
         - .env, .env.local e qualquer secret
         - auth, billing, pagamentos e dados reais
         - package.json, lockfiles e dependencias
         - Vercel config, deploy sensivel e workflows criticos
+        - Arquivos fora do escopo permitido
     validations:
       required: true
   - type: textarea
     id: validations
     attributes:
       label: Validacoes obrigatorias
-      placeholder: "- npm.cmd run lint\n- npm.cmd run typecheck"
+      placeholder: |
+        - npm.cmd run lint
+        - npm.cmd run typecheck
+        - npm.cmd run build
+        - Confirmar que somente arquivos permitidos mudaram
     validations:
       required: true
   - type: textarea
@@ -85,7 +93,10 @@ body:
     attributes:
       label: Criterios de aceite
       description: Defina criterios objetivos para concluir a tarefa.
-      placeholder: "- O texto revisado aparece no painel sem alterar comportamento."
+      placeholder: |
+        - O texto revisado aparece no painel sem alterar comportamento.
+        - Nenhum arquivo proibido foi alterado.
+        - As validacoes obrigatorias passaram ou a falha existente foi reportada.
     validations:
       required: true
   - type: dropdown
