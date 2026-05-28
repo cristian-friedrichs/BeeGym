@@ -128,6 +128,8 @@ Antes do push:
 - Confirmar que o commit pertence ao escopo.
 - Confirmar que nao ha alteracao sensivel nao aprovada.
 
+No Codex, `git fetch`, `git pull`, `git push` e comandos `gh` que acessam GitHub devem usar permissao escalada quando a rede estiver bloqueada pela sandbox. Essa permissao deve ser limitada ao comando necessario e nao permite ler secrets, mudar configuracoes remotas sensiveis ou ampliar a tarefa.
+
 ## 9. PR
 
 PR so deve ser aberto com autorizacao.
