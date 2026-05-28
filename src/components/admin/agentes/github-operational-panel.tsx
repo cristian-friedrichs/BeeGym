@@ -143,7 +143,7 @@ function StatusNotice({
                 <div className="min-w-0">
                     <p className={cn('text-xs font-black uppercase tracking-wider', tone.title)}>{visibleStatus.label}</p>
                     <p className="truncate text-xs font-bold text-slate-500">
-                        {hasError ? 'Não foi possível carregar dados do GitHub agora. A timeline simulada continua disponível.' : visibleStatus.message}
+                        {hasError ? 'Não foi possível carregar dados públicos do GitHub. Confira acesso, limite público da API ou tente novamente.' : visibleStatus.message}
                     </p>
                 </div>
             </div>
@@ -202,7 +202,13 @@ function RecentPullRequestsList({
                             </TableCell>
                         </TableRow>
                     ))}
-                    {!isLoading && pullRequests.length === 0 && <EmptyRow colSpan={compact ? 3 : 4} label="Nenhum PR público encontrado agora. Nada será aprovado, mergeado ou alterado por este painel." />}
+                    {!isLoading && pullRequests.length === 0 && (
+                        <EmptyRow
+                            colSpan={compact ? 3 : 4}
+                            label="Nenhum PR público encontrado agora."
+                            description="Confira se a branch já foi publicada, se o PR foi fechado ou se ainda precisa ser aberto no GitHub."
+                        />
+                    )}
                 </TableBody>
             </Table>
         </div>
@@ -247,7 +253,13 @@ function WorkflowRunsList({ runs, isLoading }: { runs: GitHubWorkflowRunSummary[
                             </TableCell>
                         </TableRow>
                     ))}
-                    {!isLoading && runs.length === 0 && <EmptyRow colSpan={4} label="Nenhum workflow público encontrado agora. A visão simulada dos agentes segue disponível." />}
+                    {!isLoading && runs.length === 0 && (
+                        <EmptyRow
+                            colSpan={4}
+                            label="Nenhum workflow público encontrado agora."
+                            description="Confira se existe PR recente, se o GitHub Actions iniciou ou se a leitura pública atingiu limite temporário."
+                        />
+                    )}
                 </TableBody>
             </Table>
         </div>
@@ -282,8 +294,9 @@ function OpenIssuesList({ issues, isLoading }: { issues: GitHubIssueSummary[]; i
                     </div>
                 ))}
                 {!isLoading && issues.length === 0 && (
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-400">
-                        Nenhuma issue pública aberta encontrada agora.
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+                        <p className="text-sm font-black text-slate-500">Nenhuma issue pública aberta encontrada agora.</p>
+                        <p className="mt-1 text-xs font-bold text-slate-400">Confira se existem issues elegíveis com labels de agente ou se a fila já foi concluída.</p>
                     </div>
                 )}
             </div>
@@ -324,8 +337,9 @@ function OpenPullRequestsList({ pullRequests, isLoading }: { pullRequests: GitHu
                 </div>
             ))}
             {!isLoading && pullRequests.length === 0 && (
-                <div className="rounded-[2rem] border border-slate-100 bg-white p-5 text-sm font-bold text-slate-400 shadow-sm">
-                    Nenhum PR aberto encontrado para observação agora. Nada será aprovado ou mergeado por este painel.
+                <div className="rounded-[2rem] border border-slate-100 bg-white p-5 shadow-sm">
+                    <p className="text-sm font-black text-slate-500">Nenhum PR aberto encontrado para observação agora.</p>
+                    <p className="mt-1 text-xs font-bold text-slate-400">Confira se a rodada ainda precisa abrir PR ou se os trabalhos já foram mergeados ou fechados.</p>
                 </div>
             )}
         </div>
@@ -387,11 +401,14 @@ function LoadingRow({ colSpan, label }: { colSpan: number; label: string }) {
     );
 }
 
-function EmptyRow({ colSpan, label }: { colSpan: number; label: string }) {
+function EmptyRow({ colSpan, label, description }: { colSpan: number; label: string; description?: string }) {
     return (
         <TableRow>
             <TableCell colSpan={colSpan} className="h-24 text-center text-sm font-bold text-slate-400">
-                {label}
+                <div className="mx-auto max-w-lg space-y-1">
+                    <p className="font-black text-slate-500">{label}</p>
+                    {description && <p className="text-xs font-bold text-slate-400">{description}</p>}
+                </div>
             </TableCell>
         </TableRow>
     );
