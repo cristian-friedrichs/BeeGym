@@ -11,6 +11,7 @@ import {
     FilterX,
     GitMerge,
     GitPullRequest,
+    Info,
     Loader2,
     Search,
     ShieldCheck,
@@ -20,9 +21,19 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { departments, type AgentEvent, type AgentRiskLevel } from '@/lib/admin/agent-command-center-data';
 import {
+    type AgentOperationalApprovalRequirement,
     buildOperationalTimeline,
     type AgentOperationalTimelineEvent,
     type AgentOperationalTimelineSource,
@@ -97,6 +108,7 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [filters, setFilters] = useState<TimelineFilters>(DEFAULT_FILTERS);
+    const [selectedEvent, setSelectedEvent] = useState<AgentOperationalTimelineEvent | null>(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -194,7 +206,7 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
                 {groupedEvents.length > 0 ? (
                     <div className="space-y-6">
                         {groupedEvents.map((group) => (
-                            <TimelineEventGroup key={group.id} group={group} compact={compact} />
+                            <TimelineEventGroup key={group.id} group={group} compact={compact} onSelectEvent={setSelectedEvent} />
                         ))}
                     </div>
                 ) : (
@@ -215,6 +227,14 @@ export function OperationalTimeline({ agentEvents, limit = 10, compact = false }
                     </div>
                 )}
             </div>
+
+            <TimelineEventDetailDrawer
+                event={selectedEvent}
+                open={Boolean(selectedEvent)}
+                onOpenChange={(open) => {
+                    if (!open) setSelectedEvent(null);
+                }}
+            />
         </section>
     );
 }
@@ -329,7 +349,15 @@ function TimelineFiltersBar({
     );
 }
 
-function TimelineEventGroup({ group, compact }: { group: TimelineGroup; compact: boolean }) {
+function TimelineEventGroup({
+    group,
+    compact,
+    onSelectEvent,
+}: {
+    group: TimelineGroup;
+    compact: boolean;
+    onSelectEvent: (event: AgentOperationalTimelineEvent) => void;
+}) {
     return (
         <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -342,14 +370,22 @@ function TimelineEventGroup({ group, compact }: { group: TimelineGroup; compact:
             <div className="relative space-y-4">
                 <div className="absolute bottom-4 left-5 top-4 hidden w-px bg-slate-100 sm:block" />
                 {group.events.map((event) => (
-                    <TimelineEventCard key={event.id} event={event} compact={compact} />
+                    <TimelineEventCard key={event.id} event={event} compact={compact} onSelect={() => onSelectEvent(event)} />
                 ))}
             </div>
         </div>
     );
 }
 
-function TimelineEventCard({ event, compact }: { event: AgentOperationalTimelineEvent; compact: boolean }) {
+function TimelineEventCard({
+    event,
+    compact,
+    onSelect,
+}: {
+    event: AgentOperationalTimelineEvent;
+    compact: boolean;
+    onSelect: () => void;
+}) {
     const Icon = getTimelineIcon(event);
 
     return (
@@ -357,7 +393,18 @@ function TimelineEventCard({ event, compact }: { event: AgentOperationalTimeline
             <div className="z-10 hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-white text-slate-500 shadow-sm sm:flex">
                 <Icon className="h-4 w-4" />
             </div>
-            <div className="min-w-0 flex-1 rounded-2xl border border-slate-100 bg-white px-4 py-4 transition-all hover:border-slate-200 hover:bg-amber-50/20">
+            <div
+                role="button"
+                tabIndex={0}
+                onClick={onSelect}
+                onKeyDown={(keyEvent) => {
+                    if (keyEvent.key === 'Enter' || keyEvent.key === ' ') {
+                        keyEvent.preventDefault();
+                        onSelect();
+                    }
+                }}
+                className="min-w-0 flex-1 rounded-2xl border border-slate-100 bg-white px-4 py-4 text-left transition-all hover:border-slate-200 hover:bg-amber-50/20 focus:outline-none focus:ring-2 focus:ring-bee-amber/30"
+            >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -374,7 +421,7 @@ function TimelineEventCard({ event, compact }: { event: AgentOperationalTimeline
                         <RiskBadge risk={event.risk as AgentRiskLevel} />
                         {event.url && event.url !== '#' && (
                             <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-300 hover:bg-amber-50 hover:text-bee-amber">
-                                <a href={event.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${event.title} no GitHub`}>
+                                <a href={event.url} target="_blank" rel="noreferrer" aria-label={`Abrir ${event.title} no GitHub`} onClick={(clickEvent) => clickEvent.stopPropagation()}>
                                     <ExternalLink className="h-4 w-4" />
                                 </a>
                             </Button>
@@ -395,6 +442,160 @@ function TimelineEventCard({ event, compact }: { event: AgentOperationalTimeline
                     )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+function TimelineEventDetailDrawer({
+    event,
+    open,
+    onOpenChange,
+}: {
+    event: AgentOperationalTimelineEvent | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const detailFields = event ? getEventDetailFields(event) : [];
+    const governance = event ? getEventGovernance(event) : null;
+    const nextSteps = event ? getEventNextSteps(event) : [];
+
+    return (
+        <Sheet open={open} onOpenChange={onOpenChange}>
+            <SheetContent side="right" className="w-full border-l border-slate-100 bg-white p-0 shadow-2xl sm:max-w-2xl">
+                {event && (
+                    <div className="flex h-full flex-col">
+                        <SheetHeader className="shrink-0 border-b border-slate-100 bg-white px-8 py-7 text-left">
+                            <div className="flex items-start gap-4">
+                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-500">
+                                    {(() => {
+                                        const Icon = getTimelineIcon(event);
+                                        return <Icon className="h-5 w-5" />;
+                                    })()}
+                                </div>
+                                <div className="min-w-0 flex-1 space-y-3">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <TimelinePill label={event.source === 'github' ? 'GitHub real' : 'Agente simulado'} tone={event.source === 'github' ? 'blue' : 'amber'} />
+                                        <TimelinePill label={event.status} tone={getStatusTone(event.status)} />
+                                        <RiskBadge risk={event.risk as AgentRiskLevel} />
+                                    </div>
+                                    <div>
+                                        <SheetTitle className="text-2xl font-black tracking-tight text-bee-midnight">{event.title}</SheetTitle>
+                                        <SheetDescription className="mt-2 text-sm font-medium leading-relaxed text-slate-500">
+                                            {event.description}
+                                        </SheetDescription>
+                                    </div>
+                                </div>
+                            </div>
+                        </SheetHeader>
+
+                        <ScrollArea className="flex-1">
+                            <div className="space-y-5 p-6">
+                                <DetailSection title="Contexto" icon={<Info className="h-4 w-4" />}>
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <DetailField label="Tipo" value={getTypeLabel(event.type)} />
+                                        <DetailField label="Departamento" value={event.department} />
+                                        <DetailField label="Agente" value={event.agentName} />
+                                        <DetailField label="Data e hora" value={formatFullDateTime(event.timestamp)} />
+                                        <DetailField label="Origem dos dados" value={event.isRealData ? 'Leitura real pública' : 'Simulação local'} />
+                                        <DetailField label="Natureza" value={event.isRealData ? 'Dado real sanitizado' : 'Dado simulado'} />
+                                    </div>
+                                </DetailSection>
+
+                                <DetailSection title="Evidência" icon={<CircleDot className="h-4 w-4" />}>
+                                    <p className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm font-medium leading-relaxed text-slate-600">
+                                        {event.evidence ?? event.description}
+                                    </p>
+                                    {detailFields.length > 0 && (
+                                        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            {detailFields.map((field) => (
+                                                <DetailField key={field.label} label={field.label} value={field.value} mono={field.mono} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </DetailSection>
+
+                                {governance && (
+                                    <DetailSection title="Governança" icon={<ShieldCheck className="h-4 w-4" />}>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <DetailField label="Autonomia" value={governance.level} />
+                                            <DetailField label="Aprovação CEO" value={governance.approvalLabel} />
+                                        </div>
+                                        <p className="mt-4 rounded-2xl border border-amber-100 bg-amber-50/70 p-4 text-sm font-bold leading-relaxed text-amber-800">
+                                            {governance.reason}
+                                        </p>
+                                    </DetailSection>
+                                )}
+
+                                <DetailSection title="Próximos passos sugeridos" icon={<CheckCircle2 className="h-4 w-4" />}>
+                                    <div className="space-y-2">
+                                        {nextSteps.map((step) => (
+                                            <div key={step} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm font-bold text-slate-600">
+                                                <span className="h-2 w-2 rounded-full bg-bee-amber" />
+                                                {step}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="mt-4 text-[11px] font-bold text-slate-400">
+                                        Sugestões apenas visuais. Nenhuma aprovação, merge, deploy ou automação é executada por este painel.
+                                    </p>
+                                </DetailSection>
+                            </div>
+                        </ScrollArea>
+
+                        <SheetFooter className="shrink-0 border-t border-slate-100 bg-slate-50/50 p-6">
+                            <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-end">
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    onClick={() => onOpenChange(false)}
+                                    className="h-10 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100"
+                                >
+                                    Fechar
+                                </Button>
+                                {event.url && event.url !== '#' && (
+                                    <Button asChild variant="outline" className="h-10 rounded-xl border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-amber-50 hover:text-bee-amber">
+                                        <a href={event.url} target="_blank" rel="noreferrer">
+                                            <ExternalLink className="mr-2 h-4 w-4" />
+                                            {event.externalUrlLabel ?? 'Abrir no GitHub'}
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
+                        </SheetFooter>
+                    </div>
+                )}
+            </SheetContent>
+        </Sheet>
+    );
+}
+
+function DetailSection({
+    title,
+    icon,
+    children,
+}: {
+    title: string;
+    icon: ReactNode;
+    children: ReactNode;
+}) {
+    return (
+        <section className="rounded-[1.5rem] border border-slate-100 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-50 text-slate-400">
+                    {icon}
+                </div>
+                <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400">{title}</h3>
+            </div>
+            {children}
+        </section>
+    );
+}
+
+function DetailField({ label, value, mono = false }: { label: string; value: string | number; mono?: boolean }) {
+    return (
+        <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+            <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">{label}</p>
+            <p className={cn('mt-1 break-words text-sm font-black text-bee-midnight', mono && 'font-mono text-xs')}>{value}</p>
         </div>
     );
 }
@@ -451,6 +652,92 @@ function getStatusTone(status: string): 'green' | 'amber' | 'blue' | 'red' | 'sl
     if (['failure', 'falha', 'failed', 'cancelled', 'timed_out'].includes(normalizedStatus)) return 'red';
     if (['open', 'aguardando ceo'].includes(normalizedStatus)) return 'amber';
     return 'slate';
+}
+
+function getTypeLabel(type: AgentOperationalTimelineType) {
+    const labels: Record<AgentOperationalTimelineType, string> = {
+        agent_task: 'Tarefa',
+        pull_request: 'PR',
+        workflow_run: 'Workflow',
+        issue: 'Issue',
+        merge: 'Merge',
+        alert: 'Alerta',
+        approval_request: 'Aprovação',
+    };
+
+    return labels[type];
+}
+
+function getEventDetailFields(event: AgentOperationalTimelineEvent) {
+    const fields: Array<{ label: string; value: string | number; mono?: boolean }> = [];
+    const workflowName = getMetadataValue(event, 'workflowName');
+    const runId = getMetadataValue(event, 'runId');
+    const base = getMetadataValue(event, 'base');
+    const labels = getMetadataValue(event, 'labels');
+    const eventName = getMetadataValue(event, 'event');
+    const eventType = getMetadataValue(event, 'eventType');
+
+    if (event.relatedEntityNumber) fields.push({ label: event.type === 'issue' ? 'Issue' : 'PR', value: `#${event.relatedEntityNumber}` });
+    if (workflowName) fields.push({ label: 'Workflow', value: workflowName });
+    if (runId) fields.push({ label: 'Run ID', value: runId, mono: true });
+    if (event.relatedBranch) fields.push({ label: 'Branch', value: event.relatedBranch, mono: true });
+    if (base) fields.push({ label: 'Base', value: base, mono: true });
+    if (event.relatedCommitSha) fields.push({ label: 'Commit', value: event.relatedCommitSha, mono: true });
+    if (eventName) fields.push({ label: 'Evento GitHub', value: eventName });
+    if (eventType) fields.push({ label: 'Evento agente', value: eventType });
+    if (labels) fields.push({ label: 'Labels', value: labels });
+
+    return fields;
+}
+
+function getEventGovernance(event: AgentOperationalTimelineEvent) {
+    const approvalRequired = event.approvalRequired ?? getFallbackApprovalRequirement(event);
+
+    return {
+        level: event.governanceLevel ?? (event.isRealData ? 'Leitura pública' : 'Simulação local'),
+        approvalLabel: getApprovalRequiredLabel(approvalRequired),
+        reason: event.approvalReason ?? getFallbackApprovalReason(approvalRequired, event),
+    };
+}
+
+function getEventNextSteps(event: AgentOperationalTimelineEvent) {
+    if (event.nextSteps && event.nextSteps.length > 0) return event.nextSteps;
+
+    if (event.type === 'pull_request') return ['Acompanhar checks', 'Revisar escopo'];
+    if (event.type === 'workflow_run' && getStatusCategory(event) === 'failed') return ['Abrir logs no GitHub', 'Classificar falha'];
+    if (event.type === 'workflow_run') return ['Acompanhar conclusão', 'Registrar resultado'];
+    if (event.type === 'issue') return ['Triar prioridade', 'Encaminhar departamento'];
+    return ['Validar se deve virar tarefa real', 'Vincular a uma aprovação futura'];
+}
+
+function getApprovalRequiredLabel(approvalRequired: AgentOperationalApprovalRequirement) {
+    const labels: Record<AgentOperationalApprovalRequirement, string> = {
+        yes: 'Sim',
+        no: 'Não',
+        conditional: 'Apenas em caso de falha/risco',
+    };
+
+    return labels[approvalRequired];
+}
+
+function getFallbackApprovalRequirement(event: AgentOperationalTimelineEvent): AgentOperationalApprovalRequirement {
+    if (event.type === 'approval_request' || event.risk === 'high') return 'yes';
+    if (event.risk === 'medium' || getStatusCategory(event) === 'failed') return 'conditional';
+    return 'no';
+}
+
+function getFallbackApprovalReason(approvalRequired: AgentOperationalApprovalRequirement, event: AgentOperationalTimelineEvent) {
+    if (approvalRequired === 'yes') return 'Evento classificado com risco ou aprovação explícita para decisão humana.';
+    if (approvalRequired === 'conditional') return 'Aprovação humana pode ser necessária se o risco aumentar ou houver falha operacional.';
+    return event.isRealData
+        ? 'Evento real observado em modo read-only, sem ação operacional no painel.'
+        : 'Evento simulado sem execução real nesta fase.';
+}
+
+function getMetadataValue(event: AgentOperationalTimelineEvent, key: string) {
+    const value = event.metadata?.[key];
+    if (value === null || value === undefined || value === '') return '';
+    return String(value);
 }
 
 function filterTimelineEvents(events: AgentOperationalTimelineEvent[], filters: TimelineFilters) {
@@ -578,6 +865,18 @@ function formatTimelineDate(value: string) {
     return new Intl.DateTimeFormat('pt-BR', {
         day: '2-digit',
         month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(value));
+}
+
+function formatFullDateTime(value: string) {
+    if (!value) return '-';
+
+    return new Intl.DateTimeFormat('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
