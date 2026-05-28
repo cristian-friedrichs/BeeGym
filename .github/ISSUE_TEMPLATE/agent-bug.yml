@@ -1,0 +1,82 @@
+name: Agent Bug
+description: Report a defect for BeeGym agents to triage.
+title: "[Agent Bug] "
+labels:
+  - type:bug
+body:
+  - type: input
+    id: area
+    attributes:
+      label: Area afetada
+      placeholder: "Ex.: Admin Agent Command Center"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: "1. Acessar...\n2. Clicar...\n3. Observar..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      options:
+        - baixa
+        - media
+        - alta
+        - critica
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencias
+      description: Inclua logs sanitizados, prints ou links publicos. Nao cole secrets ou dados reais.
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: "Ex.: local, preview PR, producao"
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risco
+      options:
+        - risk:low
+        - risk:medium
+        - risk:high
+        - risk:critical
+    validations:
+      required: true
+  - type: dropdown
+    id: department
+    attributes:
+      label: Departamento responsavel
+      options:
+        - dept:ceo
+        - dept:cto
+        - dept:support
+        - dept:marketing
+        - dept:growth
+        - dept:product
+        - dept:finance
+    validations:
+      required: true

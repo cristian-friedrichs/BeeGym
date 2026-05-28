@@ -1,0 +1,85 @@
+# BeeGym operational labels for agent-driven work.
+# Apply with: node scripts/sync-agent-labels.mjs --apply
+
+labels:
+  - name: dept:ceo
+    color: "5319E7"
+    description: CEO decisions, approvals, and governance.
+  - name: dept:cto
+    color: "0052CC"
+    description: Engineering, architecture, infrastructure, and technical operations.
+  - name: dept:support
+    color: "0E8A16"
+    description: Customer support, tickets, incidents, and help operations.
+  - name: dept:marketing
+    color: "FBCA04"
+    description: Marketing, campaigns, content, and positioning.
+  - name: dept:growth
+    color: "F9D0C4"
+    description: Growth loops, activation, retention, and acquisition experiments.
+  - name: dept:product
+    color: "1D76DB"
+    description: Product experience, roadmap, UX, and feature quality.
+  - name: dept:finance
+    color: "BFDADC"
+    description: Finance, billing review, reporting, and business operations.
+  - name: type:bug
+    color: "D73A4A"
+    description: Defect or regression.
+  - name: type:task
+    color: "C5DEF5"
+    description: Operational task with a defined outcome.
+  - name: type:ui
+    color: "A2EEEF"
+    description: UI, copy, layout, or empty-state work.
+  - name: type:docs
+    color: "0075CA"
+    description: Documentation, templates, or operational guidance.
+  - name: type:monitoring
+    color: "7057FF"
+    description: Monitoring, checks, reports, and observability tasks.
+  - name: type:automation
+    color: "D4C5F9"
+    description: Automation proposals or safe automation maintenance.
+  - name: type:security-review
+    color: "B60205"
+    description: Security review, risk classification, or sensitive-area analysis.
+  - name: type:technical-debt
+    color: "E4E669"
+    description: Maintenance, cleanup, or technical debt.
+  - name: risk:low
+    color: "0E8A16"
+    description: Low-risk task eligible for limited autonomous handling when other rules match.
+  - name: risk:medium
+    color: "FBCA04"
+    description: Medium-risk task requiring closer review.
+  - name: risk:high
+    color: "D93F0B"
+    description: High-risk task requiring explicit CEO approval before execution.
+  - name: risk:critical
+    color: "B60205"
+    description: Critical risk; stop and escalate.
+  - name: autonomy:level-2
+    color: "C2E0C6"
+    description: Agent may execute, validate, commit, and push when explicitly approved.
+  - name: autonomy:level-3-candidate
+    color: "0E8A16"
+    description: Candidate for Level 3 partial PR and merge flow if all safety gates pass.
+  - name: autonomy:requires-ceo
+    color: "D73A4A"
+    description: Requires explicit CEO decision before execution.
+  - name: agent:ready
+    color: "0E8A16"
+    description: Ready for agent triage or execution.
+  - name: agent:in-progress
+    color: "1D76DB"
+    description: Agent work is currently in progress.
+  - name: agent:blocked
+    color: "D73A4A"
+    description: Agent is blocked and needs input or a failed condition resolved.
+  - name: agent:done
+    color: "5319E7"
+    description: Agent work completed and recorded.
+  - name: agent:needs-review
+    color: "FBCA04"
+    description: Human review is needed before the next step.

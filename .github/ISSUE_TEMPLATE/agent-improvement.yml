@@ -1,0 +1,52 @@
+name: Agent Improvement
+description: Propose a scoped improvement for BeeGym agents.
+title: "[Agent Improvement] "
+labels:
+  - type:task
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: Qual resultado a melhoria deve produzir?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-impact
+    attributes:
+      label: Impacto esperado
+      description: Explique como isso melhora operacao, produto, suporte ou governanca.
+    validations:
+      required: true
+  - type: input
+    id: area
+    attributes:
+      label: Area
+      placeholder: "Ex.: Admin, BeeGym OS, synthetic monitoring"
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Escopo
+      description: Defina o que entra e o que fica fora.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risco
+      options:
+        - risk:low
+        - risk:medium
+        - risk:high
+        - risk:critical
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Criterios de aceite
+      placeholder: "- A melhoria esta documentada\n- Validacoes locais passam"
+    validations:
+      required: true
