@@ -422,6 +422,7 @@ function createEmptyClientActivity(): GitHubRepositoryActivitySummary {
         openIssues: 0,
         recentPullRequests: [],
         issues: [],
+        recentClosedIssues: [],
         workflowRuns: [],
         recentCommits: [],
         latestWorkflowRun: null,

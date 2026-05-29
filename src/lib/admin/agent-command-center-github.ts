@@ -32,6 +32,7 @@ export interface GitHubIssueSummary {
     labels: string[];
     createdAt: string;
     updatedAt: string;
+    closedAt: string;
     url: string;
 }
 
@@ -73,6 +74,7 @@ export interface GitHubRepositoryActivitySummary {
     openIssues: number;
     recentPullRequests: GitHubPullRequestSummary[];
     issues: GitHubIssueSummary[];
+    recentClosedIssues: GitHubIssueSummary[];
     workflowRuns: GitHubWorkflowRunSummary[];
     recentCommits: GitHubCommitSummary[];
     latestWorkflowRun: GitHubWorkflowRunSummary | null;
@@ -133,9 +135,9 @@ const GITHUB_HEADERS = {
 };
 
 const GITHUB_ENDPOINTS: Record<GitHubResource, string> = {
-    pulls: `${GITHUB_API_BASE}/pulls?state=all&per_page=10`,
-    issues: `${GITHUB_API_BASE}/issues?state=open&per_page=10`,
-    workflowRuns: `${GITHUB_API_BASE}/actions/runs?per_page=10`,
+    pulls: `${GITHUB_API_BASE}/pulls?state=all&sort=updated&direction=desc&per_page=20`,
+    issues: `${GITHUB_API_BASE}/issues?state=all&sort=updated&direction=desc&per_page=30`,
+    workflowRuns: `${GITHUB_API_BASE}/actions/runs?per_page=30`,
     commits: `${GITHUB_API_BASE}/commits?per_page=5`,
 };
 
@@ -155,6 +157,7 @@ export function createEmptyGitHubRepositoryActivity(message = 'Não foi possíve
         openIssues: 0,
         recentPullRequests: [],
         issues: [],
+        recentClosedIssues: [],
         workflowRuns: [],
         recentCommits: [],
         latestWorkflowRun: null,
@@ -208,6 +211,8 @@ export async function fetchGitHubRepositoryActivity(): Promise<GitHubRepositoryA
 
     const recentPullRequests = pulls.ok ? pulls.data.map(toPullRequestSummary).filter(isDefined) : [];
     const issuesOnly = issues.ok ? issues.data.filter((item) => !hasPullRequestMarker(item)).map(toIssueSummary).filter(isDefined) : [];
+    const openIssues = issuesOnly.filter((issue) => issue.state === 'open');
+    const recentClosedIssues = issuesOnly.filter((issue) => issue.state === 'closed').slice(0, 10);
     const runs = workflowRuns.ok ? (workflowRuns.data.workflow_runs ?? []).map(toWorkflowRunSummary).filter(isDefined) : [];
     const recentCommits = commits.ok ? commits.data.map(toCommitSummary).filter(isDefined) : [];
     const latestMergedPullRequest = recentPullRequests.find((pullRequest) => pullRequest.merged) ?? null;
@@ -226,9 +231,10 @@ export async function fetchGitHubRepositoryActivity(): Promise<GitHubRepositoryA
             rateLimited,
         },
         openPullRequests: recentPullRequests.filter((pullRequest) => pullRequest.state === 'open').length,
-        openIssues: issuesOnly.length,
+        openIssues: openIssues.length,
         recentPullRequests,
-        issues: issuesOnly,
+        issues: openIssues,
+        recentClosedIssues,
         workflowRuns: runs,
         recentCommits,
         latestWorkflowRun: runs[0] ?? null,
@@ -290,6 +296,7 @@ function toIssueSummary(item: unknown): GitHubIssueSummary | null {
         labels: getLabelNames(record.labels),
         createdAt: getString(record.created_at),
         updatedAt: getString(record.updated_at),
+        closedAt: getString(record.closed_at),
         url: getString(record.html_url, '#'),
     };
 }
@@ -362,7 +369,7 @@ function getLabelNames(labels: unknown) {
             return record ? getString(record.name) : '';
         })
         .filter(Boolean)
-        .slice(0, 4);
+        .slice(0, 8);
 }
 
 function isDefined<T>(value: T | null | undefined): value is T {
